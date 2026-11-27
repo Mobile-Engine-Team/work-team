@@ -8,7 +8,7 @@ export function apply(ctx) {
   const service = ctx.workbenchMultica
   const control = daemonController(service.directory)
   const lifecycle = {
-    'team:enableDaemon': 'daemon.start', 'team:daemonStatus': 'daemon.status', 'team:stopDaemon': 'daemon.stop',
+    'team:enableDaemon': 'daemon.start', 'team:daemonStatus': 'daemon.status', 'team:stopDaemon': 'daemon.stop', 'team:daemonLogs': 'daemon.logs',
   }
   const actions = new Set([...Object.keys(lifecycle), 'team:serverInfo', 'team:personalLinks', 'team:savePersonalLink',
     'team:modelAuthStatus', 'team:loginModel', 'team:importModelAuth', 'team:testAgent', 'team:connectRemote'])

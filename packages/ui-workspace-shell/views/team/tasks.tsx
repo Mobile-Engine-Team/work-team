@@ -1,21 +1,17 @@
 import { Progress } from "./progress";
 import { useQuery } from "@tanstack/react-query";
 import { CollapsibleMessage } from "./collapsible-message";
+import { TaskProperties, TaskDetailMenu } from "./task-properties";
 import { TaskFields } from "./task-fields";
 import { DraftSchema, generatedDraftPatch, type TeamDraft } from "./draft";
 import type { OpenworkServerClient } from "@/app/lib/openwork-server";
 
 type PersonalSource = { title: string; description: string; client: OpenworkServerClient; workspaceId: string; sessionId: string };
 import { ensureAgentAuth, runFailureHint } from "./model-auth";
-import { useEffect, useState, useRef } from "react";
+import { useEffect, useState, useRef, type CSSProperties } from "react";
 import { useNavigate, useSearchParams, useLocation } from "react-router-dom";
-import {
-  Search,
-  LayoutList,
-  Columns3,
-  ArrowLeft,
-  FileText,
-} from "lucide-react";
+import { Search, Columns3, Bot, Plus, ChevronLeft, ChevronRight, Pencil, FileText } from "../icons";
+import { LayoutList } from "lucide-react";
 import { canAssignAgentToIssue } from "@multica/core/permissions";
 import { BUILT_IN_STATUS_ORDER } from "@multica/core/issues/config/status";
 import type {
@@ -54,6 +50,10 @@ import {
   joinProjectRequirements,
 } from "./project-requirements";
 import { TeamMarkdown } from "./markdown";
+import {IssueFollowup, IssueRunHistory} from "./issue-followup";
+import { SidebarResize, useSidebarWidth } from "../workbench/sidebar-resize";
+import { SidePanel } from "./work-tools";
+import { IssueSource } from "./rooms";
 import { TaskProjectContext, TaskRequirements } from "./project-task-context";
 import { TaskArtifacts, UploadFiles, RunList } from "./task-files";
 export function useTeamPeople() {
@@ -77,7 +77,7 @@ export function useTeamPeople() {
     members.data?.find((m) => m.user_id === id)?.name ||
     squads.data?.find((s) => s.id === id)?.name ||
     text(id ? "unknownPerson" : "unassigned");
-  const options = [
+  const options: {value:string;label:string;disabled?:boolean}[] = [
     { value: "none", label: text("unassigned") },
     ...(members.data || []).map((m) => ({
       value: `member:${m.user_id}`,
@@ -124,374 +124,20 @@ export function useStatuses() {
     }));
   return { catalog, options };
 }
-export function TaskList() {
-  const { workspace, user } = useTeam();
-  const navigate = useNavigate();
-  const people = useTeamPeople();
-  const { options } = useStatuses();
-  const [params, setParams] = useSearchParams();
-  const search = params.get("q") || "",
-    filter = params.get("scope") || "all";
-  const projectID = params.get("project") || "",
-    statusFilter = params.get("status") || "",
-    ownerFilter = params.get("owner") || "";
-  const sort =
-    params.get("sort") === "updated_at"
-      ? "updated_at"
-      : params.get("sort") === "due_date"
-        ? "due_date"
-        : "created_at";
-  const direction = params.get("direction") === "asc" ? "asc" : "desc";
-  const page = Math.max(0, Number(params.get("page")) || 0),
-    board = params.get("taskView") === "board";
-  const setFilterValue = (key: string, value: string) => {
-    const next = new URLSearchParams(params);
-    if (value) next.set(key, value);
-    else next.delete(key);
-    if (key !== "page") next.delete("page");
-    setParams(next, { replace: true });
-  };
-  const setPage = (n: number) => setFilterValue("page", String(n));
-  const setBoard = (value: boolean) =>
-    setFilterValue("taskView", value ? "board" : "");
-  const projects = useTeamQuery(["projects"], () => teamApi.listProjects());
-  const snapshot = useTeamQuery(["taskSnapshot"], () =>
-    teamApi.getAgentTaskSnapshot(),
-  );
-  const query: ListIssuesParams = {
-    workspace_id: workspace.id,
-    q: search,
-    ...(statusFilter ? { statuses: [statusFilter] } : {}),
-    ...(ownerFilter === "none"
-      ? { include_no_assignee: true }
-      : ownerFilter
-        ? { assignee_ids: [ownerFilter] }
-        : {}),
-    ...(projectID === "none"
-      ? { include_no_project: true }
-      : projectID
-        ? { project_id: projectID }
-        : {}),
-  };
-  const scopeQuery = (scope: string): ListIssuesParams => ({
-    ...query,
-    ...(scope === "mine"
-      ? { assignee_id: user.id }
-      : scope === "created"
-        ? { creator_id: user.id }
-        : {}),
-  });
-  const issues = useTeamQuery(
-    ["issues", query, filter, page, sort, direction],
-    () =>
-      teamApi.listIssues({
-        ...scopeQuery(filter),
-        limit: 50,
-        offset: page * 50,
-        sort_by: sort,
-        sort_direction: direction,
-      }),
-  );
-  const counts = useTeamQuery(
-    ["issues", "counts", query, user.id],
-    async () => {
-      const [all, mine, created] = await Promise.all(
-        ["all", "mine", "created"].map((scope) =>
-          teamApi.listIssues({ ...scopeQuery(scope), limit: 1 }),
-        ),
-      );
-      return { all: all.total, mine: mine.total, created: created.total };
-    },
-  );
-  const notices = useTeamQuery(["inbox", false], () => teamApi.listInbox());
-  const updated = new Set(
-    notices.data?.filter((item) => !item.read).map((item) => item.issue_id),
-  );
-  const visibleRuns = personalRuns(snapshot.data || [], user.id);
-  const open = (issue: Issue) =>
-    navigate(`/team/${workspace.slug}/issue/${issue.id}`, {
-      state: { taskListSearch: params.toString() },
-    });
-  return (
-    <>
-      <div className="team-toolbar">
-        <div>
-          <h1>{text("teamTasks")}</h1>
-          <p>{text("tasksHint")}</p>
-        </div>
-        <div className="team-actions">
-          <Action aria-label={text("list")} onClick={() => setBoard(false)}>
-            <LayoutList />
-          </Action>
-          <Action aria-label={text("board")} onClick={() => setBoard(true)}>
-            <Columns3 />
-          </Action>
-        </div>
-      </div>
-      <div className="team-toolbar">
-        <div className="team-filter">
-          {(["all", "mine", "created"] as const).map((v) => (
-            <button
-              key={v}
-              className={v === filter ? "active" : ""}
-              onClick={() => {
-                setFilterValue("scope", v);
-              }}
-            >
-              {text(v)} <small>{counts.data?.[v] ?? "—"}</small>
-            </button>
-          ))}
-        </div>
-        <div className="team-search">
-          <Search size={16} />
-          <Input
-            aria-label={text("search")}
-            placeholder={text("search")}
-            value={search}
-            onChange={(e) => {
-              setFilterValue("q", e.target.value);
-            }}
-          />
-        </div>
-      </div>
-      <div className="team-task-filters">
-        <div
-          className="team-task-filter-group"
-          role="group"
-          aria-label={text("filters")}
-        >
-          <Field label={text("taskProject")}>
-            <SearchPicker
-              label={text("taskProject")}
-              value={projectID}
-              onChange={(v) => setFilterValue("project", v)}
-              options={[
-                { value: "", label: text("allProjects") },
-                { value: "none", label: text("noProject") },
-                ...(projects.data?.projects || []).map((p) => ({
-                  value: p.id,
-                  label: p.title,
-                })),
-              ]}
-            />
-          </Field>
-          <Field label={text("state")}>
-            <Picker
-              label={text("state")}
-              value={statusFilter}
-              onChange={(v) => setFilterValue("status", v)}
-              options={[{ value: "", label: text("allStates") }, ...options]}
-            />
-          </Field>
-          <Field label={text("owner")}>
-            <Picker
-              label={text("owner")}
-              value={ownerFilter}
-              onChange={(v) => setFilterValue("owner", v)}
-              options={[
-                { value: "", label: text("allOwners") },
-                ...people.options.map((o) => ({
-                  value: o.value === "none" ? "none" : o.value.split(":")[1],
-                  label: o.label.replace(` · ${text("noPermission")}`, ""),
-                })),
-              ]}
-            />
-          </Field>
-        </div>
-        <div
-          className="team-task-sort-group"
-          role="group"
-          aria-label={text("sorting")}
-        >
-          <Field label={text("sortBy")}>
-            <Picker
-              label={text("sortBy")}
-              value={sort}
-              onChange={(v) => setFilterValue("sort", v)}
-              options={["created_at", "updated_at", "due_date"].map(
-                (value) => ({
-                  value,
-                  label: text(`sort.${value}`),
-                }),
-              )}
-            />
-          </Field>
-          <Field label={text("sortDirection")}>
-            <Picker
-              label={text("sortDirection")}
-              value={direction}
-              onChange={(v) => setFilterValue("direction", v)}
-              options={["desc", "asc"].map((value) => ({
-                value,
-                label: text(
-                  `sort.${sort === "due_date" ? "due." : ""}${value}`,
-                ),
-              }))}
-            />
-          </Field>
-        </div>
-        <Action
-          onClick={() => {
-            setParams({ view: "tasks", ...(board ? { taskView: "board" } : {}) }, { replace: true });
-          }}
-        >
-          {text("clearFilters")}
-        </Action>
-      </div>
-      <p role="status">
-        {text("matchingTasks")} {issues.data?.total ?? "—"}{" "}
-        {text("taskCountUnit")}
-      </p>
-      <Failure
-        error={
-          projects.error ||
-          issues.error ||
-          counts.error ||
-          notices.error ||
-          people.agents.error ||
-          people.squads.error ||
-          snapshot.error
-        }
-        retry={() => {
-          for (const q of [
-            projects,
-            issues,
-            counts,
-            notices,
-            people.agents,
-            people.members,
-            people.squads,
-            snapshot,
-          ])
-            void q.refetch();
-        }}
-      />
-      {issues.isPending ? (
-        <Empty>{text("loading")}</Empty>
-      ) : issues.data?.issues.length === 0 ? (
-        <Empty>{text("noMatchingTasks")}</Empty>
-      ) : board ? (
-        <div className="team-board">
-          {options.map((s) => (
-            <section key={s.value}>
-              <h3>
-                {s.label}{" "}
-                <small>
-                  {
-                    issues.data?.issues.filter((i) => i.status === s.value)
-                      .length
-                  }
-                </small>
-              </h3>
-              {issues.data?.issues
-                .filter((i) => i.status === s.value)
-                .map((i) => (
-                  <button
-                    className="team-task-card"
-                    key={i.id}
-                    onClick={() => open(i)}
-                  >
-                    <small>
-                      {text("taskNumber")}：{i.identifier}
-                    </small>
-                    <IssueExecutionStatus
-                      runs={
-                        visibleRuns.filter((run) => run.issue_id === i.id) || []
-                      }
-                    />
-                    <strong>{i.title}</strong>
-                    <small>
-                      {projects.data?.projects.find(
-                        (p) => p.id === i.project_id,
-                      )?.title || text("noProject")}
-                    </small>
-                    {updated.has(i.id) && (
-                      <small className="team-update-dot">
-                        {text("newUpdate")}
-                      </small>
-                    )}
-                    <span>
-                      <Avatar name={people.name(i.assignee_id)} />
-                      {people.name(i.assignee_id)}
-                    </span>
-                  </button>
-                ))}
-            </section>
-          ))}
-        </div>
-      ) : (
-        <div className="team-list">
-          <div className="team-list-heading">
-            <span>{text("task")}</span>
-            <span>{text("owner")}</span>
-            <span>{text("state")}</span>
-            <span>{text(`sort.${sort}`)}</span>
-          </div>
-          {issues.data?.issues.map((i) => (
-            <button
-              key={i.id}
-              className="team-task-row"
-              onClick={() => open(i)}
-            >
-              <span>
-                <strong>{i.title}</strong>
-                {updated.has(i.id) && (
-                  <small className="team-update-dot">{text("newUpdate")}</small>
-                )}
-                <small>
-                  {text("taskNumber")}：{i.identifier} ·{" "}
-                  {projects.data?.projects.find((p) => p.id === i.project_id)
-                    ?.title || text("noProject")}
-                </small>
-              </span>
-              <span className="team-person">
-                <Avatar name={people.name(i.assignee_id)} />
-                {people.name(i.assignee_id)}
-              </span>
-              <div className="team-task-status">
-                <IssueExecutionStatus
-                  runs={
-                    visibleRuns.filter((run) => run.issue_id === i.id) || []
-                  }
-                />
-                <span className="team-business-status">
-                  {text("businessStatus")} · <Status value={i.status} />
-                </span>
-              </div>
-              <small>
-                {i[sort]
-                  ? new Date(i[sort]!).toLocaleDateString()
-                  : text("notSet")}
-              </small>
-            </button>
-          ))}
-        </div>
-      )}
-      <div className="team-pagination">
-        <Action disabled={page === 0} onClick={() => setPage(page - 1)}>
-          {text("previous")}
-        </Action>
-        <span>{page + 1}</span>
-        <Action
-          disabled={(page + 1) * 50 >= (issues.data?.total || 0)}
-          onClick={() => setPage(page + 1)}
-        >
-          {text("next")}
-        </Action>
-      </div>
-    </>
-  );
-}
 export function NewTask({
+  inline=false,
   onClose,
   onCreated,
   source,
+  initialOwner,
+  initialFields,
   draft: suppliedDraft,
   onDraftChange,
   onDiscard,
   onChangeWorkspace,
   followup,
 }: {
+  inline?: boolean;
   onClose: () => void;
   onCreated: (id: string, title: string) => void | Promise<void>;
   followup?: {
@@ -503,6 +149,8 @@ export function NewTask({
   };
   source?: PersonalSource;
   draft?: TeamDraft;
+  initialOwner?: string;
+  initialFields?: Partial<Pick<TeamDraft,"status"|"priority"|"owner"|"projectID">>;
   onDraftChange?: (patch: Partial<TeamDraft>) => void;
   onDiscard?: () => void;
   onChangeWorkspace?: () => void;
@@ -511,8 +159,9 @@ export function NewTask({
   const people = useTeamPeople();
   const { options } = useStatuses();
   const [localDraft, setLocalDraft] = useState(() =>
-    DraftSchema.parse({ projectID: followup?.project.id }),
+    DraftSchema.parse({ projectID: followup?.project.id,owner:initialOwner, ...initialFields }),
   );
+  const [continueCreating, setContinueCreating] = useState(false);
   const [requestID] = useState(() => crypto.randomUUID());
   const draft = suppliedDraft || localDraft;
   const update = (patch: Partial<TeamDraft>) =>
@@ -555,7 +204,9 @@ export function NewTask({
     if (patch) update(patch);
   }, [draft, generated.data, update]);
   const generate = useTeamAction(async () => {
-    await ensureAgentAuth(draft.draftAgentID, user.id, workspace.id);
+    const choice=draft.draftAgentID;
+    const leader=choice.startsWith("squad:") ? people.squads.data?.find(s=>s.id===choice.slice(6))?.leader_id : choice;
+    if(leader && leader!=="work" && !people.agents.data?.some(a=>a.id===leader && a.system_key==="mobilework")) await ensureAgentAuth(leader,user.id,workspace.id);
     const context = [
       draft.draftPrompt,
       source ? `${source.title}\n${source.description}` : "",
@@ -565,7 +216,7 @@ export function NewTask({
       .join("\n\n");
     const response = await teamApi.generateTaskDraft({
       request_id: crypto.randomUUID(),
-      agent_id: draft.draftAgentID,
+      agent_id: draft.draftAgentID || "work",
       prompt: context,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
       project_id: followup?.project.id || draft.projectID || undefined,
@@ -683,12 +334,19 @@ export function NewTask({
       description: context,
       status,
       attachment_ids,
+      priority: draft.priority,
+      start_date: draft.startDate || undefined,
+      ...{label_names: draft.labels.split(/[,，]/).map(s=>s.trim()).filter(Boolean)},
       due_date: draft.dueDate || undefined,
       project_id: draft.projectID || undefined,
       ...(type === "agent" || type === "member" || type === "squad"
         ? { assignee_type: type, assignee_id: agentId }
         : {}),
     });
+    if (continueCreating && !source && !followup) {
+      setLocalDraft(DraftSchema.parse({projectID:draft.projectID,owner:initialOwner,...initialFields}));
+      return;
+    }
     update({ created: { id: issue.id, title: issue.title } });
     await onCreated(issue.id, issue.title);
   });
@@ -697,13 +355,7 @@ export function NewTask({
   const close = () => {
     if (!busy) onClose();
   };
-  return (
-    <Modal
-      title={text(followup ? "project.followup.create" : "newTask")}
-      onClose={close}
-      wide
-      className="team-create-modal"
-    >
+  const body = <>
       {draft.created ? (
         <>
           <p>{text("createdLinkPending")}</p>
@@ -822,14 +474,15 @@ export function NewTask({
                     <Picker
                       label={text("draftAssistant")}
                       disabled={drafting || generate.isPending}
-                      value={draft.draftAgentID}
+                      value={draft.draftAgentID || "work"}
                       options={[
-                        { value: "", label: text("chooseAgent") },
-                        ...(people.agents.data || []).map((a) => ({
+                        { value: "work", label: "Work" },
+                        ...(people.agents.data || []).filter(a=>a.system_key!=="mobilework").map((a) => ({
                           value: a.id,
                           label: a.name,
                           disabled: !people.allowed(a),
                         })),
+                        ...(people.squads.data||[]).filter(s=>!s.archived_at).map(s=>({value:"squad:"+s.id,label:s.name+" · 小队",disabled:!people.allowedSquad(s)})),
                       ]}
                       onChange={(draftAgentID) => update({ draftAgentID })}
                     />
@@ -838,7 +491,6 @@ export function NewTask({
                     primary
                     disabled={
                       busy ||
-                      !draft.draftAgentID ||
                       !draft.draftPrompt.trim() ||
                       drafting
                     }
@@ -1003,6 +655,7 @@ export function NewTask({
           <div className="team-create-footer">
             <p className="team-trigger-hint">{text("createNoStart")}</p>
             <div className="team-actions">
+              {!source && !followup && <label><input type="checkbox" checked={continueCreating} onChange={e=>setContinueCreating(e.target.checked)}/>继续创建</label>}
               {onDiscard && (
                 <Action disabled={busy} onClick={onDiscard}>
                   {text("discardDraft")}
@@ -1012,7 +665,7 @@ export function NewTask({
               <Action
                 primary
                 disabled={
-                  busy || uploadFailed ||
+                  busy || uploadFailed || (!!draft.dueDate && draft.startDate > draft.dueDate) ||
                   !title.trim() ||
                   (mode === "agent" &&
                     (!draft.generated || !draft.draftConfirmed)) ||
@@ -1026,8 +679,12 @@ export function NewTask({
           </div>
         </>
       )}
-    </Modal>
-  );
+    </>;
+  if(inline) return <section className="wb-home-task" aria-label="新建任务">
+    <header><div className="wb-home-tabs"><button type="button" onClick={close}>会话</button><button type="button" aria-pressed="true">任务</button></div>
+    <span>创建者　{user.name}</span><Action disabled={busy||drafting} onClick={()=>update({mode:mode==="agent"?"manual":"agent",draftPrompt:draft.draftPrompt||description})} aria-label={mode==="agent"?"切换到手动":"切换到智能体"}>{mode==="agent"?"智能体":"手动"}</Action></header>
+    {body}</section>;
+  return <Modal title={text(followup ? "project.followup.create" : "newTask")} onClose={close} wide className="team-create-modal">{body}</Modal>;
 }
 export function TaskDetail({ id }: { id: string }) {
   const location = useLocation();
@@ -1046,6 +703,18 @@ export function TaskDetail({ id }: { id: string }) {
   const subscribers = useTeamQuery(["subscribers", id], () =>
     teamApi.listIssueSubscribers(id),
   );
+  const commentFile = useRef<HTMLInputElement>(null);
+  const [chatIssueId, setChatIssueId] = useState("");
+  const chatOpen = chatIssueId === id;
+  const chatWidth = useSidebarWidth("right", "task-chat");
+  useEffect(() => { setChatIssueId(""); }, [id]);
+  const [followupPanel, setFollowupPanel] = useState("");
+  const [showSubscribers, setShowSubscribers] = useState(false);
+  const changeSubscriber = useTeamAction(async ({id: memberId, add}: {id: string; add: boolean}) => {
+    if (add) await teamApi.subscribeToIssue(id, memberId, "member");
+    else await teamApi.unsubscribeFromIssue(id, memberId, "member");
+    await subscribers.refetch();
+  });
   const subscribed = subscribers.data?.some(
     (s) => s.user_type === "member" && s.user_id === user.id,
   );
@@ -1087,46 +756,20 @@ export function TaskDetail({ id }: { id: string }) {
       locatedComment.current = highlightCommentId;
     }
   }, [highlightCommentId, issue.data?.id, timeline.data]);
-  const [confirm, setConfirm] = useState<UpdateIssueRequest | null>(null);
   const [edit, setEdit] = useState(false);
+  const [editingTitle,setEditingTitle] = useState(false);
+  const [editingRevision,setEditingRevision] = useState<number>();
+  const discardTitle=useRef(false);
+  const [editingBody,setEditingBody] = useState(false);
   const [title, setTitle] = useState("");
   const [description, setDescription] = useState("");
   const [projectRequirements, setProjectRequirements] = useState<string | null>(
     null,
   );
   const update = useTeamAction(
-    async ({
-      patch,
-      approved = false,
-    }: {
-      patch: UpdateIssueRequest;
-      approved?: boolean;
-    }) => {
-      if (!approved) {
-        const preview = await teamApi.previewIssueTrigger({
-          issueIds: [id],
-          assigneeType: patch.assignee_type,
-          assigneeId: patch.assignee_id,
-          status: patch.status,
-        });
-        if (preview.total_count > 0) {
-          setConfirm(patch);
-          return;
-        }
-      }
-      const ownerId =
-        patch.assignee_id === undefined
-          ? issue.data?.assignee_id
-          : patch.assignee_id;
-      const ownerType =
-        patch.assignee_type === undefined
-          ? issue.data?.assignee_type
-          : patch.assignee_type;
-      if (approved && ownerType === "agent" && ownerId)
-        await ensureAgentAuth(ownerId, user.id, workspace.id);
-      await teamApi.updateIssue(id, patch);
-      setConfirm(null);
-      setEdit(false);
+    async ({patch}: {patch: UpdateIssueRequest}) => {
+      await teamApi.updateIssue(id, {expected_revision: issue.data?.revision, ...patch, suppress_run: true});
+      setEdit(false);setEditingTitle(false);setEditingBody(false);
     },
   );
   useEffect(() => {
@@ -1134,10 +777,18 @@ export function TaskDetail({ id }: { id: string }) {
       project = issue.data?.metadata.topic_project_id;
     if (typeof topic === "string" && typeof project === "string")
       navigate(
-        `/team/${workspace.slug}?view=projects&project=${project}&section=discussion&topic=${topic}`,
+        `/team/${workspace.slug}?view=projects&project=${project}&section=overview`,
         { replace: true },
       );
   }, [issue.data?.metadata, navigate, workspace.slug]);
+  useEffect(() => {
+    const data = issue.data;
+    if (location.state?.editTask !== id || data?.id !== id) return;
+    const parts = splitProjectRequirements(data.description || "");
+    setTitle(data.title); setDescription(parts.description); setProjectRequirements(parts.requirements);
+    setEditingRevision(data.revision); setEdit(true);
+    navigate(location.pathname + location.search, {replace:true,state:{...location.state,editTask:undefined}});
+  }, [id, issue.data, location, navigate]);
   if (!issue.data)
     return (
       <>
@@ -1149,113 +800,39 @@ export function TaskDetail({ id }: { id: string }) {
   const visibleRuns = personalRuns(runs.data || [], user.id);
   const visibleEntries = sharedTimeline(timeline.data || [], visibleRuns);
   const squadFeedback = latestSquadFeedback(visibleEntries);
+  const base = "/team/" + workspace.slug;
+  const listUrl = base+"?"+(location.state?.taskListSearch || "view=tasks");
+  const projectUrl = base+"?view=projects&project="+item.project_id;
+  const fromProject = !!item.project_id && detailParams.has("project");
+  const beginDescription = () => {
+    setEditingRevision(item.revision);
+    const parts = splitProjectRequirements(item.description || "");
+    setDescription(parts.description);setProjectRequirements(parts.requirements);
+  };
+  const editIssue = () => { setTitle(item.title);beginDescription();setEdit(true); };
+  const saveBody = () => update.mutate({patch:{expected_revision:editingRevision,description:joinProjectRequirements(description,projectRequirements),description_base:item.description||""}});
+  const taskIds = (location.state?.taskIds || []) as string[];
+  const runAgent = item.assignee_type === "agent" ? item.assignee_id : item.assignee_type === "squad"
+    ? people.squads.data?.find(s => s.id === item.assignee_id && !s.archived_at)?.leader_id : null;
+  const canRun = !!runAgent && !!people.agents.data?.some(a => a.id === runAgent && !a.archived_at && people.allowed(a));
   return (
-    <>
-      <nav className="team-task-navigation">
-        <button
-          className="team-back"
-          onClick={() =>
-            navigate(
-              `/team/${workspace.slug}${typeof location.state?.taskListSearch === "string" ? "?" + location.state.taskListSearch : "?view=tasks"}`,
-            )
-          }
-        >
-          <ArrowLeft size={16} />
-          {text("backToTasks")}
-        </button>
-        {sourceRoute && (
-          <Action onClick={() => navigate(sourceRoute)}>
-            {text("backToPersonal")}
-          </Action>
-        )}
-        {item.project_id && (
-          <>
-            <button
-              className="team-text-action"
-              onClick={() =>
-                navigate(
-                  `/team/${workspace.slug}?view=projects&project=${item.project_id}&section=${detailParams.get("section") || "tasks"}`,
-                )
-              }
-            >
-              {text("project.backProject")}
-            </button>
-            <button
-              className="team-text-action"
-              onClick={() =>
-                navigate(
-                  `/team/${workspace.slug}?view=projects&project=${item.project_id}&section=blueprint`,
-                )
-              }
-            >
-              {text("project.openProjectPlan")}
-            </button>
-          </>
-        )}
+    <section className="v3-issue-detail" aria-label="任务详情">
+      <nav className="v3-issue-toolbar">
+        <button aria-label={fromProject?"返回项目":"返回看板"} onClick={()=>navigate(fromProject?projectUrl+"&section="+(detailParams.get("section")||"tasks"):listUrl)}><ChevronLeft size={17}/></button>
+        <span className="v3-issue-breadcrumb">{sourceProject.data?.title || "任务"}<ChevronRight size={12}/>{item.identifier} {item.title}</span>
+        {sourceRoute && <button onClick={()=>navigate(sourceRoute)}>{text("backToPersonal")}</button>}
+        {fromProject && <button onClick={()=>navigate(listUrl)}>返回任务列表</button>}
+        {item.project_id && <button onClick={()=>navigate(projectUrl+"&section=blueprint")}>查看项目计划</button>}
+        {[-1,1].map(offset=>{
+          const index=taskIds.indexOf(id),adjacent=index>=0?taskIds[index+offset]:null;
+          return <button key={offset} aria-label={offset<0?"上一个任务":"下一个任务"} disabled={!adjacent} onClick={()=>navigate(base+"/issue/"+adjacent+location.search,{state:location.state})}>
+            {offset<0?<ChevronLeft size={15}/>:<ChevronRight size={15}/>}</button>
+        })}
+        <button className="v3-mobile-side-chat" aria-label="发起会话" onClick={() => setChatIssueId(id)}><Bot size={17}/></button>
+        <TaskDetailMenu issue={item} onEdit={editIssue} onWake={()=>setFollowupPanel(item.assignee_type === "agent" || item.assignee_type === "squad" ? "wake" : "schedule")}
+          onCopy={copy=>navigate(`/team/${workspace.slug}/issue/${copy}`)}
+        onDelete={()=>navigate(item.project_id && detailParams.has("project") ? `/team/${workspace.slug}?view=projects&project=${item.project_id}&section=tasks` : `/team/${workspace.slug}?${location.state?.taskListSearch || "view=tasks"}`)}/>
       </nav>
-      <div className="team-detail-heading">
-        <div>
-          <h1>{item.title}</h1>
-          <small className="team-task-number">
-            {text("taskNumber")}：{item.identifier}
-          </small>
-          <p className="team-task-meta">
-            {text("taskProject")}：
-            {sourceProject.data?.title || text("noProject")}
-          </p>
-          <p className="team-task-meta">
-            {text("project.dueDate")}：{item.due_date || text("notSet")}
-          </p>
-          <IssueExecutionStatus runs={visibleRuns} />
-        </div>
-        <div className="team-detail-pickers">
-          <Action
-            variant="ghost"
-            size="sm"
-            disabled={subscribe.isPending}
-            onClick={() => subscribe.mutate()}
-          >
-            {text(subscribed ? "unsubscribe" : "subscribe")}
-          </Action>
-          <Field label={text("businessStatus")}>
-            <Picker
-              label={text("state")}
-              value={item.status}
-              options={options}
-              onChange={(v) => update.mutate({ patch: { status: v } })}
-              disabled={update.isPending}
-            />
-          </Field>
-          <Field label={text("owner")}>
-            <Picker
-              label={text("owner")}
-              value={
-                item.assignee_id
-                  ? `${item.assignee_type}:${item.assignee_id}`
-                  : "none"
-              }
-              options={people.options}
-              onChange={(v) => {
-                const [type, ownerId] = v.split(":");
-                update.mutate({
-                  patch: {
-                    assignee_type:
-                      type === "agent"
-                        ? "agent"
-                        : type === "member"
-                          ? "member"
-                          : type === "squad"
-                            ? "squad"
-                            : null,
-                    assignee_id: ownerId || null,
-                  },
-                });
-              }}
-              disabled={update.isPending}
-            />
-          </Field>
-        </div>
-      </div>
       <Failure
         error={
           update.error ||
@@ -1278,27 +855,33 @@ export function TaskDetail({ id }: { id: string }) {
           {text("newReplies")}
         </button>
       )}
-      <div className="team-detail-grid">
-        <div className="team-main-column">
-          <section className="team-brief">
-            <div className="team-toolbar">
-              <h3>{text("requirements")}</h3>
-              <Action
-                size="sm"
-                onClick={() => {
-                  setTitle(item.title);
-                  const parts = splitProjectRequirements(
-                    item.description || "",
-                  );
-                  setDescription(parts.description);
-                  setProjectRequirements(parts.requirements);
-                  setEdit(true);
-                }}
-              >
-                {text("edit")}
-              </Action>
-            </div>
-            <TaskRequirements issue={item} />
+      <div className="v3-issue-columns" data-chat-open={chatOpen} style={chatOpen && chatWidth.width ? {"--task-chat-width":chatWidth.width+"px"} as CSSProperties : undefined}>
+        <div className="v3-issue-main"><TimelineComposer key={item.id} heading="动态" runs={visibleRuns} issue={item} entries={visibleEntries} people={people} fileInput={commentFile}
+          subscription={<div className="v3-subscribers">
+            <button aria-pressed={!!subscribed} disabled={!subscribers.data || subscribe.isPending} onClick={() => subscribe.mutate()}>{subscribed ? "取消订阅" : "订阅"}</button>
+            <button aria-label="任务订阅者" aria-expanded={showSubscribers} onClick={() => setShowSubscribers(!showSubscribers)}>＋</button>
+            {showSubscribers && <fieldset><legend>任务订阅者</legend>
+              {people.members.data?.map(m => <label key={m.user_id}><input type="checkbox"
+                disabled={!subscribers.data || changeSubscriber.isPending}
+                checked={!!subscribers.data?.some(s=>s.user_type==="member" && s.user_id===m.user_id)}
+                onChange={e=>changeSubscriber.mutate({id:m.user_id,add:e.target.checked})}/>{m.name || m.email}</label>)}
+              <Failure error={changeSubscriber.error || people.members.error}/>
+              <button onClick={()=>setShowSubscribers(false)}>关闭</button>
+            </fieldset>}
+          </div>}>
+          <div className="v3-issue-id"><FileText size={13}/>任务 <small>{item.identifier}</small></div>
+          {editingTitle ? <Input aria-label="编辑任务标题" autoFocus value={title} onChange={e=>setTitle(e.target.value)}
+            onKeyDown={e=>{
+              if(e.nativeEvent.isComposing)return;
+              if(e.key==="Enter")e.currentTarget.blur();
+              if(e.key==="Escape"){e.preventDefault();discardTitle.current=true;setEditingTitle(false);}
+            }}
+            onBlur={()=>{if(discardTitle.current)return;const next=title.trim();if(next && next!==item.title)update.mutate({patch:{title:next,title_base:item.title,expected_revision:editingRevision}});else setEditingTitle(false);}}/>
+            : <h1><button onClick={()=>{discardTitle.current=false;setEditingRevision(item.revision);setTitle(item.title);setEditingTitle(true);}}>{item.title}</button></h1>}
+          <section className="v3-issue-brief">
+            {editingBody ? <><Textarea aria-label="编辑任务描述" value={description} onChange={e=>setDescription(e.target.value)}/>
+              <Action onClick={()=>setEditingBody(false)}>取消</Action><Action primary disabled={update.isPending} onClick={saveBody}>保存描述</Action></>
+              : <><TaskRequirements issue={item}/><button aria-label="编辑任务描述" onClick={()=>{beginDescription();setEditingBody(true)}}><Pencil size={14}/></button></>}
             <div className="team-input-files">
               {attachments.data
                 ?.filter((a) => !a.comment_id)
@@ -1310,6 +893,7 @@ export function TaskDetail({ id }: { id: string }) {
                 ))}
             </div>
           </section>
+          <IssueFollowup issue={item} part="links" onAttach={() => commentFile.current?.click()}/>
           <TaskProjectContext issue={item} />
           {squadFeedback && (
             <section className="team-squad-feedback">
@@ -1336,6 +920,64 @@ export function TaskDetail({ id }: { id: string }) {
               <TeamMarkdown content={squadFeedback.content || ""} />
             </section>
           )}
+          </TimelineComposer>
+        </div>
+        <aside id="v3-task-detail-rail" className="v3-issue-inspector">
+          {chatOpen && <>
+            <SidebarResize side="right" controls="v3-task-detail-rail" label="调整任务聊天宽度" setWidth={chatWidth.setWidth} save={chatWidth.save}/>
+            <SidePanel key={id} ws={workspace.id} kind="issue" issue={item} id={id} close={() => setChatIssueId("")}/>
+          </>}
+          <Action aria-label="发起会话" onClick={() => setChatIssueId(id)}>
+            <Bot size={18}/><span>发起会话<small>与 Work 临时讨论，关闭后清空</small></span><Plus size={15}/>
+          </Action>
+          <IssueSource id={item.id}/>
+          <section className="v3-issue-fields"><h2>属性</h2>
+          <Field label="状态">
+            <Picker
+              label={text("state")}
+              value={item.status}
+              options={options}
+              onChange={(v) => update.mutate({ patch: { status: v } })}
+              disabled={update.isPending}
+            />
+          </Field>
+          <Field label={text("owner")}>
+            <Picker
+              label={text("owner")}
+              value={
+                item.assignee_id
+                  ? `${item.assignee_type}:${item.assignee_id}`
+                  : "none"
+              }
+              options={people.options}
+              selectedLabel={item.assignee_id ? people.name(item.assignee_id) : "无负责人"}
+              onChange={(v) => {
+                const [type, ownerId] = v.split(":");
+                update.mutate({
+                  patch: {
+                    assignee_type:
+                      type === "agent"
+                        ? "agent"
+                        : type === "member"
+                          ? "member"
+                          : type === "squad"
+                            ? "squad"
+                            : null,
+                    assignee_id: ownerId || null,
+                  },
+                });
+              }}
+              disabled={update.isPending}
+            />
+          </Field>
+          </section>
+          <TaskProperties issue={item}/>
+          <details><summary>唤醒与提醒</summary><IssueFollowup issue={item} part="actions" activePanel={followupPanel} onPanelChange={setFollowupPanel}/></details>
+          <details><summary>执行日志</summary>
+          <Action disabled={!canRun}
+            onClick={() => setFollowupPanel("run")}>运行智能体</Action>
+          <IssueRunHistory issueId={id} canRun={canRun} onRetry={()=>setFollowupPanel("run")}/>
+          <IssueExecutionStatus runs={visibleRuns}/>
           <RunList
             issueId={id}
             people={people}
@@ -1343,47 +985,16 @@ export function TaskDetail({ id }: { id: string }) {
             error={runs.error}
             entries={visibleEntries}
           />
-          <TimelineComposer
-            runs={visibleRuns}
-            issue={item}
-            entries={visibleEntries}
-            people={people}
-          />
-        </div>
-        <aside className="team-artifact-column">
+          <section aria-label="任务产物与输入材料">
           <TaskArtifacts
             runs={visibleRuns}
             entries={visibleEntries}
             inputs={attachments.data?.filter((a) => !a.comment_id) || []}
           />
+          </section>
+          </details>
         </aside>
       </div>
-      {confirm && (
-        <Modal title={text("startConfirm")} onClose={() => setConfirm(null)}>
-          <p>{text("startHint")}</p>
-          <Failure error={update.error} />
-          <div className="team-actions">
-            <Action
-              disabled={update.isPending}
-              onClick={() =>
-                update.mutate({
-                  patch: { ...confirm, suppress_run: true },
-                  approved: true,
-                })
-              }
-            >
-              {text("doNotStart")}
-            </Action>
-            <Action
-              primary
-              disabled={update.isPending}
-              onClick={() => update.mutate({ patch: confirm, approved: true })}
-            >
-              {text("confirmStart")}
-            </Action>
-          </div>
-        </Modal>
-      )}
       {edit && (
         <Modal title={text("editTask")} onClose={() => setEdit(false)}>
           <Field label={text("taskTitle")}>
@@ -1414,13 +1025,13 @@ export function TaskDetail({ id }: { id: string }) {
                 patch: {
                   title,
                   title_base: item.title,
+                  expected_revision: editingRevision,
                   description: joinProjectRequirements(
                     description,
                     projectRequirements,
                   ),
                   description_base: item.description || "",
                 },
-                approved: true,
               })
             }
           >
@@ -1428,6 +1039,6 @@ export function TaskDetail({ id }: { id: string }) {
           </Action>
         </Modal>
       )}
-    </>
+    </section>
   );
 }

@@ -46,7 +46,7 @@ async function connect() {
     const args = [join(product, 'scripts/local'), 'start', profile]
     if (process.argv.includes('--workbench-fixture')) args.push('--fixture')
     await exec('/usr/bin/python3', args, {
-      env: { HOME: app.getPath('home'), PATH: '/usr/bin:/bin:/usr/sbin:/sbin', WORKBENCH_RUNTIME: runtime, WORKBENCH_TEST_LAB: replay ? '1' : '0' },
+      env: { HOME: app.getPath('home'), PATH: '/usr/bin:/bin:/usr/sbin:/sbin', WORKBENCH_RUNTIME: runtime, WORKBENCH_TEST_LAB: replay ? '1' : '0', ...(replay && process.argv.includes('--workbench-work-mock') ? { MOBILEWORK_WORK_ADAPTER: 'mock' } : {}) },
       timeout: 140000,
     })
     const entry = new URL((await readFile(join(profileDir, 'entry.private'), 'utf8')).trim())

@@ -1,4 +1,5 @@
-import { taskRequirementsBody } from "./project-requirements";
+import { allProjectIssues } from "./project-issues";
+import {taskRequirementsBody} from "./project-requirements";
 import { CollapsibleMessage } from "./collapsible-message";
 import { useState } from "react";
 import { ProjectStart } from "./project-planning";
@@ -12,9 +13,7 @@ export function TaskProjectContext({ issue }: { issue: Issue }) {
   const people = useTeamPeople();
   const { workspace } = useTeam(),
     navigate = useNavigate();
-  const topics = useTeamQuery(["topics", "issue", issue.id], () =>
-    teamApi.listIssueProjectTopics(issue.id),
-  );
+  const live=useTeamQuery(["issues","project",issue.project_id],()=>allProjectIssues(issue.project_id!),!!issue.project_id);
   const state = useTeamQuery(
     ["blueprint", issue.project_id, "start"],
     () => teamApi.getProjectStartState(issue.project_id!),
@@ -28,24 +27,24 @@ export function TaskProjectContext({ issue }: { issue: Issue }) {
   const graph = versions.data?.versions[0]?.graph,
     node = graph?.nodes.find((n) => n.issue_id === issue.id),
     inputs = graph?.edges.filter((e) => e.to === node?.id) || [];
-  const open = (id: string, section: string, topic = "") =>
-    navigate(
-      `/team/${workspace.slug}?view=projects&project=${id}&section=${section}${topic ? `&topic=${topic}` : ""}`,
-    );
+  const openTask=(id:string)=>navigate(`/team/${workspace.slug}/issue/${id}?project=${issue.project_id}&section=tasks`,{state:{taskIds:live.data?.map(i=>i.id)}});
+  const upstream = inputs.map(edge => {
+    const source = graph?.nodes.find(n => n.id === edge.from);
+    const task = live.data?.find(i => i.id === source?.issue_id);
+    return {id:edge.from, title:task?.title || source?.title, task};
+  });
+  const waiting = upstream.filter(({task}) => task?.status !== "done");
+  if(!node) return <Failure error={versions.error}/>;
   return (
-    <div className="project-task-context">
-      <Failure error={topics.error} />
-      {inputs.length > 0 && (
-        <p>
-          {text("project.predecessors")}：
-          {inputs
-            .map((e) => graph?.nodes.find((n) => n.id === e.from)?.title)
-            .join("、")}{" "}
-          ·{" "}
-          {state.data?.items.find((i) => i.issue_id === issue.id)?.reason ||
-            text("project.dependencyEntryHint")}
-        </p>
-      )}
+    <div className="project-task-context" aria-label="项目交付关系">
+      {inputs.length>0 && <section className="project-task-handoff"><h3>前置交付</h3>
+        <ul>{upstream.map(({id, title, task}) =>
+          <li key={id}>{task ? <button type="button" onClick={()=>openTask(task.id)}>{title}</button> : <strong>{title}</strong>}
+            <small>{!live.data ? "正在读取" : !task ? "前置任务不在当前项目" : task.status === "done" ? "已交付" : "等待前置交付"}</small>
+          </li>)}</ul>
+        {live.data && <p>{waiting.length ? "等待前置交付：" + waiting.map(i=>i.title).join("、") : "前置交付已完成"}</p>}
+      </section>}
+      <Failure error={live.error}/>
       <Failure error={state.error || versions.error} />
       {issue.status === "done" && issue.project_id && (
         <section className="project-task-handoff">
@@ -54,7 +53,7 @@ export function TaskProjectContext({ issue }: { issue: Issue }) {
             .filter((i) => i.predecessor_ids.includes(issue.id))
             .map((i) => (
               <div key={i.issue_id}>
-                <strong>{i.title}</strong>
+                <Action onClick={()=>openTask(i.issue_id)}>{i.title}</Action>
                 <span>
                   {text("project.assignee")}：
                   {people.name(i.assignee_id || null)}
@@ -81,37 +80,6 @@ export function TaskProjectContext({ issue }: { issue: Issue }) {
           predecessorId={issue.id}
           onClose={() => setHandoff(false)}
         />
-      )}
-      {!!topics.data?.topics.length && (
-        <section className="team-decision-basis">
-          <h3>{text("decisionBasis")}</h3>
-          <p>{text("adoptedVersionHint")}</p>
-          {topics.data.topics.map((t) => (
-            <section key={t.id}>
-              <Action onClick={() => open(t.project_id, "discussion", t.id)}>
-                {text("project.openTopic")} · {t.title}
-              </Action>
-              {t.adopted_versions.length
-                ? t.adopted_versions.map((v) => (
-                    <div key={v.revision}>
-                      <strong>
-                        {text("project.sourceVersions")} V{v.revision}
-                      </strong>
-                      <p>
-                        <small>
-                          {text("project.conclusionConfirmedAt")}{" "}
-                          {new Date(v.confirmed_at).toLocaleString()}
-                        </small>
-                      </p>
-                      <CollapsibleMessage content={v.content} />
-                    </div>
-                  ))
-                : t.adopted_conclusions && (
-                    <CollapsibleMessage content={t.adopted_conclusions} />
-                  )}
-            </section>
-          ))}
-        </section>
       )}
     </div>
   );

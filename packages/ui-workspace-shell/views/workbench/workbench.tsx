@@ -1,3 +1,17 @@
+import {useMessageAnchor} from "../team/locate-message";
+import brandMark from "../../../../mloop/design-v3/welcome-brand-mark.svg?inline";
+import workAvatar from "../../../../mloop/design-v3/ai-message-avatar.svg?inline";
+import composerRobot from "./composer-robot.webp?inline";
+import {mentionRecipients} from "./mention-recipients";
+import {readAttachment} from "./composer-files";
+import {NewTask,useTeamPeople} from "../team/tasks";
+import {teamFetch} from "../team/request-transport";
+import {teamServer} from "../team/client";
+import {WorkspaceNavigation} from "./workspace-navigation";
+import {SidebarResize,useSidebarWidth} from "./sidebar-resize";
+import {PersonalSettings} from "../team/preferences";
+import {WorkAction} from "./work-action";
+import { WorkspaceSearch,WorkSuggestion } from "../team/work-tools";
 import { usePageAssembly } from "../pages";
 import { evidenceDestination } from "./evidence-presentation";
 import { EvidenceDetails } from "./evidence-details";
@@ -5,14 +19,13 @@ import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "re
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  AtSign, KeyRound, Paperclip, X, Send, ChevronRight, PanelLeftClose, PanelLeftOpen, Search,
   MessageSquare,
   Pin as PinIcon,
-  Plus,
+  Plus, CirclePlus,
   Folder,
   ListTodo,
-  Inbox,
   Users,
-  Bot,
   ArrowUp,
   ArrowLeft,
   RefreshCw,
@@ -35,7 +48,7 @@ import { z } from "zod";
 import "./workbench.css";
 import { DynamicView, type LayoutStateChange } from "./dynamic-view";
 import { AnswerOutcome, hasAnswerBody } from "./answer-outcome";
-import type { State } from "./schemas";
+import { ResultSchema, type State } from "./schemas";
 
 function WorkbenchTable({
   block,
@@ -182,10 +195,12 @@ function View({
 
 export function WorkbenchShell({
   children,
+  onLogout,
   view,
   issueId,
 }: {
   children: ReactNode;
+  onLogout:()=>void;
   view: string;
   issueId?: string;
 }) {
@@ -194,12 +209,6 @@ export function WorkbenchShell({
   const [params, setParams] = useSearchParams();
   const client = useQueryClient();
   const { entries } = usePageAssembly();
-  const inbox = useQuery({
-    enabled: entries.has("inbox"),
-    queryKey: ["team", workspace.id, "inbox", false],
-    queryFn: () => teamApi.listInbox(),
-  });
-  const unread = inbox.data?.filter((item) => !item.read).length || 0;
   const conversation = params.get("conversation") || "";
   const pinID = params.get("pin") || "";
   const sourcePin = params.get("sourcePin") || "";
@@ -209,14 +218,50 @@ export function WorkbenchShell({
   const layoutStates = useRef<
     Record<string, Record<string, Record<string, unknown>>>
   >({});
-  const [modelId, setModelId] = useState("");
+  const rail=useSidebarWidth("left","work-team");
+  useLayoutEffect(()=>{
+    const root=document.querySelector<HTMLElement>(".team-root");
+    if(rail.width) root?.style.setProperty("--rail",rail.width+"px");
+    return ()=>{root?.style.removeProperty("--rail");};
+  },[rail.width]);
+  const [collapsed,setCollapsed]=useState(()=>window.innerWidth<=760);
+  const wideCollapsed=useRef(false);
+  useEffect(()=>{
+    const compact=window.matchMedia("(max-width: 760px)");
+    const adapt=()=>setCollapsed(compact.matches || wideCollapsed.current);
+    compact.addEventListener("change",adapt);
+    return ()=>compact.removeEventListener("change",adapt);
+  },[]);
+  const [accountMenu,setAccountMenu]=useState(false),[prefs,setPrefs]=useState("");
+  const accountEntry=useRef<HTMLButtonElement>(null);
+  const accountPopup=useRef<HTMLElement>(null);
+  useEffect(()=>{
+    if(!accountMenu) return;
+    function dismiss(event:PointerEvent){if(!accountPopup.current?.contains(event.target as Node))setAccountMenu(false)}
+    function keyboard(event:KeyboardEvent){if(event.key==="Escape"){setAccountMenu(false);accountEntry.current?.focus()}}
+    document.addEventListener("pointerdown",dismiss);
+    document.addEventListener("keydown",keyboard);
+    return ()=>{document.removeEventListener("pointerdown",dismiss);document.removeEventListener("keydown",keyboard)};
+  },[accountMenu]);
+  const people=useTeamPeople();
+  const [partners,setPartners]=useState(false);
+  const [attachmentError,setAttachmentError]=useState("");
+  const [uploads,setUploads]=useState<{file:File;key:string}[]>([]);
+  const selectFiles=useRef<HTMLInputElement>(null);
+  function addFiles(files:File[]){
+    if(files.length+uploads.length>4 || files.some(f=>f.size>3*1024*1024)){
+      setAttachmentError("每条消息最多四个附件，单个附件上限 3 MB");return;
+    }
+    setAttachmentError("");
+    setUploads(previous=>[...previous,...files.map(file=>({file,key:crypto.randomUUID()}))]);
+  }
   const scope = `${user.id}:${workspace.id}`;
   useEffect(() => {
     layoutStates.current = {};
   }, [scope, revokedAt]);
   const draftKey = `mobilework.workbench.draft:${scope}:${conversation || "new"}`;
   const [draft, setDraft] = useState(
-    () => localStorage.getItem(draftKey) || "",
+    () => sessionStorage.getItem(draftKey) || "",
   );
   const composerInput = useRef<HTMLTextAreaElement>(null);
   const [composerExpanded, setComposerExpanded] = useState(false);
@@ -250,7 +295,8 @@ export function WorkbenchShell({
     };
   }, []);
   useEffect(() => {
-    setDraft(localStorage.getItem(draftKey) || "");
+    setDraft(sessionStorage.getItem(draftKey) || "");
+    setUploads([]);setAttachmentError("");setPartners(false);
   }, [draftKey]);
   const queryKey = ["team", workspace.id, "workbench", user.id, conversation];
   const state = useQuery({
@@ -301,6 +347,16 @@ export function WorkbenchShell({
     });
   }, [state.dataUpdatedAt, workspace.id, user.id, conversation, client]);
   const pin = data?.pins.find((p) => p.id === pinID);
+  const [pinRevision, setPinRevision] = useState<number | null>(null);
+  useEffect(() => setPinRevision(null), [pinID, scope]);
+  const history = useQuery({
+    queryKey: ["team", workspace.id, "pinVersions", user.id, pinID, pin?.revision],
+    enabled: Boolean(pin && data),
+    queryFn: () => request(workspace.id, "/pins/" + pinID + "/versions", z.array(z.object({revision: z.number(), result: ResultSchema}))),
+  });
+  const pinResult = pinRevision === null ? pin?.result : history.data?.find(entry => entry.revision === pinRevision)?.result;
+  const targetMessage = params.get("message");
+  useMessageAnchor("work-message-", targetMessage, !!data?.messages.some(m=>m.id===targetMessage));
   const active = data?.messages.find((m) => m.status === "running");
   const runtimeNotice = data?.modelReady ? "" : text(
     data?.runtimeStatus === "warming" ? "wb.warming" :
@@ -351,24 +407,41 @@ export function WorkbenchShell({
     };
   }, [active?.id, workspace.id]);
   const send = useMutation({
-    mutationFn: async (retryPrompt?: string) => {
-      const prompt = (retryPrompt ?? draft).trim();
-      if (!prompt || !data?.modelReady) return;
+    mutationFn: async (retry?: {id:string;prompt:string;files?:{id:string;filename:string}[]}) => {
+      const retryPrompt=retry?.prompt;
+      const files=retry ? await Promise.all((retry.files || []).map(async f=>{
+        const response=await teamFetch(teamServer+"/api/workbench/input-files/"+f.id,{headers:{"X-Workspace-ID":workspace.id}});
+        if(!response.ok)throw Error("原消息附件不可访问");
+        return readAttachment(await response.blob(),f.filename);
+      })) : await Promise.all(uploads.map(({file})=>readAttachment(file,file.name)));
+      const inputKey=retry?.id || uploads.map(f=>f.key).join(",");
+      const prompt = (retryPrompt ?? draft).trim() || files.map(f=>f.filename).join("、");
+      if (!prompt || !data) return;
       const pendingKey = `mobilework.workbench.pending:${scope}:${conversation || "new"}`;
       const cached = z
         .object({
           requestId: z.string(),
           conversationId: z.string(),
           prompt: z.string(),
-          modelId: z.string().default(""),
+          inputKey:z.string().optional(),
         })
-        .safeParse(JSON.parse(localStorage.getItem(pendingKey) || "null"));
+        .safeParse(JSON.parse(sessionStorage.getItem(pendingKey) || "null"));
+      if(!conversation && /(^|\s)@[^\s@]/u.test(prompt)){
+        const members=await teamApi.listMembers(workspace.id);
+        const mentioned=mentionRecipients(prompt,members,user.id);
+        if(mentioned.length){
+          const key=cached.success&&cached.data.prompt===prompt&&(cached.data.inputKey||"")===inputKey?cached.data.requestId:crypto.randomUUID();
+          sessionStorage.setItem(pendingKey,JSON.stringify({requestId:key,conversationId:"",prompt,inputKey}));
+          const room=await request(workspace.id,"/rooms",IDSchema,{kind:mentioned.length===1?"direct":"group",members:mentioned.map(m=>m.user_id),title:mentioned.map(m=>m.name||m.email).join("、").slice(0,100),request_id:key,content:prompt,files});
+          sessionStorage.removeItem(pendingKey);sessionStorage.removeItem(draftKey);setDraft("");setParams({view:"rooms",room:room.id});return;
+        }
+        if(!prompt.includes("@Work"))throw Error("请选择当前工作区中可见的成员。");
+      }
       let id = conversation;
       if (
         !id &&
         cached.success &&
-        cached.data.prompt === prompt &&
-        cached.data.modelId === modelId
+        cached.data.prompt === prompt && (cached.data.inputKey||"")===inputKey
       )
         id = cached.data.conversationId;
       if (!id) {
@@ -379,13 +452,12 @@ export function WorkbenchShell({
       }
       const requestId =
         cached.success &&
-        cached.data.prompt === prompt &&
-        cached.data.modelId === modelId
+        cached.data.prompt === prompt && (cached.data.inputKey||"")===inputKey
           ? cached.data.requestId
           : crypto.randomUUID();
-      localStorage.setItem(
+      sessionStorage.setItem(
         pendingKey,
-        JSON.stringify({ requestId, conversationId: id, prompt, modelId }),
+        JSON.stringify({ requestId, conversationId: id, prompt,inputKey }),
       );
       const latest = data?.messages
         .filter((m) => m.status === "completed")
@@ -394,17 +466,17 @@ export function WorkbenchShell({
         requestId,
         conversationId: id,
         prompt,
-        modelId,
+        files,
         sourcePinId: latest ? undefined : sourcePin || undefined,
         layoutState:
           layoutStates.current[
             latest ? `message:${latest.id}` : `pin:${sourcePin}`
           ],
       });
-      localStorage.removeItem(pendingKey);
-      if (retryPrompt === undefined) localStorage.removeItem(draftKey);
+      sessionStorage.removeItem(pendingKey);
+      if (retryPrompt === undefined) sessionStorage.removeItem(draftKey);
       if (mounted.current) {
-        if (retryPrompt === undefined) setDraft("");
+        if (retryPrompt === undefined) {setDraft("");setUploads([]);setPartners(false)}
         setParams({
           view: "workbench",
           conversation: id,
@@ -437,8 +509,8 @@ export function WorkbenchShell({
     },
   });
   const refresh = useMutation({
-    mutationFn: async (id: string) => {
-      const response = await request(workspace.id, `/pins/${id}/refresh`, StatusSchema, {});
+    mutationFn: async ({id,force=false}:{id:string;force?:boolean}) => {
+      const response = await request(workspace.id, `/pins/${id}/refresh${force?"?force=1":""}`, StatusSchema, {});
       await refreshState();
       return { id, status: response.status };
     },
@@ -464,7 +536,7 @@ export function WorkbenchShell({
   });
   const prefill = (value: string) => {
     setDraft(value);
-    localStorage.setItem(draftKey, value);
+    sessionStorage.setItem(draftKey, value);
   };
   const attempted = useRef(new Set<string>());
   const refreshBudget = useRef({ pin: "", count: 0, last: 0 });
@@ -489,7 +561,7 @@ export function WorkbenchShell({
     attempted.current.add(key);
     refreshBudget.current.count++;
     refreshBudget.current.last = Date.now();
-    refresh.mutate(pin.id);
+    refresh.mutate({id:pin.id});
   }, [pin?.id, pin?.status, pin?.result?.fingerprint, pin?.refreshKey, data?.modelReady]);
   const to = (query: Record<string, string>) =>
     navigate(`/team/${workspace.slug}?${new URLSearchParams(query)}`);
@@ -506,8 +578,7 @@ export function WorkbenchShell({
       to({
         view: "projects",
         project: e.projectId,
-        section: "discussion",
-        topic: e.topicId,
+        section: "overview",
         return: back,
         ...(e.kind === "comment" ? { comment: e.objectId } : {}),
       });
@@ -524,71 +595,34 @@ export function WorkbenchShell({
     counts && counts.issue > 0
       ? [text("wb.question1"), text("wb.question2"), text("wb.question3")]
       : [text("wb.emptyQuestion")];
+  const home=showing && !pinID && !conversation && params.get("from")!=="agent";
+  const canSend=!!(draft.trim() || uploads.length) && !!data && !send.isPending && !active;
+  const suggest=()=>{prefill(recommendations[0]);composerInput.current?.focus()};
+  const openPartner=useMutation({mutationFn:async ({kind,id,label}:{kind:"agent"|"squad"|"member";id:string;label:string})=>{
+    if(kind==="member"){prefill(draft.replace(/@$/,"")+"@"+label+" ");composerInput.current?.focus()}
+    else if(kind==="squad"){const room=await request(workspace.id,"/squad-room/"+id,IDSchema,{});to({view:"rooms",room:room.id})}
+    else {const session=await teamApi.createChatSession({agent_id:id,title:label},workspace.slug);to({view:"agent-chat",chat:session.id})}
+    setPartners(false);
+  }});
   return (
-    <div className="wb-shell">
-      <aside className="wb-sidebar">
-        <button aria-label={text("wb.newChat")} className="wb-new" onClick={() => to({ view: "workbench" })}>
-          <Plus size={17} />
-          {text("wb.newChat")}
+    <div className={"wb-shell"+(collapsed?" rail-collapsed":"")}>
+      <div className="v3-rail-tools">
+        <button aria-label="搜索会话与任务" onClick={()=>window.dispatchEvent(new Event("mw:search"))}><Search size={14}/></button>
+        <button aria-label={collapsed?"展开侧栏":"收起侧栏"} onClick={()=>{if(window.innerWidth>760)wideCollapsed.current=!collapsed;setCollapsed(!collapsed)}}>{collapsed?<PanelLeftOpen size={14}/>:<PanelLeftClose size={14}/>}</button>
+      </div>
+      <PersonalSettings onLogout={onLogout} open={!!prefs} initialTab={prefs} close={()=>setPrefs("")}/><WorkSuggestion key={workspace.id+user.id}/><WorkspaceSearch/>
+      <aside className="wb-sidebar" id="mw-workspace-sidebar">
+        <SidebarResize side="left" controls="mw-workspace-sidebar" setWidth={rail.setWidth} save={rail.save}/>
+        <button aria-label="新建" className="wb-new" onClick={() => to({ view: "workbench" })}>
+          <CirclePlus size={18} />
+          新建
         </button>
-        <div className="wb-sidebar-scroll">
-          <h4>{text("wb.myViews")}</h4>
-          {data?.pins.map((p) => (
-            <button
-              aria-label={p.name}
-              className={pinID === p.id && showing ? "active" : ""}
-              key={p.id}
-              onClick={() => to({ view: "workbench", pin: p.id })}
-            >
-              <PinIcon size={15} />
-              <span>{p.name}</span>
-            </button>
-          ))}
-          {!data?.pins.length && <small>{text("wb.noPins")}</small>}
-          <h4>{text("wb.capabilities")}</h4>
-          {[
-            { id: "projects", label: text("project.projects"), Icon: Folder },
-            { id: "tasks", label: text("tasks"), Icon: ListTodo },
-            { id: "inbox", label: text("inbox"), Icon: Inbox },
-            { id: "squads", label: text("squads"), Icon: Bot },
-            { id: "settings", label: text("settings"), Icon: Users },
-          ].filter(({ id }) => id === "projects" || entries.has(id)).map(({ id, label, Icon }) => (
-            <button
-              key={id}
-              aria-label={label}
-              className={view === id ? "active" : ""}
-              onClick={() => to({ view: id })}
-            >
-              <Icon size={17} />
-              {label}
-              {id === "inbox" && unread > 0 && (
-                <span className="team-unread-count">{unread}</span>
-              )}
-            </button>
-          ))}
-          <h4>{text("wb.recent")}</h4>
-          {data?.conversations.map((c) => (
-            <button
-              aria-label={c.title}
-              className={conversation === c.id && showing ? "active" : ""}
-              key={c.id}
-              onClick={() => to({ view: "workbench", conversation: c.id })}
-            >
-              <MessageSquare size={15} />
-              <span>{c.title}</span>
-            </button>
-          ))}
-        </div>
-        <footer>
-          {user.name}
-          <small>
-            {workspace.kind === "personal"
-              ? text("wb.personal")
-              : text("workspaceTeam")}
-          </small>
+        <WorkspaceNavigation key={workspace.id+user.id} view={view} issueId={issueId} showTasks={entries.has("tasks")} show={entry=>entries.has(entry)} pins={data?.pins||[]}/>
+        <footer ref={accountPopup}><button ref={accountEntry} onClick={()=>setAccountMenu(!accountMenu)} aria-label="账户菜单" aria-expanded={accountMenu}><i>{user.name.slice(0,1)}</i><span>{user.name}</span><ChevronRight size={14}/></button>
+          {accountMenu&&<div className="mw-account-menu"><strong>{user.name}</strong><small>{user.email}</small><button onClick={()=>{setPrefs("账户管理");setAccountMenu(false)}}>设置</button><button onClick={()=>{setPrefs("帮助与反馈");setAccountMenu(false)}}>帮助与反馈</button><button onClick={()=>{to({view:"runtime"});setAccountMenu(false)}}>运行时</button><button onClick={onLogout}>退出账号</button></div>}
         </footer>
       </aside>
-      <main className="wb-main">
+      <main className={"wb-main"+(home?" wb-home":"")}>
         {!showing ? (
           <>
             {params.get("return") && (
@@ -603,6 +637,11 @@ export function WorkbenchShell({
             )}
             {children}
           </>
+        ) : home && params.get("compose")==="task" ? (
+          <div className="wb-home-task-wrap">
+            <section className="wb-welcome"><div className="wb-home-title"><img src={brandMark} alt="Work"/><h1>Mobile熠动，Work智简</h1></div><p>一个人的灵感，一群人的成果。</p></section>
+            <NewTask inline onClose={()=>to({view:"workbench"})} onCreated={id=>navigate("/team/"+workspace.slug+"/issue/"+id)}/>
+          </div>
         ) : (
           <>
             <div className="wb-chat-content">
@@ -627,7 +666,7 @@ export function WorkbenchShell({
                       disabled={
                         pin.status === "refreshing" || refresh.isPending || !data?.modelReady
                       }
-                      onClick={() => refresh.mutate(pin.id)}
+                      onClick={() => refresh.mutate({id:pin.id,force:true})}
                     >
                       <RefreshCw size={15} />
                       {text(pin.status === "refreshing" || refresh.isPending ? "wb.refreshBusy" : "wb.refresh")}
@@ -635,12 +674,15 @@ export function WorkbenchShell({
                     <Action
                       onClick={() => {
                         setDraft(pin.intent);
-                        localStorage.setItem(draftKey, pin.intent);
+                        sessionStorage.setItem(draftKey, pin.intent);
                         setParams({ view: "workbench", sourcePin: pin.id });
                       }}
                     >
                       {text("wb.adjust")}
                     </Action>
+                    <label>版本 <select aria-label="视图版本" value={pinRevision ?? ""} onChange={e=>setPinRevision(e.target.value ? Number(e.target.value) : null)}>
+                      <option value="">当前版本</option>{history.data?.map(v=><option key={v.revision} value={v.revision}>V{v.revision}</option>)}
+                    </select></label><Failure error={history.error}/>
                     <Action onClick={() => remove.mutate(pin.id)}>
                       <Trash2 size={15} />
                       {text("wb.unpin")}
@@ -652,10 +694,10 @@ export function WorkbenchShell({
                   )}
                   {pin.status !== "refreshing" && pin.error && <p role="alert" className="wb-answer-failure">{text("wb.refreshFailed")}</p>}
                   {pin.status === "ready" && pin.result?.fingerprint === pin.refreshKey && refresh.data?.id === pin.id && refresh.data.status === "ready" && !refresh.isPending && <p role="status">{text("wb.upToDate")}</p>}
-                  {pin.result && (
+                  {pinResult && (
                     <View
-                      key={`pin:${pin.id}`}
-                      result={pin.result}
+                      key={`pin:${pin.id}:${pinRevision}`}
+                      result={pinResult}
                       onStateChange={(id, state) => {
                         const key = `pin:${pin.id}`;
                         layoutStates.current[key] = {
@@ -669,11 +711,13 @@ export function WorkbenchShell({
                     />
                   )}
                 </>
+              ) : pinID ? (
+                data && <section className="team-welcome"><h2>这个视图已取消固定或不可访问</h2><Action onClick={()=>to({view:"workbench"})}>返回首页</Action></section>
               ) : conversation ? (
                 <div className="wb-messages">
                   {data?.messages.map((m) => (
-                    <section key={m.id}>
-                      <div className="wb-question">{m.prompt}</div>
+                    <section key={m.id} id={"work-message-"+m.id}>
+                      <div className="wb-question">{m.prompt}{m.files?.map(f=><button key={f.id} onClick={()=>to({view:"files",file:f.id})}><Paperclip size={14}/>{f.filename}</button>)}</div>
                       {m.status === "running" && (
                         <div className="wb-progress">
                           {progress || m.progress || text("wb.working")}{" "}
@@ -688,7 +732,7 @@ export function WorkbenchShell({
                         notice={text(m.status === "cancelled" ? "wb.answerStopped" : m.status === "interrupted" ? "wb.answerInterrupted" : hasAnswerBody(m.result) ? "wb.answerPartial" : "wb.answerFailed")}
                         retryLabel={text("wb.answerRetry")}
                         retryDisabled={send.isPending || !!active || !data?.modelReady}
-                        onRetry={() => send.mutate(m.prompt)}
+                        onRetry={() => send.mutate(m)}
                       >
                       {m.result && (
                         <>
@@ -707,7 +751,8 @@ export function WorkbenchShell({
                       onEntity={openEvidence}
                             onFollowUp={prefill}
                           />
-                          {m.status === "completed" && <Action
+                          {m.status==="completed" && m.result?.action && <WorkAction kind={m.result.action} message={m.id} prompt={m.prompt}/>}
+                          {m.status === "completed" && !m.result?.action && <Action
                             disabled={pinAction.isPending}
                             onClick={() =>
                               pinAction.mutate({ messageId: m.id })
@@ -737,85 +782,51 @@ export function WorkbenchShell({
                     </section>
                   ))}
                 </div>
-              ) : (
+              ) : params.get("from")==="agent" ? <section className="wb-messages"><h1>Work</h1></section> : (
                 <section className="wb-welcome">
-                  <span className="wb-eyebrow">{workspace.name}</span>
-                  <h1>{text("wb.welcome")}</h1>
-                  <p>{text("wb.welcomeHint")}</p>
-                  <div className="wb-prompts">
-                    {recommendations.map((q) => (
-                      <button
-                        key={q}
-                        onClick={() => {
-                          setDraft(q);
-                          localStorage.setItem(draftKey, q);
-                        }}
-                      >
-                        {q}
-                        <ArrowUp size={15} />
-                      </button>
-                    ))}
-                  </div>
-                  {counts && (
-                    <div className="wb-counts">
-                      <span>
-                        {counts.project || 0} {text("project.projects")}
-                      </span>
-                      <span>
-                        {counts.issue || 0} {text("tasks")}
-                      </span>
-                      <span>
-                        {counts.topic || 0} {text("wb.topics")}
-                      </span>
-                    </div>
-                  )}
+                  <div className="wb-home-title"><img src={brandMark} alt="Work"/><h1>Mobile熠动，Work智简</h1></div>
+                  <p>一个人的灵感，一群人的成果。</p>
                 </section>
               )}
             </div>
-            {!pin && (
+            {!pinID && (
               <form
                 className="wb-composer"
+                onDragOver={e=>e.preventDefault()}
+                onDrop={e=>{e.preventDefault();addFiles(Array.from(e.dataTransfer.files))}}
                 onSubmit={(e) => {
                   e.preventDefault();
-                  if (draft.trim() && data?.modelReady && !send.isPending && !active) send.mutate(undefined);
+                  if (canSend) send.mutate(undefined);
                 }}
               >
+                {home&&<><img className="wb-home-robot" src={composerRobot} alt=""/><div className="wb-home-tabs"><button type="button" aria-pressed="true" onClick={()=>composerInput.current?.focus()}><MessageSquare size={15}/>会话</button><button type="button" onClick={()=>to({view:"workbench",compose:"task"})}><ListTodo size={15}/>任务</button></div></>}
+                <input type="file" multiple hidden ref={selectFiles} aria-label="添加会话附件" onChange={e=>{addFiles(Array.from(e.target.files||[]));e.target.value=""}}/>
+                {attachmentError&&<p role="alert">{attachmentError}</p>}
+                {uploads.length>0 && <div className="wb-input-files">{uploads.map(f=><button type="button" key={f.key} onClick={()=>setUploads(uploads.filter(row=>row.key!==f.key))} aria-label={"移除 "+f.file.name}><Paperclip size={13}/>{f.file.name}<X size={13}/></button>)}</div>}
                 <textarea
                   ref={composerInput}
                   aria-label={text("wb.placeholder")}
                   value={draft}
-                  placeholder={text("wb.placeholder")}
+                  placeholder={home ? "可以试试："+recommendations[0] : text("wb.placeholder")}
                   onChange={(e) => {
                     setDraft(e.target.value);
-                    localStorage.setItem(draftKey, e.target.value);
+                    if(home && e.target.value.endsWith("@"))setPartners(true);
+                    sessionStorage.setItem(draftKey, e.target.value);
                   }}
                   onKeyDown={(e) => {
+                    if(home && !draft && e.key==="ArrowRight"){e.preventDefault();suggest();return}
                     if (
                       e.key === "Enter" &&
                       !e.shiftKey &&
                       !e.nativeEvent.isComposing
                     ) {
                       e.preventDefault();
-                      if (draft.trim() && data?.modelReady && !send.isPending && !active)
+                      if (canSend)
                         send.mutate(undefined);
                     }
                   }}
                 />
-                <select
-                  className="wb-model-picker"
-                  aria-label={text("wb.model")}
-                  value={
-                    modelId || data?.models.find((m) => m.default)?.id || ""
-                  }
-                  onChange={(e) => setModelId(e.target.value)}
-                >
-                  {data?.models.map((m) => (
-                    <option key={m.id} value={m.id}>
-                      {m.label}
-                      {m.default ? ` · ${text("wb.defaultModel")}` : ""}
-                    </option>
-                  ))}
-                </select>
+
                 {(canExpandComposer || composerExpanded) && (
                   <button type="button" className="wb-composer-expand"
                     aria-expanded={composerExpanded}
@@ -823,23 +834,24 @@ export function WorkbenchShell({
                     {text(composerExpanded ? "wb.collapseInput" : "wb.expandInput")}
                   </button>
                 )}
-                <button
-                  className="wb-send"
-                  aria-label={text("wb.send")}
-                  disabled={
-                    !draft.trim() ||
-                    send.isPending ||
-                    !!active ||
-                    !data?.modelReady
-                  }
-                >
-                  <ArrowUp size={20} />
-                </button>
-                <small role="status" className={runtimeNotice ? "wb-runtime-notice" : undefined}>
-                  {data ? runtimeNotice || text("wb.private") : text("loading")}
-                </small>
+                <div className="wb-composer-actions">
+                  <button type="button" aria-label="选择附件" onClick={()=>selectFiles.current?.click()}><Plus size={17}/></button>
+                  {home&&<button type="button" aria-label="选择伙伴" aria-expanded={partners} onClick={()=>setPartners(!partners)}><AtSign size={17}/></button>}
+                  {home&&!draft&&<button type="button" className="wb-fill" onClick={suggest}>填入建议</button>}
+                  <button className="wb-send" aria-label={text("wb.send")} disabled={!canSend}><Send size={15}/></button>
+                </div>
+                {partners&&<div className="wb-partners"><strong>选择伙伴</strong>
+                  <button type="button" onClick={()=>{prefill(draft.replace(/@$/,"")+"@Work ");setPartners(false);composerInput.current?.focus()}}>Work</button>
+                  {people.members.data?.filter(m=>m.user_id!==user.id).map(m=><button type="button" key={m.id} onClick={()=>openPartner.mutate({kind:"member",id:m.user_id,label:m.email||m.name})}>{m.name||m.email} · 成员</button>)}
+                  {people.agents.data?.filter(a=>!a.archived_at && a.system_key!=="mobilework" && people.allowed(a)).map(a=><button type="button" key={a.id} disabled={openPartner.isPending} onClick={()=>openPartner.mutate({kind:"agent",id:a.id,label:a.name})}>{a.name} · 智能体</button>)}
+                  {people.squads.data?.filter(people.allowedSquad).map(s=><button type="button" key={s.id} disabled={openPartner.isPending} onClick={()=>openPartner.mutate({kind:"squad",id:s.id,label:s.name})}>{s.name} · 小队</button>)}
+                  <Failure error={openPartner.error||people.members.error||people.agents.error||people.squads.error}/>
+                </div>}
+                <div className="wb-composer-scope"><span><Folder size={14}/>当前协作空间</span><span><KeyRound size={13}/>默认权限</span>
+                <small role="status">{runtimeNotice || (data?.mock ? "Work · Mock 模型适配器" : "")}</small></div>
               </form>
             )}
+            {home&&<div className="wb-home-guides"><span><img src={workAvatar} alt=""/>直接提问，与 Work 一起工作</span><i/><button onClick={()=>setPartners(!partners)}><Users size={15}/>@ 伙伴，开始协作<ChevronRight size={13}/></button></div>}
           </>
         )}
       </main>

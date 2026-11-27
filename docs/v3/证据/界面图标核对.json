@@ -1,0 +1,19 @@
+{
+  "正式桌面/task-detail": {
+    "临时聊天": "cef0ce7d3e766e2f2aac5502db67ad0c6bc51371fcc108dccf9fd870fefedd6a",
+    "会话加号": "d17beec6d43dcfad2e88648cb2f029fb88647945805e7a3e2e237573292a42a8",
+    "日历": "eda425b13365942df25d045c9a8ab549f8798b324668a696d087f54b90d3f796",
+    "更多属性": "df56a193382fa22454f7019f374be1cdbc5f21663f36c4b81977858b855b591f"
+  },
+  "正式桌面/runtime": {
+    "运行时": "3628d8567d17fda0ec2f86bfe738390ed957c771d45afbb47029ffd8960427b5",
+    "本机图标": "3c085102d93b7bec21408549252e18ee9be2ace85df1b9335c73d55e3a2cf5fe",
+    "在线标识": "af0e2c51d34d14c58c9a26d0e8a1f3cbbc5e6252969c497e4fba04063823149c"
+  },
+  "独立浏览器/task-detail": {
+    "临时聊天": "cef0ce7d3e766e2f2aac5502db67ad0c6bc51371fcc108dccf9fd870fefedd6a",
+    "会话加号": "d17beec6d43dcfad2e88648cb2f029fb88647945805e7a3e2e237573292a42a8",
+    "日历": "eda425b13365942df25d045c9a8ab549f8798b324668a696d087f54b90d3f796",
+    "更多属性": "df56a193382fa22454f7019f374be1cdbc5f21663f36c4b81977858b855b591f"
+  }
+}

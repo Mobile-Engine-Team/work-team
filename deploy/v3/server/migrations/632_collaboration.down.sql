@@ -1,0 +1,1 @@
+DROP TABLE issue_message_source, collaboration_message, collaboration_participant, collaboration_room;

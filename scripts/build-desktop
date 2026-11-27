@@ -109,9 +109,7 @@ def extract_electron(directory):
 
 def main():
     prepare = ROOT/'scripts/prepare-multica.sh'
-    receipt = STATE/'bin/prepare-multica.sh'
-    if not (STATE/'bin/api').is_file() or not receipt.is_file() or receipt.read_bytes() != prepare.read_bytes():
-        sp.run([ROOT/'scripts/prepare-multica.sh'],check=True)
+    sp.run([prepare],check=True)
     OUT.mkdir(parents=True,exist_ok=True)
     files = list(package_files())
     native = [ROOT/'desktop'/n for n in ['main.mjs','menu.mjs','application-menu-locale.mjs','package.json','AppIcon.icns']]

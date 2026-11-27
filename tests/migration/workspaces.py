@@ -17,7 +17,7 @@ def register(p, name, password):
     expect(p.get_by_role('alert')).to_contain_text('两次输入的密码不一致')
     passwords.last.fill(password)
     p.locator('form button').click()
-    expect(p.get_by_role('combobox', name='工作区')).to_contain_text('个人工作区')
+    expect(p.get_by_role('combobox', name='工作区')).to_contain_text(re.compile('我的工作区|个人工作区'))
 
 def accounts(r):
     a,b=r.a,r.b

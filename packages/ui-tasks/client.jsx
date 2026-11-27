@@ -1,19 +1,16 @@
 import { useState } from 'react'
-import { Plus } from 'lucide-react'
-import { text } from '@team-workbench/ui-workspace-shell/client'
+import { useSearchParams } from '@team-workbench/ui-workspace-shell/client'
 import { contribute } from '@team-workbench/ui-workspace-shell/contract'
-import { Action } from '../ui-workspace-shell/views/team/ui'
-import { NewTask, TaskDetail, TaskList } from '../ui-workspace-shell/views/team/tasks'
+import { TaskBoard } from '../ui-workspace-shell/views/team/task-board'
+import { NewTask, TaskDetail } from '../ui-workspace-shell/views/team/tasks'
 
 function Tasks({ issueId, onOpen }) {
-  const [create, setCreate] = useState(false)
+  const [params]=useSearchParams()
+  const [create, setCreate] = useState(params.get("create")==="1" ? {} : null)
   if (issueId) return <TaskDetail key={issueId} id={issueId}/>
   return <>
-    <div className="team-toolbar"><div className="team-spacer" />
-      <Action primary onClick={() => setCreate(true)}><Plus size={16}/>{text('newTask')}</Action>
-    </div>
-    <TaskList/>
-    {create && <NewTask onClose={() => setCreate(false)} onCreated={id => { setCreate(false); onOpen(id) }}/>}
+    <TaskBoard onCreate={(fields={})=>setCreate(fields)}/>
+    {create && <NewTask initialFields={create} initialOwner={params.get("owner") || undefined} onClose={() => setCreate(null)} onCreated={id => { setCreate(null); onOpen(id) }}/>}
   </>
 }
 export const inject = ['slots']

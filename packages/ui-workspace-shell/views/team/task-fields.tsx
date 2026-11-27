@@ -65,11 +65,20 @@ export function TaskFields({
       </div>
       {
         <div className="team-two-fields">
-          <Field label={text("project.dueDate")}>
-            <Input
-              type="date"
-              value={draft.dueDate}
-              onChange={(e) => update({ dueDate: e.target.value })}
+          <Field label="优先级">
+            <Picker
+              label="优先级"
+              value={draft.priority}
+              options={[
+                { value: "none", label: "无优先级" },
+                { value: "low", label: "低" },
+                { value: "medium", label: "中" },
+                { value: "high", label: "高" },
+                { value: "urgent", label: "紧急" },
+              ]}
+              onChange={(priority) =>
+                update({ priority: priority as TeamDraft["priority"] })
+              }
             />
           </Field>
           <Field label={text("taskProject")}>
@@ -92,6 +101,35 @@ export function TaskFields({
           </Field>
         </div>
       }
+      <details>
+        <summary>更多选项</summary>
+        <div className="team-two-fields">
+          <Field label="开始日期">
+            <Input
+              type="date"
+              value={draft.startDate}
+              onChange={(e) => update({ startDate: e.target.value })}
+            />
+          </Field>
+          <Field label={text("project.dueDate")}>
+            <Input
+              type="date"
+              value={draft.dueDate}
+              onChange={(e) => update({ dueDate: e.target.value })}
+            />
+          </Field>
+        </div>
+        {draft.dueDate && draft.startDate > draft.dueDate && (
+          <p role="alert">截止日期不能早于开始日期</p>
+        )}
+        <Field label="标签">
+          <Input
+            placeholder="用逗号分隔标签"
+            value={draft.labels}
+            onChange={(e) => update({ labels: e.target.value })}
+          />
+        </Field>
+      </details>
       <Failure error={projects.error} />
       <UploadFiles
         files={draft.files}

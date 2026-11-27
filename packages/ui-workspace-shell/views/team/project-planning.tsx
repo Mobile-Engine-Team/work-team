@@ -1,8 +1,9 @@
+import {ProjectReceipts} from "./project-receipts";
 import { planEqual } from "./blueprint-model";
 import { CheckCircle2, CircleAlert } from "lucide-react";
 import { SuggestionGraphPreview } from "./suggestion-graph-preview";
 import { useEffect, useRef, useState } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import { Sparkles, Check, X } from "lucide-react";
 import { ApiError } from "@multica/core/api/client";
@@ -43,10 +44,6 @@ export function ProjectPlanning({
 }) {
   const { workspace } = useTeam(),
     people = useTeamPeople();
-  const [params] = useSearchParams();
-  const topics = useTeamQuery(["topics", project.id], () =>
-    teamApi.listProjectTopics(project.id),
-  );
   const requests = useQuery({
     queryKey: ["team", workspace.id, "blueprint", project.id, "planning"],
     queryFn: () => teamApi.listProjectPlanning(project.id),
@@ -57,13 +54,11 @@ export function ProjectPlanning({
         ? 3000
         : false,
   });
-  const [agent, setAgent] = useState(""),
+  const [agent, setAgent] = useState("work"),
     [instructions, setInstructions] = useState(""),
     [materials, setMaterials] = useState(""),
-    [topic, setTopic] = useState(params.get("topic") || ""),
     [requestID, setRequestID] = useState(() => crypto.randomUUID());
   const [scope, setScope] = useState(selectedNodes.length ? "selected" : "add"),
-    [contextConfirmed, setContextConfirmed] = useState(false),
     [input, setInput] = useState<PlanningInput | null>(null);
   const options = {
     agent_id: agent,
@@ -72,11 +67,10 @@ export function ProjectPlanning({
     instructions,
     materials,
     selected_nodes: scope === "selected" ? selectedNodes : [],
-    topic_id: topic,
+    topic_id: "",
     scope,
-    context_confirmed: contextConfirmed,
-    conclusion_revision:
-      topics.data?.topics.find((t) => t.id === topic)?.conclusion_revision || 0,
+    context_confirmed: false,
+    conclusion_revision: 0,
   };
   const signature = JSON.stringify(options);
   const [previewSignature, setPreviewSignature] = useState("");
@@ -144,9 +138,7 @@ export function ProjectPlanning({
               label={text("project.chooseAssistant")}
               value={agent}
               onChange={setAgent}
-              options={(people.agents.data || [])
-                .filter(people.allowed)
-                .map((a) => ({ value: a.id, label: a.name }))}
+              options={[{value:"work",label:"Work"},...(people.agents.data||[]).filter(a=>a.system_key!=="mobilework" && people.allowed(a)).map(a=>({value:a.id,label:a.name}))]}
             />
           </Field>
           <p className="project-helper">{text("project.planningSupport")}</p>
@@ -156,20 +148,6 @@ export function ProjectPlanning({
               placeholder={text("project.adjustmentExample")}
               value={instructions}
               onChange={(e) => setInstructions(e.target.value)}
-            />
-          </Field>
-          <Field label={text("project.selectedTopic")}>
-            <Picker
-              label={text("project.selectedTopic")}
-              value={topic || "none"}
-              onChange={(v) => setTopic(v === "none" ? "" : v)}
-              options={[
-                { value: "none", label: text("project.noTopicSelected") },
-                ...(topics.data?.topics || []).map((t) => ({
-                  value: t.id,
-                  label: t.title,
-                })),
-              ]}
             />
           </Field>
           <Field label={text("project.selectedMaterials")}>
@@ -200,19 +178,8 @@ export function ProjectPlanning({
               ]}
             />
           </Field>
-          {topic && (
-            <label className="project-context-confirm">
-              <input
-                type="checkbox"
-                checked={contextConfirmed}
-                onChange={(e) => setContextConfirmed(e.target.checked)}
-              />
-              {text("project.confirmTopicProject")}「{project.title}」
-            </label>
-          )}
-          <p className="project-helper">{text("project.unrelatedTopicHint")}</p>
           <Action
-            disabled={action.isPending || (!!topic && !contextConfirmed)}
+            disabled={action.isPending}
             onClick={() => action.mutate("preview")}
           >
             {text("project.previewInput")}
@@ -221,16 +188,6 @@ export function ProjectPlanning({
             <section className="project-input-preview">
               <h4>{text("project.goal")}</h4>
               <TeamMarkdown content={input.goal} />
-              <h4>
-                {text("project.conclusionVersion")} {input.conclusion_revision}{" "}
-                · {input.topic_title}
-              </h4>
-              <TeamMarkdown
-                content={
-                  input.confirmed_conclusion ||
-                  text("project.noConfirmedConclusion")
-                }
-              />
               <h4>{text("project.allowedScope")}</h4>
               <p>
                 {text(
@@ -265,7 +222,7 @@ export function ProjectPlanning({
                   )}
                 </div>
               ))}
-              <h4>{text("project.supplementalDiscussion")}</h4>
+              {input.materials && <h4>{text("project.selectedMaterials")}</h4>}
               {input.messages.map((m, i) => (
                 <TeamMarkdown key={i} content={m} />
               ))}
@@ -557,17 +514,36 @@ export function ProjectStart({
   });
   const actionLabel = (i: ProjectStartItem) =>
     `${text(i.assignee_type === "member" ? "project.notifyPerson" : "project.requestAgent")} · ${people.name(i.assignee_id || null)}`;
+  const title = text(predecessorId ? "project.viewHandoff" : "project.startTasks");
+  if (!state.data || state.data.version === 0) {
+    return (
+      <Modal wide title={title} className="mw-handoff-dialog" onClose={onClose}>
+        <div className="mw-handoff-body">
+          {state.error
+            ? <Failure error={state.error} retry={() => void state.refetch()} />
+            : <p className="project-plan-version" role="status">
+                {text(state.data ? "project.noPublishedPlan" : "loading")}
+              </p>}
+          <div className="project-actions">
+            <Action onClick={onClose}>{text("close")}</Action>
+            {state.data?.version === 0 && !state.error &&
+              <Action primary onClick={viewChanges}>前往施工蓝图</Action>}
+          </div>
+        </div>
+      </Modal>
+    );
+  }
   return (
     <Modal
       wide
-      title={text(predecessorId ? "project.viewHandoff" : "project.startTasks")}
+      title={title}
+      className="mw-handoff-dialog"
       onClose={onClose}
     >
+      <div className="mw-handoff-body">
       <p className="project-plan-version">
         <strong>
-          {state.data?.version
-            ? `${text("project.startVersion")} V${state.data.version}`
-            : text("project.noPublishedPlan")}
+          {text("project.startVersion")} V{state.data.version}
         </strong>
       </p>
       {unpublished && (
@@ -579,6 +555,7 @@ export function ProjectStart({
         </div>
       )}
       <p>{text("project.startTasksHint")}</p>
+      <p className="mw-handoff-hint">确认后向成员投递站内通知，或向智能体提交执行请求。回执显示送达、入队或失败的结果。</p>
       <Failure
         error={state.error || action.error}
         retry={() => void state.refetch()}
@@ -594,7 +571,7 @@ export function ProjectStart({
               }
             >
               <input
-                type="checkbox"
+                type="checkbox" aria-label={i.title}
                 disabled={!!i.reason || action.isPending}
                 checked={selected.includes(i.issue_id) && !i.reason}
                 onChange={(e) =>
@@ -630,6 +607,7 @@ export function ProjectStart({
             </label>
           ))}
       </div>
+      <ProjectReceipts project={project.id}/>
       {results.length > 0 && (
         <section aria-live="polite">
           <h3>{text("project.handoffResults")}</h3>
@@ -673,6 +651,7 @@ export function ProjectStart({
             {chosen.length})
           </Action>
         )}
+      </div>
       </div>
     </Modal>
   );

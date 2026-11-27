@@ -5,8 +5,9 @@ import {
   failureForEntry,
   needsModelAuth,
 } from "./model-auth";
+import { requestIssueRun } from "./issue-followup";
 import { ExecutionStatus } from "./execution-status";
-import { useRef, useState, useEffect, type ReactNode } from "react";
+import { useRef, useState, useEffect, type ReactNode, type RefObject } from "react";
 import {
   FileText,
   Download,
@@ -31,9 +32,15 @@ export function UploadFiles({
   onChange,
   onPendingChange,
   onFailureChange,
+  chatSessionId,
+  inputRef,
+  buttonLabel,
   disabled = false,
   children,
 }: {
+  inputRef?: RefObject<HTMLInputElement | null>;
+  buttonLabel?: string;
+  chatSessionId?: string;
   files: Attachment[];
   onChange: (v: Attachment[]) => void;
   onPendingChange: (pending: boolean) => void;
@@ -41,7 +48,8 @@ export function UploadFiles({
   disabled?: boolean;
   children?: ReactNode;
 }) {
-  const input = useRef<HTMLInputElement>(null);
+  const fallbackInput = useRef<HTMLInputElement>(null);
+  const input = inputRef || fallbackInput;
   const busy = useRef(false);
   const [failedFiles, setFailedFiles] = useState<File[]>([]);
   const upload = useTeamAction(async (selected: File[]) => {
@@ -53,7 +61,8 @@ export function UploadFiles({
     try {
       for (const file of selected) {
         try {
-          const attachment = await teamApi.uploadFile(file);
+          if(chatSessionId && file.size>3*1024*1024)throw Error("单个附件不能超过 3 MB");
+          const attachment = await teamApi.uploadFile(file,chatSessionId ? {chatSessionId} : undefined);
           if (!attachment.id) throw new Error(text("uploadFailed"));
           result.push(attachment);
           onChange([...result]);
@@ -94,7 +103,7 @@ export function UploadFiles({
             <span className="team-file-chip" key={f.id}>
               <span>
                 {f.filename}
-                <small>{text("draftAttachment")}</small>
+                <small>{chatSessionId ? "待发送 · 仅当前会话可见" : text("draftAttachment")}</small>
               </span>
               <button
                 disabled={disabled || upload.isPending}
@@ -126,11 +135,13 @@ export function UploadFiles({
       <Failure error={upload.error} />
       <div className="team-composer-footer">
         <Action
+          aria-label={buttonLabel}
+          title={buttonLabel}
           disabled={disabled || upload.isPending}
           onClick={() => input.current?.click()}
         >
           <Paperclip size={15} />
-          {text("attach")}
+          {!buttonLabel && text("attach")}
         </Action>
         {!!failedFiles.length && (
           <Action
@@ -298,6 +309,7 @@ export function RunList({
   error: unknown;
 }) {
   const { workspace, user } = useTeam();
+  const retryKeys=useRef(new Map<string,string>());
   const [authOpen, setAuthOpen] = useState(false);
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const selected = runs.find((run) => run.id === selectedId);
@@ -305,7 +317,12 @@ export function RunList({
     async ({ run, retry }: { run: AgentTask; retry: boolean }) => {
       if (retry) {
         await ensureAgentAuth(run.agent_id, user.id, workspace.id);
-        return teamApi.rerunIssue(issueId, run.id);
+        const key=retryKeys.current.get(run.id) || crypto.randomUUID();
+        retryKeys.current.set(run.id,key);
+        const result=await requestIssueRun(workspace.id,issueId,key,run.id);
+        retryKeys.current.delete(run.id);
+        if(result.status==="failed") throw Error(result.reason || "执行请求失败");
+        return;
       }
       return teamApi.cancelTask(issueId, run.id);
     },

@@ -9,7 +9,7 @@ import {
   useTeamSession,
   useTeamAction,
 } from "./client";
-import { Action, Failure } from "./ui";
+import { Action, Failure, Modal } from "./ui";
 import "./team.css";
 
 export function useAcceptWorkspaceInvitation(userId: string | undefined) {
@@ -87,4 +87,24 @@ export function Invitations() {
       <Failure error={accept.error} />
     </aside>
   );
+}
+
+export function InvitationLink({id,userId,close}:{id:string;userId:string;close:()=>void}){
+  const record=useQuery({queryKey:["team","invitation",id,userId],queryFn:()=>teamApi.getInvitation(id),retry:false});
+  const accept=useAcceptWorkspaceInvitation(userId);
+  const navigate=useNavigate();
+  const enter=useTeamAction(async()=>{
+    const team=(await teamApi.listWorkspaces()).find(w=>w.id===record.data?.workspace_id);
+    if(!team)throw Error("当前账号已不在该团队");
+    navigate("/team/"+team.slug,{replace:true});
+  });
+  const invitation=record.data;
+  const expired=!!invitation?.expires_at && Date.parse(invitation.expires_at)<=Date.now();
+  return <Modal title="团队邀请" onClose={close}>
+    {record.isPending&&<p role="status">正在读取邀请…</p>}
+    {record.error&&<p role="alert">当前账号没有可接受的邀请。</p>}
+    {invitation&&<><strong>{invitation.workspace_name}</strong><p>{invitation.inviter_name} 邀请你以{invitation.role==="admin"?"管理员":"成员"}身份加入团队。</p>
+      {invitation.status!=="pending"||expired?<div><p>{invitation.status==="accepted"?"已接受邀请":"邀请已失效"}</p>{invitation.status==="accepted"&&<Action primary disabled={enter.isPending} onClick={()=>enter.mutate()}>进入团队</Action>}</div>:<Action primary disabled={accept.isPending} onClick={()=>accept.mutate(invitation)}>接受并加入</Action>}</>}
+    <Failure error={accept.error||enter.error}/><Action onClick={close}>关闭</Action>
+  </Modal>;
 }

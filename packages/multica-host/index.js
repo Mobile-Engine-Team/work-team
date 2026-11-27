@@ -1,3 +1,4 @@
+import { devicePreferences } from './device-preferences.js'
 import { installTransport } from './transport.js'
 import { join } from 'node:path'
 import { sessionStore } from './session.js'
@@ -46,6 +47,7 @@ export function protectedRoute(ctx, path, handler) {
 export function apply(ctx) {
   const { WORKBENCH_STATE: state, WORKBENCH_CLIENT: client, WORKBENCH_API: origin } = process.env
   if (!state || !['a', 'b'].includes(client)) throw new Error('missing isolated workbench profile')
+  const device=devicePreferences(join(state,client))
   const sessions = sessionStore(state, client)
   const api = upstream(origin)
   const revoke = installTransport(ctx, new URL(origin).origin, sessions)
@@ -87,7 +89,9 @@ export function apply(ctx) {
     }
     const auth = await authorize(request)
     let result
-    if (operation === 'session.current') {
+    if(operation==='device.read') result=await device.read()
+    else if(operation==='device.save') result=await device.save(args)
+    else if (operation === 'session.current') {
       const [user, data] = await Promise.all([auth.call('GET', '/api/me'), auth.call('GET', '/api/workspaces/')])
       result = { user, workspaces: data }
     } else {

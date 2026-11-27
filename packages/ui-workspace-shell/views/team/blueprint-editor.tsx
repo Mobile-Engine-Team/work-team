@@ -1,4 +1,3 @@
-import { TopicBlueprintContext } from "./topic-blueprint-context";
 import {
   blueprintDraftSchema,
   blueprintNodeSchema,
@@ -9,26 +8,11 @@ import {
   displayProjectRequirements,
   importProjectRequirements,
 } from "./project-requirements";
+import { allProjectIssues } from "./project-issues";
 import { ProjectChangeDetails } from "./project-change-details";
 import { ProjectPlanning, ProjectStart } from "./project-planning";
 import { useEffect, useRef, useState } from "react";
-import {
-  Sparkles,
-  Play,
-  Plus,
-  Undo2,
-  Redo2,
-  Maximize,
-  LayoutGrid,
-  Link2,
-  History,
-  Trash2,
-  ZoomIn,
-  ZoomOut,
-  GitBranch,
-  Save,
-  Check,
-} from "lucide-react";
+import { Sparkles, Play, Plus, Undo2, Redo2, Maximize, LayoutGrid, Link2, History, Trash2, GitBranch, Save, Check, ZoomIn, ZoomOut } from "lucide-react";
 import { ApiError } from "@multica/core/api";
 import type {
   BlueprintDraft,
@@ -65,6 +49,21 @@ import {
   validEdge,
   type MergeConflict,
 } from "./blueprint-model";
+
+type Point = { x: number; y: number };
+type NodeDrag = { kind: "node"; id: string; position: Point; scale: number };
+type CanvasGesture = { pointerId: number; start: Point } & (
+  | NodeDrag
+  | { kind: "pan"; pan: Point }
+  | { kind: "box" }
+);
+
+function draggedPosition(drag: CanvasGesture & NodeDrag, x: number, y: number): Point {
+  return {
+    x: Math.max(0, drag.position.x + (x - drag.start.x) / drag.scale),
+    y: Math.max(0, drag.position.y + (y - drag.start.y) / drag.scale),
+  };
+}
 
 type ConflictState = {
   base: BlueprintGraph;
@@ -141,21 +140,31 @@ export function BlueprintEditor({
   const [zoom, setZoom] = useState(1),
     [pan, setPan] = useState({ x: 20, y: 20 });
   const canvas = useRef<HTMLDivElement>(null);
-  const drag = useRef<{
-    id: string;
-    x: number;
-    y: number;
-    original: BlueprintGraph;
-    pan: { x: number; y: number };
-  } | null>(null);
-  const editable = draft?.status === "active" && !!people.role && !viewVersion;
+  const gesture = useRef<CanvasGesture | null>(null);
+  const [nodePreview, setNodePreview] = useState<{id: string; position: Point} | null>(null);
+  function cancelGesture(pointerId: number) {
+    const active = gesture.current;
+    if (!active || active.pointerId !== pointerId) return;
+    gesture.current = null;
+    if (active.kind === "pan") setPan(active.pan);
+    setNodePreview(null);
+    setSelectionBox(null);
+  }
+  const canEditDraft = draft?.status === "active" && !!people.role;
+  const editable = canEditDraft && !viewVersion;
+  const displayedAuthor = viewVersion?.published_by ?? (canEditDraft ? draft.updated_by : current?.published_by);
   const unpublished =
     !!current && draft?.status === "active" && !planEqual(graph, current.graph);
   const dirty = !!draft && !graphEqual(graph, baseRef.current?.graph);
-  const displayed =
+  const visiblePlan =
     viewVersion?.graph ||
     (draft?.status === "active" ? graph : current?.graph) ||
     emptyGraph();
+  // Pointer previews never enter draft recovery, undo history or autosave.
+  const displayed = editable && nodePreview ? {
+    ...visiblePlan,
+    nodes: visiblePlan.nodes.map(n => n.id === nodePreview.id ? {...n, position: nodePreview.position} : n),
+  } : visiblePlan;
   const node = displayed.nodes.find((n) => n.id === selected),
     edge = displayed.edges.find((e) => e.id === edgeID);
   const synced = (d: BlueprintDraft) => {
@@ -225,14 +234,13 @@ export function BlueprintEditor({
       }
     }
   }, [draftQuery.data, conflict]);
-  async function save(): Promise<BlueprintDraft | null> {
+  async function save(refreshBaseline = false): Promise<BlueprintDraft | null> {
     const base = baseRef.current;
     if (
       !base ||
-      drag.current ||
       savingRef.current ||
       conflict ||
-      graphEqual(graphRef.current, base.graph)
+      (!refreshBaseline && graphEqual(graphRef.current, base.graph))
     )
       return base;
     const submitted = graphRef.current;
@@ -244,15 +252,22 @@ export function BlueprintEditor({
         project.id,
         base.revision,
         submitted,
+        refreshBaseline,
       );
       const latest = graphRef.current;
       baseRef.current = saved;
       setDraft(saved);
-      const next = graphEqual(latest, submitted)
-        ? saved.graph
-        : mergeGraphs(submitted, latest, saved.graph).graph;
-      graphRef.current = next;
-      setGraph(next);
+      const merged = mergeGraphs(submitted, latest, saved.graph);
+      if (merged.conflicts.length) {
+        setConflict({ base: submitted, local: latest, remote: saved, conflicts: merged.conflicts });
+        return null;
+      }
+      if (refreshBaseline && !graphEqual(latest, merged.graph)) {
+        setHistory(h => [...h, { before: latest, after: merged.graph }]);
+        setRedo([]);
+      }
+      graphRef.current = merged.graph;
+      setGraph(merged.graph);
       return saved;
     } catch (e) {
       if (e instanceof ApiError && e.status === 409) {
@@ -265,6 +280,10 @@ export function BlueprintEditor({
         }
         if (!remote) setError(e);
         if (remote) {
+          if (remote.revision === base.revision && remote.status === "active") {
+            setError(e);
+            return null;
+          }
           if (remote.status !== "active") {
             setRemotePublished(remote);
             return null;
@@ -295,11 +314,11 @@ export function BlueprintEditor({
     }
   }
   useEffect(() => {
-    if (!dirty || !editable || conflict || remotePublished || error || saving)
+    if (!dirty || !canEditDraft || conflict || remotePublished || error || saving)
       return;
     const timer = setTimeout(() => void save(), 700);
     return () => clearTimeout(timer);
-  }, [graph, draft, editable, conflict, remotePublished, error, saving]);
+  }, [graph, draft, canEditDraft, conflict, remotePublished, error, saving]);
   useEffect(() => {
     const handler = (event: BeforeUnloadEvent) => {
       if (
@@ -390,13 +409,32 @@ export function BlueprintEditor({
     return "—";
   }
   function change(next: BlueprintGraph) {
-    setHistory((h) => [
-      ...h.slice(-49),
-      { before: graphRef.current, after: next },
-    ]);
+    if (!editable) return;
+    const before = graphRef.current;
+    graphRef.current = next;
+    setHistory((h) => [...h.slice(-49), { before, after: next }]);
     setRedo([]);
     setGraph(next);
     setError(null);
+  }
+  function selectNode(id: string) {
+    setMultiSelected([]);
+    setEdgeID("");
+    setSelected(id);
+  }
+  function selectNewNode(n: BlueprintNode) {
+    selectNode(n.id);
+    if (!canvas.current) return;
+    const left = pan.x + n.position.x * zoom;
+    const top = pan.y + n.position.y * zoom;
+    if (left < 0 || top < 0 || left + 260 * zoom > canvas.current.clientWidth || top + 140 * zoom > canvas.current.clientHeight) {
+      setPan({x:40 - n.position.x * zoom, y:40 - n.position.y * zoom});
+    }
+  }
+  function selectEdge(id: string) {
+    setMultiSelected([]);
+    setSelected("");
+    setEdgeID(id);
   }
   function patchNode(patch: Partial<BlueprintNode>) {
     change({
@@ -427,6 +465,7 @@ export function BlueprintEditor({
       setError(new Error(text("project.undoConflict")));
   }
   function addEdge(from: string, to: string) {
+    if (!editable) return;
     if (!validEdge(graph, from, to)) {
       setError(new Error(text("project.invalidEdge")));
       return;
@@ -484,20 +523,7 @@ export function BlueprintEditor({
     }
     if (mode === "refresh") {
       if (!window.confirm(text("project.refreshConfirm"))) return;
-      const base = baseRef.current;
-      if (base) {
-        const next = await teamApi.saveBlueprintDraft(
-          project.id,
-          base.revision,
-          graphRef.current,
-          true,
-        );
-        setHistory((h) => [
-          ...h,
-          { before: graphRef.current, after: next.graph },
-        ]);
-        synced(next);
-      }
+      await save(true);
     }
     if (mode === "edit") {
       const response = await teamApi.getBlueprintDraft(project.id, true);
@@ -529,39 +555,41 @@ export function BlueprintEditor({
     }
   });
   const existing = useTeamQuery(
-    ["issues", "blueprint-candidates", search],
-    () => teamApi.listIssues({ q: search, limit: 100 }),
+    ["issues", "blueprint-candidates", project.id],
+    () => allProjectIssues(project.id, {includeUnassigned:true}),
     adding,
   );
-  const candidates = (existing.data?.issues || []).filter(
-    (i) =>
-      (!i.project_id || i.project_id === project.id) &&
-      !graph.nodes.some((n) => n.issue_id === i.id),
-  );
+  const includedIds = new Set(graph.nodes.map(n => n.issue_id));
+  const term = search.trim().toLowerCase();
+  const candidates = (existing.data || []).filter(i => !includedIds.has(i.id) &&
+    `${i.title} ${i.identifier}`.toLowerCase().includes(term));
   const include = useTeamAction(async (i: Issue) => {
     const topics = await teamApi.listIssueProjectTopics(i.id);
-    const adopted = topics.topics.flatMap((t) =>
-      t.adopted_versions.map((v) => v.content),
-    );
+    const currentGraph = graphRef.current;
+    const alreadyIncluded = currentGraph.nodes.find(n => n.issue_id === i.id);
+    if (alreadyIncluded) {
+      selectNewNode(alreadyIncluded);
+      return;
+    }
+    const adopted = topics.topics.flatMap(t => t.adopted_versions.map(v => v.content));
+    const contract = {
+      title:i.title, requirements:importProjectRequirements(i.description || "", adopted),
+      assignee_type:i.assignee_type || "", assignee_id:i.assignee_id || "",
+      due_date:i.due_date?.slice(0,10) || "",
+    };
     const n = {
-      ...newNode(i.title),
-      issue_id: i.id,
-      requirements: importProjectRequirements(i.description || "", adopted),
-      assignee_type: i.assignee_type || "",
-      assignee_id: i.assignee_id || "",
-      due_date: i.due_date || "",
-      position: {
-        x: 80 + (graph.nodes.length % 4) * 300,
-        y: 80 + Math.floor(graph.nodes.length / 4) * 170,
+      ...newNode(i.title), ...contract, issue_id:i.id,
+      baseline:{...contract, description:i.description || "", status:i.status, project_id:i.project_id || ""},
+      position:{
+        x:80 + (currentGraph.nodes.length % 4) * 300,
+        y:80 + Math.floor(currentGraph.nodes.length / 4) * 170,
       },
     };
-    const currentGraph = graphRef.current;
-    change({ ...currentGraph, nodes: [...currentGraph.nodes, n] });
-    setSelected(n.id);
+    change({...currentGraph, nodes:[...currentGraph.nodes, n]});
+    selectNewNode(n);
   });
   return (
     <section className="mw-blueprint">
-      <TopicBlueprintContext projectID={project.id} />
       <div className="project-plan-heading">
         <div>
           <span className="project-eyebrow">{text("project.blueprint")}</span>
@@ -584,7 +612,7 @@ export function BlueprintEditor({
                   : dirty
                     ? text("project.unsaved")
                     : text("project.saved")}
-            {draft && ` · ${people.name(draft.updated_by)}`}
+            {displayedAuthor && ` · ${people.name(displayedAuthor)}`}
           </span>
         </div>
         <div className="project-actions">
@@ -664,8 +692,7 @@ export function BlueprintEditor({
                   y: 80 + Math.floor(graph.nodes.length / 4) * 170,
                 };
                 change({ ...graph, nodes: [...graph.nodes, n] });
-                setSelected(n.id);
-                setEdgeID("");
+                selectNewNode(n);
               }}
             >
               <Plus size={15} />
@@ -729,8 +756,7 @@ export function BlueprintEditor({
           onChange={(id) => {
             const n = displayed.nodes.find((n) => n.id === id);
             if (!n) return;
-            setSelected(id);
-            setEdgeID("");
+            selectNode(id);
             setZoom(0.9);
             setPan({ x: 40 - n.position.x * 0.9, y: 40 - n.position.y * 0.9 });
           }}
@@ -788,80 +814,60 @@ export function BlueprintEditor({
               undoChange(!e.shiftKey);
             }
           }}
+          onPointerCancel={e => cancelGesture(e.pointerId)}
+          onLostPointerCapture={e => cancelGesture(e.pointerId)}
           onPointerDown={(e) => {
-            if (e.target !== e.currentTarget) return;
+            if (e.button !== 0 || gesture.current || e.target !== e.currentTarget) return;
             e.currentTarget.setPointerCapture(e.pointerId);
+            const start = { x:e.clientX, y:e.clientY };
             if (e.shiftKey || boxSelect) {
+              gesture.current = { kind:"box", pointerId:e.pointerId, start };
               const rect = e.currentTarget.getBoundingClientRect();
-              setSelectionBox({
-                x: e.clientX - rect.left,
-                y: e.clientY - rect.top,
-                endX: e.clientX - rect.left,
-                endY: e.clientY - rect.top,
-              });
-              return;
+              const x = start.x - rect.left, y = start.y - rect.top;
+              setSelectionBox({ x, y, endX:x, endY:y });
+            } else {
+              gesture.current = { kind:"pan", pointerId:e.pointerId, start, pan };
             }
-            setMultiSelected([]);
-            drag.current = {
-              id: "",
-              x: e.clientX,
-              y: e.clientY,
-              original: graph,
-              pan,
-            };
           }}
           onPointerMove={(e) => {
-            if (selectionBox) {
+            const active = gesture.current;
+            if (!active || active.pointerId !== e.pointerId) return;
+            if (active.kind === "node") {
+              setNodePreview({ id:active.id, position:draggedPosition(active,e.clientX,e.clientY) });
+            } else if (active.kind === "pan") {
+              setPan({
+                x:active.pan.x + e.clientX - active.start.x,
+                y:active.pan.y + e.clientY - active.start.y,
+              });
+            } else {
               const rect = e.currentTarget.getBoundingClientRect();
               setSelectionBox({
-                ...selectionBox,
-                endX: e.clientX - rect.left,
-                endY: e.clientY - rect.top,
+                x:active.start.x - rect.left, y:active.start.y - rect.top,
+                endX:e.clientX - rect.left, endY:e.clientY - rect.top,
               });
-              return;
-            }
-            const d = drag.current;
-            if (!d) return;
-            if (!d.id) {
-              setPan({
-                x: d.pan.x + e.clientX - d.x,
-                y: d.pan.y + e.clientY - d.y,
-              });
-              return;
-            }
-            const n = d.original.nodes.find((n) => n.id === d.id);
-            if (n) {
-              const next = {
-                ...graphRef.current,
-                nodes: graphRef.current.nodes.map((v) =>
-                  v.id === d.id
-                    ? {
-                        ...v,
-                        position: {
-                          x: Math.max(
-                            0,
-                            n.position.x + (e.clientX - d.x) / zoom,
-                          ),
-                          y: Math.max(
-                            0,
-                            n.position.y + (e.clientY - d.y) / zoom,
-                          ),
-                        },
-                      }
-                    : v,
-                ),
-              };
-              graphRef.current = next;
-              setGraph(next);
             }
           }}
           onPointerUp={(e) => {
-            if (selectionBox) {
+            const active = gesture.current;
+            if (!active || active.pointerId !== e.pointerId) return;
+            gesture.current = null;
+            if (active.kind === "node") {
+              setNodePreview(null);
+              const position = draggedPosition(active,e.clientX,e.clientY);
+              if (position.x === active.position.x && position.y === active.position.y) return;
+              const latest = graphRef.current;
+              if (latest.nodes.some(n => n.id === active.id)) {
+                change({...latest, nodes:latest.nodes.map(n => n.id === active.id ? {...n,position} : n)});
+              }
+            } else if (active.kind === "pan") {
+              if (active.start.x === e.clientX && active.start.y === e.clientY) {
+                selectNode("");
+              }
+            } else {
               const rect = e.currentTarget.getBoundingClientRect();
               const box = {
-                ...selectionBox,
-                endX: e.clientX - rect.left,
-                endY: e.clientY - rect.top,
+                x:active.start.x - rect.left, y:active.start.y - rect.top,
+                endX:e.clientX - rect.left, endY:e.clientY - rect.top,
               };
               const ids = displayed.nodes
                 .filter((n) => {
@@ -877,20 +883,10 @@ export function BlueprintEditor({
                 .map((n) => n.id);
               setMultiSelected(ids);
               setSelected(ids[0] || "");
+              setEdgeID("");
               setSelectionBox(null);
               setBoxSelect(false);
-              return;
             }
-            const d = drag.current;
-            if (d?.id && !graphEqual(d.original, graphRef.current)) {
-              setHistory((h) => [
-                ...h,
-                { before: d.original, after: graphRef.current },
-              ]);
-              setRedo([]);
-            }
-            drag.current = null;
-            if (d?.id) setGraph((g) => ({ ...g }));
           }}
         >
           {selectionBox && (
@@ -943,10 +939,15 @@ export function BlueprintEditor({
                   <g
                     key={e.id}
                     className={edgeID === e.id ? "selected" : ""}
-                    onClick={() => {
-                      setEdgeID(e.id);
-                      setSelected("");
+                    role="button"
+                    tabIndex={0}
+                    aria-label={`${a.title} → ${b.title}`}
+                    onKeyDown={event => {
+                      if (event.key !== "Enter" && event.key !== " ") return;
+                      event.preventDefault();
+                      selectEdge(e.id);
                     }}
+                    onClick={() => selectEdge(e.id)}
                   >
                     <path
                       className="edge-hit"
@@ -971,44 +972,34 @@ export function BlueprintEditor({
                   tabIndex={0}
                   onClick={(event) => {
                     if (event.shiftKey) {
-                      setMultiSelected((ids) =>
-                        ids.includes(n.id)
-                          ? ids.filter((id) => id !== n.id)
-                          : [...ids, n.id],
-                      );
-                      setSelected(n.id);
+                      const ids = multiSelected.length ? multiSelected : selected ? [selected] : [];
+                      const next = ids.includes(n.id) ? ids.filter(id => id !== n.id) : [...ids,n.id];
+                      setMultiSelected(next);
+                      setSelected(next.at(-1) || "");
+                      setEdgeID("");
                       return;
                     }
-                    setMultiSelected([]);
-                    if (connectFrom) {
-                      addEdge(connectFrom, n.id);
-                      return;
-                    }
-                    setSelected(n.id);
-                    setEdgeID("");
+                    if (connectFrom) addEdge(connectFrom, n.id);
+                    else selectNode(n.id);
                   }}
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") {
-                      setSelected(n.id);
-                      setEdgeID("");
-                    }
+                    if (e.target !== e.currentTarget || e.key !== "Enter") return;
+                    e.preventDefault();
+                    if (connectFrom) addEdge(connectFrom, n.id);
+                    else selectNode(n.id);
                   }}
                   onPointerDown={(e) => {
                     if (
-                      !editable ||
-                      e.shiftKey ||
-                      connectFrom ||
-                      e.target instanceof HTMLButtonElement
+                      !editable || e.button !== 0 || gesture.current ||
+                      e.shiftKey || connectFrom ||
+                      (e.target instanceof Element && e.target.closest("button"))
                     )
                       return;
                     e.stopPropagation();
                     e.currentTarget.setPointerCapture(e.pointerId);
-                    drag.current = {
-                      id: n.id,
-                      x: e.clientX,
-                      y: e.clientY,
-                      original: graphRef.current,
-                      pan,
+                    gesture.current = {
+                      kind:"node", pointerId:e.pointerId, id:n.id,
+                      start:{x:e.clientX,y:e.clientY}, position:n.position, scale:zoom,
                     };
                   }}
                 >
@@ -1050,7 +1041,7 @@ export function BlueprintEditor({
             <>
               <div className="project-inspector-title">
                 <h3>{text("project.taskDetails")}</h3>
-                {node.issue_id && (
+                {node.issue_id && (!viewVersion || issues.some(issue => issue.id === node.issue_id)) && (
                   <Action onClick={() => onOpen(node.issue_id)}>
                     {text("open")}
                   </Action>
@@ -1119,10 +1110,7 @@ export function BlueprintEditor({
                   <button
                     key={e.id}
                     className="project-predecessor"
-                    onClick={() => {
-                      setSelected("");
-                      setEdgeID(e.id);
-                    }}
+                    onClick={() => selectEdge(e.id)}
                   >
                     {displayed.nodes.find((n) => n.id === e.from)?.title} →{" "}
                     {node.title}
@@ -1149,7 +1137,7 @@ export function BlueprintEditor({
                         (e) => e.from !== node.id && e.to !== node.id,
                       ),
                     });
-                    setSelected("");
+                    selectNode("");
                   }}
                 >
                   <Trash2 size={15} />
@@ -1235,124 +1223,137 @@ export function BlueprintEditor({
       )}
       {adding && (
         <Modal
+          className="mw-blueprint-dialog mw-blueprint-candidates"
           title={text("project.includeExisting")}
           onClose={() => {
             if (!include.isPending) setAdding(false);
           }}
         >
-          <Input
-            placeholder={text("search")}
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-          />
-          <Failure error={existing.error || include.error} />
-          <div className="project-candidate-list">
-            {candidates.map((i) => (
-              <button
-                key={i.id}
-                disabled={include.isPending}
-                onClick={() => include.mutate(i)}
-              >
-                <span>
-                  <strong>{i.title}</strong>
-                  <small>
-                    {i.identifier} ·{" "}
-                    {i.project_id ? project.title : text("project.noProject")}
-                  </small>
-                </span>
-                <Plus size={17} />
-              </button>
-            ))}
-            {!candidates.length && (
-              <Empty>{text("project.noCandidates")}</Empty>
-            )}
+          <div className="mw-blueprint-dialog-body">
+            <Input
+              autoFocus
+              aria-label={text("search")}
+              placeholder={text("search")}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+            />
+            <Failure error={existing.error || include.error} />
+            <div className="project-candidate-list">
+              {candidates.map((i) => (
+                <button
+                  key={i.id}
+                  disabled={include.isPending}
+                  onClick={() => include.mutate(i)}
+                >
+                  <span>
+                    <strong>{i.title}</strong>
+                    <small>
+                      {i.identifier} ·{" "}
+                      {i.project_id ? project.title : text("project.noProject")}
+                    </small>
+                  </span>
+                  <Plus size={17} />
+                </button>
+              ))}
+              {existing.isPending && <Empty>{text("loading")}</Empty>}
+              {existing.isSuccess && !candidates.length && <Empty>{text("project.noCandidates")}</Empty>}
+            </div>
           </div>
         </Modal>
       )}
       {preview && (
         <Modal
           wide
+          focusClose
+          className="mw-blueprint-dialog mw-blueprint-preview"
           title={`${text("project.reviewPublish")} V${preview.version}`}
           onClose={() => setPreview(null)}
         >
-          <p>{text("project.publishHint")}</p>
-          <div className="project-change-list">
-            {preview.changes.map((c, i) => (
-              <div key={`${c.node_id}-${i}`}>
-                <span className={`project-change-${c.kind}`}>
-                  {text(`project.change.${c.kind}`)}
-                </span>
-                <strong>{c.title}</strong>
-                <ProjectChangeDetails
-                  before={current?.graph || emptyGraph()}
-                  after={preview.graph}
-                  id={c.node_id}
-                  name={people.name}
-                />
-              </div>
-            ))}
+          <div className="mw-blueprint-dialog-body">
+            <p>{text("project.publishHint")}</p>
+            <div className="project-change-list">
+              {preview.changes.map((c, i) => (
+                <div key={`${c.node_id}-${i}`}>
+                  <span className={`project-change-${c.kind}`}>
+                    {text(`project.change.${c.kind}`)}
+                  </span>
+                  <strong>{c.title}</strong>
+                  <ProjectChangeDetails
+                    before={current?.graph || emptyGraph()}
+                    after={preview.graph}
+                    id={c.node_id}
+                    name={people.name}
+                  />
+                </div>
+              ))}
+            </div>
+            <Field label={text("project.publishReason")}>
+              <Textarea
+                value={reason}
+                onChange={(e) => setReason(e.target.value)}
+              />
+            </Field>
+            <PlanFailure error={action.error} />
+            <Action
+              primary
+              disabled={action.isPending}
+              onClick={() => action.mutate("publish")}
+            >
+              {text("project.publish")} V{preview.version}
+            </Action>
           </div>
-          <Field label={text("project.publishReason")}>
-            <Textarea
-              value={reason}
-              onChange={(e) => setReason(e.target.value)}
-            />
-          </Field>
-          <PlanFailure error={action.error} />
-          <Action
-            primary
-            disabled={action.isPending}
-            onClick={() => action.mutate("publish")}
-          >
-            {text("project.publish")} V{preview.version}
-          </Action>
         </Modal>
       )}
       {showHistory && (
         <Modal
           wide
+          className="mw-blueprint-dialog mw-blueprint-history"
           title={text("project.history")}
           onClose={() => setShowHistory(false)}
         >
-          {versions.map((v, i) => (
-            <article className="project-version" key={v.id}>
-              <div>
-                <h3>
-                  V{v.number} · {v.reason || text("project.planPublished")}
-                </h3>
-                <small>
-                  {people.name(v.published_by)} ·{" "}
-                  {new Date(v.created_at).toLocaleString()}
-                </small>
-              </div>
-              <Action
-                onClick={() => {
-                  setViewVersion(v);
-                  setShowHistory(false);
-                }}
-              >
-                {text("project.viewVersion")}
-              </Action>
-              <ul>
-                {describeChanges(
-                  versions[i + 1]?.graph || emptyGraph(),
-                  v.graph,
-                ).map((c, j) => (
-                  <li key={j}>
-                    {text(`project.change.${c.kind}`)} ·{" "}
-                    {c.title || text("project.dependency")}
-                    <ProjectChangeDetails
-                      before={versions[i + 1]?.graph || emptyGraph()}
-                      after={v.graph}
-                      id={c.id}
-                      name={people.name}
-                    />
-                  </li>
-                ))}
-              </ul>
-            </article>
-          ))}
-          {!versions.length && <Empty>{text("project.noVersions")}</Empty>}
+          <div className="mw-blueprint-dialog-body">
+            {versions.map((v, i) => (
+              <article className="project-version" key={v.id}>
+                <div>
+                  <h3>
+                    V{v.number} · {v.reason || text("project.planPublished")}
+                  </h3>
+                  <small>
+                    {people.name(v.published_by)} ·{" "}
+                    {new Date(v.created_at).toLocaleString()}
+                  </small>
+                </div>
+                <Action
+                  onClick={() => {
+                    setConnectFrom("");
+                    selectNode("");
+                    setViewVersion(v);
+                    setShowHistory(false);
+                  }}
+                >
+                  {text("project.viewVersion")}
+                </Action>
+                <ul>
+                  {describeChanges(
+                    versions[i + 1]?.graph || emptyGraph(),
+                    v.graph,
+                  ).map((c, j) => (
+                    <li key={j}>
+                      {text(`project.change.${c.kind}`)} ·{" "}
+                      {c.title || text("project.dependency")}
+                      <ProjectChangeDetails
+                        before={versions[i + 1]?.graph || emptyGraph()}
+                        after={v.graph}
+                        id={c.id}
+                        name={people.name}
+                      />
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+            {!versions.length && <Empty>{text("project.noVersions")}</Empty>}
+          </div>
         </Modal>
       )}
       {conflict && (

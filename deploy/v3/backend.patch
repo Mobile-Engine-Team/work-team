@@ -1,0 +1,2001 @@
+diff --git a/server/cmd/server/main.go b/server/cmd/server/main.go
+index 3d985ab..5605cd8 100644
+--- a/server/cmd/server/main.go
++++ b/server/cmd/server/main.go
+@@ -729,6 +729,11 @@ func main() {
+ 	// Start background workers.
+ 	sweepCtx, sweepCancel := context.WithCancel(context.Background())
+ 	go h.WorkbenchPi.Warmup(sweepCtx)
++	go h.RunRoomWork(sweepCtx)
++	go h.RunRoomAgents(sweepCtx)
++	go h.RunWorkPlanner(sweepCtx)
++	go h.RunBuiltinTasks(sweepCtx)
++	go h.RunMemberReminders(sweepCtx)
+ 	autopilotCtx, autopilotCancel := context.WithCancel(context.Background())
+ 	telemetryWorker := selfhosttelemetry.New(pool, version, telemetryConfig, slog.Default())
+ 	// Reuse the router's services here. In particular, the router wires the
+diff --git a/server/cmd/server/router.go b/server/cmd/server/router.go
+index bb8bdc5..1be7b48 100644
+--- a/server/cmd/server/router.go
++++ b/server/cmd/server/router.go
+@@ -1534,7 +1534,7 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
+ 	// static route instead of hitting the global frame-ancestors 'none' CSP.
+ 	// See MUL-3821 / #4477.
+ 	if _, ok := store.(*storage.LocalStorage); ok {
+-		r.Get("/uploads/*", h.ServeLocalUpload)
++		r.With(middleware.Auth(queries, patCache, cloudPATVerifier, cfSigner)).Get("/uploads/*", h.ServeLocalUpload)
+ 	}
+ 
+ 	// Capability-authenticated attachment download (MUL-5292). Public by
+@@ -1546,7 +1546,7 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
+ 	// /api/attachments/{id} after that request's membership check passed.
+ 	// The authenticated /api/attachments/{id}/download route below is
+ 	// unchanged — this one is purely additive.
+-	r.Get("/api/attachments/{id}/signed-download", h.DownloadAttachmentWithCapability)
++	r.With(middleware.Auth(queries, patCache, cloudPATVerifier, cfSigner)).Get("/api/attachments/{id}/signed-download", h.DownloadAttachment)
+ 
+ 	// Avatar serving. Public for the same reason as the capability download
+ 	// above: the auth cookie is SameSite=Strict, so an auth-gated URL cannot
+@@ -1992,6 +1992,7 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
+ 		// User-scoped invitation routes (no workspace context required)
+ 		r.Get("/api/invitations", h.ListMyInvitations)
+ 		r.Get("/api/invitations/{id}", h.GetMyInvitation)
++		r.Post("/api/invitations/join-link", h.JoinWorkspaceLink)
+ 		r.Post("/api/invitations/{id}/accept", h.AcceptInvitation)
+ 		r.Post("/api/invitations/{id}/decline", h.DeclineInvitation)
+ 		r.Post("/api/share-links/join", h.JoinByShareLink)
+@@ -2230,15 +2231,48 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
+ 				})
+ 			})
+ 
++			r.Get("/api/workbench/join-links", h.WorkspaceLinks)
++			r.Post("/api/workbench/join-links", h.WorkspaceLinks)
++			r.Put("/api/workbench/join-links/{id}", h.WorkspaceLinks)
++			r.Delete("/api/workbench/join-links/{id}", h.WorkspaceLinks)
++			r.Post("/api/workbench/room-messages/{id}/retry", h.RetryRoomWork)
++			r.Post("/api/workbench/suggestions", h.WorkSuggestion)
++			r.Get("/api/workbench/preferences", h.MemberPreferences)
++			r.Put("/api/workbench/preferences", h.MemberPreferences)
++			r.Get("/api/workbench/issues/{id}/followup", h.IssueFollowup)
++			r.Post("/api/workbench/issues/{id}/followup", h.IssueFollowup)
++			r.Put("/api/workbench/issues/{id}/labels", h.ReplaceTaskLabels)
++			r.Get("/api/workbench/search", h.SearchWorkspace)
++			r.Post("/api/workbench/squad-room/{id}", h.SquadRoom)
++			r.Get("/api/workbench/input-files/{id}", h.WorkInputFile)
++			r.Get("/api/workbench/files", h.WorkspaceFiles)
++			r.Get("/api/workbench/artifacts/{id}", h.WorkArtifact)
++			r.Post("/api/workbench/side-work", h.SideWork)
++			r.Get("/api/workbench/navigation", h.Navigation)
++			r.Get("/api/workbench/runtime-load", h.RuntimeLoad)
++			r.Get("/api/workbench/model-readiness", h.WorkModelReadiness)
++			r.Get("/api/workbench/rooms", h.RoomList)
++			r.Post("/api/workbench/rooms", h.CreateRoom)
++			r.Get("/api/workbench/rooms/{id}", h.RoomDetail)
++			r.Get("/api/workbench/rooms/{id}/mentions", h.RoomMentions)
++			r.Get("/api/workbench/rooms/{id}/search", h.SearchRoom)
++			r.Post("/api/workbench/rooms/{id}/read", h.ReadRoom)
++			r.Put("/api/workbench/rooms/{id}", h.RoomUpdate)
++			r.Post("/api/workbench/rooms/{id}/messages", h.RoomPost)
++			r.Get("/api/workbench/room-files/{id}", h.RoomFile)
++			r.Post("/api/workbench/room-messages/{id}/task", h.TaskFromMessage)
++			r.Get("/api/workbench/issue-source/{id}", h.IssueSource)
+ 			r.Get("/api/workbench", h.WorkbenchState)
+ 			r.Post("/api/workbench/conversations", h.WorkbenchConversation)
+ 			r.Post("/api/workbench/messages", h.WorkbenchSend)
+ 			r.Get("/api/workbench/messages/{id}", h.WorkbenchMessage)
++			r.Post("/api/workbench/messages/{id}/task", h.ConfirmWorkTask)
+ 			r.Get("/api/workbench/messages/{id}/events", h.WorkbenchEvents)
+ 			r.Post("/api/workbench/messages/{id}/cancel", h.WorkbenchCancel)
+ 			r.Post("/api/workbench/pins", h.WorkbenchPin)
+ 			r.Delete("/api/workbench/pins/{id}", h.WorkbenchPin)
+ 			r.Put("/api/workbench/pins/{id}", h.WorkbenchPin)
++			r.Get("/api/workbench/pins/{id}/versions", h.PinVersions)
+ 			r.Post("/api/workbench/pins/{id}/refresh", h.WorkbenchRefresh)
+ 
+ 			r.Post("/api/model-probes", h.ModelProbe)
+@@ -2262,6 +2296,7 @@ func NewRouterWithOptions(pool *pgxpool.Pool, hub *realtime.Hub, bus *events.Bus
+ 					r.Post("/planning-requests", h.ProjectPlanning)
+ 					r.Post("/planning-requests/{requestId}/cancel", h.CancelProjectPlanning)
+ 					r.Post("/blueprint/draft/apply-suggestion", h.ApplyProjectSuggestion)
++					r.Get("/receipts", h.ProjectReceipts)
+ 					r.Get("/start-tasks", h.StartProjectTasks)
+ 					r.Post("/start-tasks", h.StartProjectTasks)
+ 					r.Get("/topics/{topicId}/followups", h.ProjectTopicFollowups)
+diff --git a/server/internal/handler/agent.go b/server/internal/handler/agent.go
+index e38bd66..836d80f 100644
+--- a/server/internal/handler/agent.go
++++ b/server/internal/handler/agent.go
+@@ -1535,6 +1535,10 @@ func (h *Handler) CreateAgent(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 
++	if !validAgentEnvChanges(nil, req.CustomEnv) {
++		writeError(w, http.StatusUnprocessableEntity, "无效的环境变量名")
++		return
++	}
+ 	if err := agent.ValidateCustomArgs(runtime.Provider, req.CustomArgs); err != nil {
+ 		writeError(w, http.StatusBadRequest, err.Error())
+ 		return
+@@ -1999,6 +2003,10 @@ func (h *Handler) UpdateAgent(w http.ResponseWriter, r *http.Request) {
+ 	if !ok {
+ 		return
+ 	}
++	if existing.SystemKey.String == "mobilework" {
++		writeError(w, 403, "Work 使用服务端预配")
++		return
++	}
+ 	if !h.canManageAgent(w, r, existing) {
+ 		return
+ 	}
+@@ -2801,24 +2809,56 @@ func (h *Handler) ArchiveAgent(w http.ResponseWriter, r *http.Request) {
+ 	}
+ 
+ 	userID := requestUserID(r)
+-	archived, err := h.Queries.ArchiveAgent(r.Context(), db.ArchiveAgentParams{
+-		ID:         agent.ID,
+-		ArchivedBy: parseUUID(userID),
+-	})
++	ctx := r.Context()
++	tx, err := h.TxStarter.Begin(ctx)
+ 	if err != nil {
+-		slog.Warn("archive agent failed", append(logger.RequestAttrs(r), "error", err, "agent_id", id)...)
+-		writeError(w, http.StatusInternalServerError, "failed to archive agent")
++		writeError(w, http.StatusInternalServerError, "failed to begin archive")
+ 		return
+ 	}
+-
+-	// Cancel all pending/active tasks for this agent. The cancel and its
+-	// delegated-failure settlement commit together — a settlement issued after
+-	// the cancel committed could never be repaired. Chat tasks publish
+-	// task:cancelled after commit for chat lifecycle consumers; the aggregate
+-	// agent:archived event below remains unchanged.
+-	if _, err := h.TaskService.CancelTasksForArchivedAgent(r.Context(), agent.ID); err != nil {
+-		slog.Warn("cancel agent tasks on archive failed", append(logger.RequestAttrs(r), "error", err, "agent_id", id)...)
++	defer tx.Rollback(ctx)
++	qtx := h.Queries.WithTx(tx)
++	locked, err := qtx.GetAgentForUpdate(ctx, agent.ID)
++	if err != nil {
++		writeError(w, http.StatusInternalServerError, "failed to lock agent")
++		return
++	}
++	if locked.OwnerID != agent.OwnerID {
++		writeError(w, http.StatusConflict, "agent ownership changed; reload before archiving")
++		return
++	}
++	if locked.ArchivedAt.Valid {
++		writeError(w, http.StatusConflict, "agent is already archived")
++		return
++	}
++	var leadsSquad bool
++	err = tx.QueryRow(ctx, `SELECT EXISTS(SELECT 1 FROM squad
++		WHERE workspace_id=$1 AND leader_id=$2 AND archived_at IS NULL)`, locked.WorkspaceID, locked.ID).Scan(&leadsSquad)
++	if err != nil {
++		writeError(w, http.StatusInternalServerError, "failed to check active squads")
++		return
++	}
++	if leadsSquad {
++		writeError(w, http.StatusConflict, "请先更换小队队长")
++		return
++	}
++	archived, err := qtx.ArchiveAgent(ctx, db.ArchiveAgentParams{ID: locked.ID, ArchivedBy: parseUUID(userID)})
++	if err != nil {
++		writeError(w, http.StatusInternalServerError, "failed to archive agent and assigned issues")
++		return
++	}
++	cancelled, err := qtx.CancelAgentTasksByAgent(ctx, locked.ID)
++	if err == nil {
++		err = service.SettleTerminalTaskState(ctx, qtx, cancelled...)
++	}
++	if err == nil {
++		err = tx.Commit(ctx)
++	}
++	if err != nil {
++		slog.Warn("archive agent transaction failed", append(logger.RequestAttrs(r), "error", err, "agent_id", id)...)
++		writeError(w, http.StatusInternalServerError, "failed to settle archived agent tasks")
++		return
+ 	}
++	h.TaskService.NotifyArchivedAgentCancellations(ctx, cancelled)
+ 
+ 	wsID := uuidToString(archived.WorkspaceID)
+ 	slog.Info("agent archived", append(logger.RequestAttrs(r), "agent_id", id, "workspace_id", wsID)...)
+diff --git a/server/internal/handler/agent_env.go b/server/internal/handler/agent_env.go
+index 6661ace..bbff894 100644
+--- a/server/internal/handler/agent_env.go
++++ b/server/internal/handler/agent_env.go
+@@ -4,6 +4,7 @@ import (
+ 	"encoding/json"
+ 	"log/slog"
+ 	"net/http"
++	"regexp"
+ 	"sort"
+ 
+ 	"github.com/go-chi/chi/v5"
+@@ -15,6 +16,21 @@ import (
+ 	"github.com/multica-ai/multica/server/pkg/protocol"
+ )
+ 
++var agentEnvKey = regexp.MustCompile(`^[A-Za-z_][A-Za-z0-9_]*$`)
++
++// Let owners keep or remove unchanged historical keys when updating other variables.
++func validAgentEnvChanges(current, next map[string]string) bool {
++	for name, value := range next {
++		if old, ok := current[name]; ok && old == value {
++			continue
++		}
++		if !agentEnvKey.MatchString(name) {
++			return false
++		}
++	}
++	return true
++}
++
+ // envSentinel is the masked marker the UI / clients see in place of a
+ // real value. A PUT body carrying it for a given key means "do not
+ // overwrite the existing value for that key" — a defense-in-depth
+@@ -81,6 +97,10 @@ func (h *Handler) authorizeAgentEnv(w http.ResponseWriter, r *http.Request) (db.
+ 		return db.Agent{}, db.Member{}, false
+ 	}
+ 
++	if agent.SystemKey.String == "mobilework" {
++		writeError(w, 403, "Work 使用服务端预配")
++		return db.Agent{}, db.Member{}, false
++	}
+ 	workspaceID := uuidToString(agent.WorkspaceID)
+ 	userID := requestUserID(r)
+ 
+@@ -204,6 +224,10 @@ func (h *Handler) UpdateAgentEnv(w http.ResponseWriter, r *http.Request) {
+ 
+ 	existing := unmarshalCustomEnv(agent)
+ 	merged, audit := mergeAgentEnv(existing, req.CustomEnv)
++	if !validAgentEnvChanges(existing, merged) {
++		writeError(w, http.StatusUnprocessableEntity, "环境变量名只能包含字母、数字和下划线，且不能以数字开头")
++		return
++	}
+ 	if len(merged) > 0 && h.rejectQoderOverrides(w, r, agent, qoderOverrides{customEnv: len(merged)}) {
+ 		return
+ 	}
+diff --git a/server/internal/handler/chat.go b/server/internal/handler/chat.go
+index e3e0eff..6858587 100644
+--- a/server/internal/handler/chat.go
++++ b/server/internal/handler/chat.go
+@@ -812,6 +812,7 @@ func (h *Handler) DeleteChatSession(w http.ResponseWriter, r *http.Request) {
+ // Chat Messages
+ 
+ type SendChatMessageRequest struct {
++	RequestID     string   `json:"request_id"`
+ 	Content       string   `json:"content"`
+ 	AttachmentIDs []string `json:"attachment_ids"`
+ }
+@@ -952,9 +953,18 @@ func (h *Handler) SendChatMessage(w http.ResponseWriter, r *http.Request) {
+ 	// creator-only), so they are the task initiator and the run's originator —
+ 	// surfaced to the agent under `## On Behalf Of`. actorType/actorID were
+ 	// resolved above for the invoke gate.
+-	sent, err := h.TaskService.SendDirectChatMessage(r.Context(), session, agent, parseUUID(userID), req.Content, attachmentIDs, actorType, parseUUID(actorID))
++	var key pgtype.UUID
++	if req.RequestID != "" {
++		key, ok = parseUUIDOrBadRequest(w, req.RequestID, "request_id")
++		if !ok {
++			return
++		}
++	}
++	sent, err := h.TaskService.SendDirectChatMessage(r.Context(), session, agent, parseUUID(userID), req.Content, attachmentIDs, actorType, parseUUID(actorID), key)
+ 	if err != nil {
+ 		switch {
++		case errors.Is(err, service.ErrChatRequestChanged):
++			writeError(w, 409, err.Error())
+ 		case errors.Is(err, service.ErrChatSessionArchived):
+ 			writeError(w, http.StatusConflict, "chat session is archived")
+ 		case errors.Is(err, service.ErrChatTaskAgentArchived):
+@@ -967,6 +977,14 @@ func (h *Handler) SendChatMessage(w http.ResponseWriter, r *http.Request) {
+ 		}
+ 		return
+ 	}
++	if sent.Replayed {
++		ids := []string{}
++		for _, id := range sent.BoundAttachmentIDs {
++			ids = append(ids, uuidToString(id))
++		}
++		writeJSON(w, 200, map[string]any{"message_id": uuidToString(sent.Message.ID), "task_id": uuidToString(sent.Task.ID), "supports_queue": true, "queued": sent.Queued, "created_at": timestampToString(sent.Task.CreatedAt), "attachment_ids": ids})
++		return
++	}
+ 	msg := sent.Message
+ 	task := sent.Task
+ 	currentTitle := session.Title
+diff --git a/server/internal/handler/comment.go b/server/internal/handler/comment.go
+index 06aceaf..5b6bdca 100644
+--- a/server/internal/handler/comment.go
++++ b/server/internal/handler/comment.go
+@@ -1439,6 +1439,7 @@ func keepRootConnected(byID map[string]db.Comment) []db.Comment {
+ }
+ 
+ type CreateCommentRequest struct {
++	SuppressRun      bool     `json:"suppress_run"`
+ 	RequestID        string   `json:"request_id"`
+ 	Content          string   `json:"content"`
+ 	Type             string   `json:"type"`
+@@ -1728,6 +1729,13 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
+ 	if !ok {
+ 		return
+ 	}
++	if req.SuppressRun {
++		// Completion replay uses the persisted suppression set as well.
++		if err := h.DB.QueryRow(r.Context(), "SELECT coalesce(array_agg(id),ARRAY[]::uuid[]) FROM agent WHERE workspace_id=$1", issue.WorkspaceID).Scan(&suppressAgentIDs); err != nil {
++			writeError(w, 500, "failed to prepare comment")
++			return
++		}
++	}
+ 	steerTaskIDs, ok := parseUUIDSliceOrBadRequest(w, req.SteerTaskIDs, "steer_task_ids")
+ 	if !ok {
+ 		return
+@@ -1978,7 +1986,9 @@ func (h *Handler) CreateComment(w http.ResponseWriter, r *http.Request) {
+ 	// The comment is already saved; a blocked mention must not fail the whole
+ 	// request. Surface the per-target outcomes so the client can show partial
+ 	// success instead of a silent no-op (MUL-4525 §2).
+-	resp.TriggerOutcomes = h.triggerTasksForComment(r.Context(), issue, comment, parentComment, authorType, authorID, originatorUserID, suppressAgentIDs, steer)
++	if !req.SuppressRun {
++		resp.TriggerOutcomes = h.triggerTasksForComment(r.Context(), issue, comment, parentComment, authorType, authorID, originatorUserID, suppressAgentIDs, steer)
++	}
+ 	if !steer.empty() {
+ 		applyCommentSupplements(&resp, h.listCommentSupplements(r.Context(), issue.WorkspaceID, []pgtype.UUID{comment.ID})[uuidToString(comment.ID)])
+ 	}
+@@ -3507,6 +3517,7 @@ func (h *Handler) UpdateComment(w http.ResponseWriter, r *http.Request) {
+ 
+ 	var req struct {
+ 		Content          string    `json:"content"`
++		SuppressRun      bool      `json:"suppress_run"`
+ 		ContentBase      *string   `json:"content_base,omitempty"`
+ 		AttachmentIDs    *[]string `json:"attachment_ids"`
+ 		SuppressAgentIDs []string  `json:"suppress_agent_ids"`
+@@ -3553,6 +3564,13 @@ func (h *Handler) UpdateComment(w http.ResponseWriter, r *http.Request) {
+ 	if !ok {
+ 		return
+ 	}
++	if req.SuppressRun {
++		// Completion replay uses the persisted suppression set as well.
++		if err := h.DB.QueryRow(r.Context(), "SELECT coalesce(array_agg(id),ARRAY[]::uuid[]) FROM agent WHERE workspace_id=$1", existing.WorkspaceID).Scan(&suppressAgentIDs); err != nil {
++			writeError(w, 500, "failed to prepare comment")
++			return
++		}
++	}
+ 
+ 	// NOTE: See CreateComment — Markdown is sanitized at render/edit time, not here.
+ 
+@@ -3711,6 +3729,9 @@ func (h *Handler) UpdateComment(w http.ResponseWriter, r *http.Request) {
+ 		}
+ 
+ 		h.retriggerCancelledTaskSurvivors(r.Context(), issue, cancelled, existing.ID)
++		if req.SuppressRun {
++			return nil
++		}
+ 		return h.triggerTasksForComment(r.Context(), issue, comment, parentComment, actorType, actorID, h.invokeOriginatorFromRequest(r, actorType, actorID), suppressAgentIDs, commentSteerRequest{})
+ 	}
+ 
+diff --git a/server/internal/handler/demo_password.go b/server/internal/handler/demo_password.go
+index 9bfc289..c02798d 100644
+--- a/server/internal/handler/demo_password.go
++++ b/server/internal/handler/demo_password.go
+@@ -18,7 +18,10 @@ const demoEmailSuffix = "@demo.mobilework.invalid"
+ var demoUsername = regexp.MustCompile(`^[a-z0-9][a-z0-9_.-]{1,39}$`)
+ 
+ func demoPasswordEnabled() bool {
+-	return os.Getenv("MW_DEMO_PASSWORD_AUTH") == "1" && !isProductionEnv()
++	// An operator must opt into local password accounts. Preserve the V2
++	// development switch for older local deployments.
++	return os.Getenv("WORKBENCH_PASSWORD_AUTH") == "1" ||
++		(os.Getenv("MW_DEMO_PASSWORD_AUTH") == "1" && !isProductionEnv())
+ }
+ 
+ // Password accounts occupy a separate namespace and cannot claim an existing email identity.
+diff --git a/server/internal/handler/file.go b/server/internal/handler/file.go
+index 2282f28..c0636eb 100644
+--- a/server/internal/handler/file.go
++++ b/server/internal/handler/file.go
+@@ -166,19 +166,13 @@ func (h *Handler) attachmentToResponse(a db.Attachment, mode attachmentURLMode)
+ 		UploaderType: a.UploaderType,
+ 		UploaderID:   uuidToString(a.UploaderID),
+ 		Filename:     a.Filename,
+-		URL:          a.Url,
++		URL:          util.AttachmentDownloadPath(id),
+ 		DownloadURL:  util.AttachmentDownloadPath(id),
+-		MarkdownURL:  h.buildMarkdownURL(a, id),
++		MarkdownURL:  util.AttachmentDownloadPath(id),
+ 		ContentType:  a.ContentType,
+ 		SizeBytes:    a.SizeBytes,
+ 		CreatedAt:    a.CreatedAt.Time.Format("2006-01-02T15:04:05Z07:00"),
+ 	}
+-	// Only CloudFront mode overrides the stable path here; the presign and proxy
+-	// modes already leave DownloadURL as the stable path and resolve it at
+-	// download time, so stable mode is a no-op for them.
+-	if h.CFSigner != nil && mode != attachmentURLModeStable {
+-		resp.DownloadURL = h.CFSigner.SignedURL(a.Url, time.Now().Add(h.attachmentDownloadURLTTL()))
+-	}
+ 	if a.IssueID.Valid {
+ 		s := uuidToString(a.IssueID)
+ 		resp.IssueID = &s
+@@ -681,78 +675,10 @@ func (h *Handler) GetAttachmentForDownload(w http.ResponseWriter, r *http.Reques
+ }
+ 
+ func (h *Handler) writeSignedAttachmentMetadata(w http.ResponseWriter, r *http.Request, att db.Attachment) {
+-
+-	// Always signed, regardless of what the caller advertised: this endpoint is
+-	// the single source of fresh, natively-loadable URLs. Stable-mode callers
+-	// (CLI `attachment download`, the web inline-media re-sign hook) exchange a
+-	// stable path for a signature HERE, so honoring the capability would break
+-	// the very flow that makes stable mode safe elsewhere.
+-	resp := h.attachmentToResponse(att, attachmentURLModeSigned)
+-	// Token-mode clients use this authenticated endpoint to replace the
+-	// auth-gated API path with a URL that native media elements can load.
+-	// Assert the same storage.DownloadPresigner that resolveAttachmentDownloadMode
+-	// keys its presign decision on, so the mode resolution and the presign call
+-	// can never disagree. An empty content disposition inherits the object's
+-	// stored Content-Disposition (inline for media, attachment otherwise), which
+-	// keeps images renderable inline while preserving the original download
+-	// filename.
+-	switch mode := h.resolveAttachmentDownloadMode(att.Url); mode {
+-	case attachmentDownloadModeCloudFront:
+-		// CloudFront mode: attachmentToResponse already set DownloadURL to an
+-		// inline-intent signed URL. The download button needs the forced-
+-		// attachment sibling. response-content-disposition is folded into the
+-		// signed Resource (SignedURLWithContentDisposition), so a client cannot
+-		// strip or alter it without invalidating the signature. Keying on the
+-		// resolved mode (not h.CFSigner != nil) lets an explicit proxy/presign
+-		// override take effect even when a signer is configured; the nil guard
+-		// keeps an explicit cloudfront mode without a configured signer from
+-		// panicking — the field is left empty and the client falls back to
+-		// download_url, the same graceful degrade attachmentToResponse uses.
+-		if h.CFSigner != nil {
+-			resp.AttachmentDownloadURL = h.CFSigner.SignedURLWithContentDisposition(
+-				att.Url,
+-				storage.AttachmentContentDisposition(att.Filename),
+-				time.Now().Add(h.attachmentDownloadURLTTL()),
+-			)
+-		}
+-	case attachmentDownloadModePresign:
+-		if presigner, ok := h.Storage.(storage.DownloadPresigner); ok {
+-			key := h.Storage.KeyFromURL(att.Url)
+-			signedURL, err := presigner.PresignGetWithContentDisposition(r.Context(), key, h.attachmentDownloadURLTTL(), "")
+-			if err != nil {
+-				slog.Warn("failed to presign inline attachment URL", "id", uuidToString(att.ID), "key", key, "error", err)
+-			} else {
+-				resp.DownloadURL = signedURL
+-			}
+-			// Download-intent sibling: the same presigned object, but with a
+-			// forced attachment disposition so the download button saves the
+-			// file instead of previewing it. Independent of DownloadURL's inline
+-			// signature above; either may be present without the other.
+-			if dlURL, err := presigner.PresignGetWithContentDisposition(r.Context(), key, h.attachmentDownloadURLTTL(), storage.AttachmentContentDisposition(att.Filename)); err != nil {
+-				slog.Warn("failed to presign attachment download URL", "id", uuidToString(att.ID), "key", key, "error", err)
+-			} else {
+-				resp.AttachmentDownloadURL = dlURL
+-			}
+-		}
+-	case attachmentDownloadModeProxy:
+-		// Proxy mode has no signed storage URL to offer, so this response
+-		// would otherwise hand back the auth-gated API path — which a
+-		// native download on a token-mode client cannot authenticate,
+-		// leaving the user with no file (MUL-5292). Mint a
+-		// single-attachment, 60-second capability instead, so the same
+-		// "replace the auth-gated path with something a native loader can
+-		// fetch" contract holds in all three modes.
+-		//
+-		// Only here, never in attachmentToResponse: list responses are held
+-		// far longer than the TTL, so a capability embedded in one would be
+-		// expired by the time anything used it.
+-		resp.DownloadURL = attachmentCapabilityPath(resp.ID, time.Now())
+-		// Download-intent sibling capability (dl=1): the redemption route turns
+-		// it into a Content-Disposition: attachment, for the download button.
+-		resp.AttachmentDownloadURL = attachmentDownloadCapabilityPath(resp.ID, time.Now())
+-	}
+-
+-	writeJSON(w, http.StatusOK, resp)
++	resp := h.attachmentToResponse(att, attachmentURLModeStable)
++	resp.AttachmentDownloadURL = resp.DownloadURL
++	w.Header().Set("Cache-Control", "no-store")
++	writeJSON(w, 200, resp)
+ }
+ 
+ func (h *Handler) loadAttachmentForRequest(w http.ResponseWriter, r *http.Request) (db.Attachment, bool) {
+@@ -781,7 +707,7 @@ func (h *Handler) loadAttachmentForRequest(w http.ResponseWriter, r *http.Reques
+ 		return db.Attachment{}, false
+ 	}
+ 
+-	return att, true
++	return h.authorizeAttachmentContext(w, r, att)
+ }
+ 
+ // loadAttachmentForDownload is a workspace-self-resolving variant used by the
+@@ -827,14 +753,48 @@ func (h *Handler) loadAttachmentForDownload(w http.ResponseWriter, r *http.Reque
+ 		writeError(w, http.StatusNotFound, "attachment not found")
+ 		return db.Attachment{}, false
+ 	}
+-	if h.MembershipCache.Get(r.Context(), userID, workspaceID) {
+-		return att, true
+-	}
++
+ 	if _, err := h.getWorkspaceMember(r.Context(), userID, workspaceID); err != nil {
+ 		writeError(w, http.StatusNotFound, "attachment not found")
+ 		return db.Attachment{}, false
+ 	}
+ 	h.MembershipCache.Set(r.Context(), userID, workspaceID)
++	return h.authorizeAttachmentContext(w, r, att)
++}
++
++func (h *Handler) authorizeAttachmentContext(w http.ResponseWriter, r *http.Request, att db.Attachment) (db.Attachment, bool) {
++	uid := requestUserID(r)
++	if _, err := h.getWorkspaceMember(r.Context(), uid, uuidToString(att.WorkspaceID)); err != nil {
++		writeError(w, 404, "attachment not found")
++		return db.Attachment{}, false
++	}
++	session := att.ChatSessionID
++	if !session.Valid && att.ChatMessageID.Valid {
++		if err := h.DB.QueryRow(r.Context(), "SELECT chat_session_id FROM chat_message WHERE id=$1", att.ChatMessageID).Scan(&session); err != nil {
++			writeError(w, 404, "attachment not found")
++			return db.Attachment{}, false
++		}
++	}
++	if !session.Valid && att.TaskID.Valid {
++		if err := h.DB.QueryRow(r.Context(), "SELECT t.chat_session_id FROM agent_task_queue t JOIN agent a ON a.id=t.agent_id WHERE t.id=$1 AND a.workspace_id=$2", att.TaskID, att.WorkspaceID).Scan(&session); err != nil {
++			writeError(w, 404, "attachment not found")
++			return db.Attachment{}, false
++		}
++	}
++	if session.Valid {
++		if _, ok := h.gateChatSessionForUser(w, r, uid, uuidToString(att.WorkspaceID), uuidToString(session)); !ok {
++			return db.Attachment{}, false
++		}
++	} else if att.SourceContextID.Valid {
++		var visible bool
++		if err := h.DB.QueryRow(r.Context(), `SELECT EXISTS(SELECT 1 FROM issue_source_context WHERE id=$1 AND workspace_id=$2 AND captured_by_user_id=$3)`, att.SourceContextID, att.WorkspaceID, uid).Scan(&visible); err != nil || !visible {
++			writeError(w, 404, "attachment not found")
++			return db.Attachment{}, false
++		}
++	} else if !att.IssueID.Valid && !att.CommentID.Valid && !att.TaskID.Valid && uuidToString(att.UploaderID) != uid {
++		writeError(w, 404, "attachment not found")
++		return db.Attachment{}, false
++	}
+ 	return att, true
+ }
+ 
+@@ -857,53 +817,28 @@ func (h *Handler) DownloadAttachment(w http.ResponseWriter, r *http.Request) {
+ 	if !ok {
+ 		return
+ 	}
+-	if h.Storage == nil {
+-		writeFeatureDisabled(w, "storage_not_configured", "storage not configured")
++	h.setAttachmentPreviewSecurityHeaders(w)
++	w.Header().Set("Cache-Control", "no-store")
++	if strings.TrimSpace(att.Url) == "" {
++		writeError(w, 404, "没有可下载的文件内容")
+ 		return
+ 	}
+-
+-	key := h.Storage.KeyFromURL(att.Url)
+-	switch h.resolveAttachmentDownloadMode(att.Url) {
+-	case attachmentDownloadModeCloudFront:
+-		if h.CFSigner == nil {
+-			writeError(w, http.StatusInternalServerError, "cloudfront attachment downloads are not configured")
++	if strings.HasPrefix(att.Url, "db-content:") {
++		var body []byte
++		if err := h.DB.QueryRow(r.Context(), "SELECT content FROM attachment_content WHERE attachment_id=$1", att.ID).Scan(&body); err != nil {
++			writeError(w, 404, "attachment not found")
+ 			return
+ 		}
+-		h.setAttachmentPreviewSecurityHeaders(w)
+-		http.Redirect(
+-			w,
+-			r,
+-			h.CFSigner.SignedURLWithContentDisposition(
+-				att.Url,
+-				storage.AttachmentContentDisposition(att.Filename),
+-				time.Now().Add(h.attachmentDownloadURLTTL()),
+-			),
+-			http.StatusFound,
+-		)
+-	case attachmentDownloadModePresign:
+-		presigner, ok := h.Storage.(storage.DownloadPresigner)
+-		if !ok {
+-			writeError(w, http.StatusInternalServerError, "attachment storage does not support presigned downloads")
+-			return
+-		}
+-		signedURL, err := presigner.PresignGetWithContentDisposition(
+-			r.Context(),
+-			key,
+-			h.attachmentDownloadURLTTL(),
+-			storage.AttachmentContentDisposition(att.Filename),
+-		)
+-		if err != nil {
+-			slog.Error("failed to presign attachment download", "id", uuidToString(att.ID), "key", key, "error", err)
+-			writeError(w, http.StatusBadGateway, "failed to create download URL")
+-			return
+-		}
+-		h.setAttachmentPreviewSecurityHeaders(w)
+-		http.Redirect(w, r, signedURL, http.StatusFound)
+-	case attachmentDownloadModeProxy:
+-		h.proxyAttachmentDownload(w, r, att, key, false)
+-	default:
+-		writeError(w, http.StatusInternalServerError, "invalid attachment download mode")
++		w.Header().Set("Content-Type", att.ContentType)
++		w.Header().Set("Content-Disposition", storage.AttachmentContentDisposition(att.Filename))
++		w.Write(body)
++		return
+ 	}
++	if h.Storage == nil {
++		writeFeatureDisabled(w, "storage_not_configured", "storage not configured")
++		return
++	}
++	h.proxyAttachmentDownload(w, r, att, h.Storage.KeyFromURL(att.Url), true)
+ }
+ 
+ func (h *Handler) resolveAttachmentDownloadMode(rawURL string) attachmentDownloadMode {
+@@ -973,7 +908,14 @@ func (h *Handler) ServeLocalUpload(w http.ResponseWriter, r *http.Request) {
+ 	}
+ 	h.setAttachmentPreviewSecurityHeaders(w)
+ 	key := strings.TrimPrefix(r.URL.Path, "/uploads/")
+-	local.ServeFile(w, r, key)
++	var id string
++	if err := h.DB.QueryRow(r.Context(), "SELECT id FROM attachment WHERE url=$1 OR url=$2 LIMIT 1", local.ObjectURL(key), "/uploads/"+key).Scan(&id); err != nil {
++		http.NotFound(w, r)
++		return
++	}
++	route := chi.RouteContext(r.Context())
++	route.URLParams.Add("id", id)
++	h.DownloadAttachment(w, r)
+ }
+ 
+ // proxyAttachmentDownload streams an attachment through the API instead of
+diff --git a/server/internal/handler/issue.go b/server/internal/handler/issue.go
+index a9deb1c..232e93b 100644
+--- a/server/internal/handler/issue.go
++++ b/server/internal/handler/issue.go
+@@ -19,6 +19,7 @@ import (
+ 
+ 	"github.com/go-chi/chi/v5"
+ 	"github.com/jackc/pgx/v5"
++	"github.com/jackc/pgx/v5/pgconn"
+ 	"github.com/jackc/pgx/v5/pgtype"
+ 	"github.com/multica-ai/multica/server/internal/channelmedia"
+ 	"github.com/multica-ai/multica/server/internal/dispatch"
+@@ -316,6 +317,19 @@ func (h *Handler) broadcastCancelledWakeups(ctx context.Context, workspaceID pgt
+ 	}
+ }
+ 
++func unavailableAssignment(err error) bool {
++	var pgErr *pgconn.PgError
++	return errors.As(err, &pgErr) && pgErr.ConstraintName == "mw_active_assignment_target"
++}
++
++func writeUnavailableAssignment(w http.ResponseWriter, err error) bool {
++	if !unavailableAssignment(err) {
++		return false
++	}
++	writeError(w, http.StatusConflict, "负责人已不可用，请重新选择负责人")
++	return true
++}
++
+ // writeIssueStatusRaceError renders errIssueStatusArchivedRace as a 409 and
+ // reports whether it handled the error.
+ func writeIssueStatusRaceError(w http.ResponseWriter, err error) bool {
+@@ -3077,7 +3091,8 @@ type CreateIssueRequest struct {
+ 	// LabelIDs are issue-scoped labels to attach to the new issue in the same
+ 	// transaction as the create. Unknown or non-issue ids are rejected with
+ 	// 400 (service.ErrIssueLabelNotFound) rather than silently dropped.
+-	LabelIDs []string `json:"label_ids,omitempty"`
++	LabelIDs   []string `json:"label_ids,omitempty"`
++	LabelNames []string `json:"label_names,omitempty"`
+ 	// Properties is an ID-keyed bag whose values use the same typed wire shape
+ 	// as Issue.properties and the standalone property PUT endpoint.
+ 	Properties map[string]json.RawMessage `json:"properties,omitempty"`
+@@ -3377,6 +3392,19 @@ func (h *Handler) CreateIssue(w http.ResponseWriter, r *http.Request) {
+ 	if !ok {
+ 		return
+ 	}
++	if len(req.LabelNames) > 50 {
++		writeError(w, http.StatusBadRequest, "too many labels")
++		return
++	}
++	for i, raw := range req.LabelNames {
++		name, err := validateLabelName(raw)
++		if err != nil {
++			writeError(w, http.StatusBadRequest, err.Error())
++			return
++		}
++		req.LabelNames[i] = name
++	}
++	sort.Slice(req.LabelNames, func(i, j int) bool { return strings.ToLower(req.LabelNames[i]) < strings.ToLower(req.LabelNames[j]) })
+ 	properties, ok := parseIssueCreateProperties(w, req.Properties)
+ 	if !ok {
+ 		return
+@@ -3402,6 +3430,10 @@ func (h *Handler) CreateIssue(w http.ResponseWriter, r *http.Request) {
+ 		dueDate = d
+ 	}
+ 
++	if startDate.Valid && dueDate.Valid && dueDate.Time.Before(startDate.Time) {
++		writeError(w, http.StatusBadRequest, "截止日期不能早于开始日期")
++		return
++	}
+ 	// Determine creator identity: agent (via X-Agent-ID header) or member.
+ 	creatorType, actualCreatorID := h.resolveActor(r, creatorID, workspaceID)
+ 
+@@ -3507,6 +3539,7 @@ func (h *Handler) CreateIssue(w http.ResponseWriter, r *http.Request) {
+ 		Stage:          ptrToInt4(req.Stage),
+ 		AttachmentIDs:  attachmentIDs,
+ 		LabelIDs:       labelIDs,
++		LabelNames:     req.LabelNames,
+ 		Properties:     properties,
+ 		AllowDuplicate: req.AllowDuplicate,
+ 	}, service.IssueCreateOpts{
+@@ -3561,7 +3594,7 @@ func (h *Handler) CreateIssue(w http.ResponseWriter, r *http.Request) {
+ 			"the target status was archived while this request was in flight; reload the status list and retry")
+ 		return
+ 	}
+-	if writeIssueCreatePropertyError(w, err) {
++	if writeUnavailableAssignment(w, err) || writeIssueCreatePropertyError(w, err) {
+ 		return
+ 	}
+ 	if writeIssueLimitReached(w, err) {
+@@ -3966,6 +3999,10 @@ func (h *Handler) UpdateIssue(w http.ResponseWriter, r *http.Request) {
+ 			params.DueDate = pgtype.Date{Valid: false} // explicit null = clear date
+ 		}
+ 	}
++	if (req.StartDate != nil || req.DueDate != nil) && params.StartDate.Valid && params.DueDate.Valid && params.DueDate.Time.Before(params.StartDate.Time) {
++		writeError(w, http.StatusBadRequest, "截止日期不能早于开始日期")
++		return
++	}
+ 	if _, ok := rawFields["parent_issue_id"]; ok {
+ 		if req.ParentIssueID != nil {
+ 			newParentID, ok := parseUUIDOrBadRequest(w, *req.ParentIssueID, "parent_issue_id")
+@@ -4109,7 +4146,7 @@ func (h *Handler) UpdateIssue(w http.ResponseWriter, r *http.Request) {
+ 		issue, err = h.updateIssueWithStatusGuard(writeCtx, prevIssue.WorkspaceID, statusKeyForGuard, params)
+ 	}
+ 	if err != nil {
+-		if writeIssueStatusRaceError(w, err) {
++		if writeUnavailableAssignment(w, err) || writeIssueStatusRaceError(w, err) {
+ 			return
+ 		}
+ 		if writeDuplicateMarkError(w, err) {
+diff --git a/server/internal/handler/issue_table_query.go b/server/internal/handler/issue_table_query.go
+index 3b667ea..9815d28 100644
+--- a/server/internal/handler/issue_table_query.go
++++ b/server/internal/handler/issue_table_query.go
+@@ -155,12 +155,13 @@ type issueTableGroupsRequest struct {
+ }
+ 
+ type issueTableRowsRequest struct {
+-	Query     issueTableQuerySpec        `json:"query"`
+-	Group     issueTableGroupSpec        `json:"group"`
+-	GroupKey  *string                    `json:"group_key"`
+-	Hierarchy issueTableHierarchyRequest `json:"hierarchy"`
+-	ParentID  *string                    `json:"parent_id"`
+-	Page      issueTablePageRequest      `json:"page"`
++	PrioritizePins bool                       `json:"prioritize_pins,omitempty"`
++	Query          issueTableQuerySpec        `json:"query"`
++	Group          issueTableGroupSpec        `json:"group"`
++	GroupKey       *string                    `json:"group_key"`
++	Hierarchy      issueTableHierarchyRequest `json:"hierarchy"`
++	ParentID       *string                    `json:"parent_id"`
++	Page           issueTablePageRequest      `json:"page"`
+ }
+ 
+ type issueTableFacetSpec struct {
+diff --git a/server/internal/handler/issue_table_rows.go b/server/internal/handler/issue_table_rows.go
+index 1113742..fb0ebfc 100644
+--- a/server/internal/handler/issue_table_rows.go
++++ b/server/internal/handler/issue_table_rows.go
+@@ -145,6 +145,19 @@ func (h *Handler) issueTableOrderBy(
+ 	}
+ 	switch sortField {
+ 	case "position":
++	case "project":
++		resolved.expression = "(SELECT p.title FROM project p WHERE p.id=i.project_id AND p.workspace_id=i.workspace_id)"
++		resolved.castType = "text"
++		resolved.nullsLast = true
++		resolved.idOnlyTie = true
++	case "assignee":
++		resolved.expression = `CASE i.assignee_type
++            WHEN 'member' THEN (SELECT u.name FROM "user" u JOIN member m ON m.user_id=u.id WHERE u.id=i.assignee_id AND m.workspace_id=i.workspace_id)
++            WHEN 'agent' THEN (SELECT a.name FROM agent a WHERE a.id=i.assignee_id AND a.workspace_id=i.workspace_id)
++            WHEN 'squad' THEN (SELECT s.name FROM squad s WHERE s.id=i.assignee_id AND s.workspace_id=i.workspace_id) END`
++		resolved.castType = "text"
++		resolved.nullsLast = true
++		resolved.idOnlyTie = true
+ 	case "title":
+ 		resolved.expression = "i.title"
+ 		resolved.castType = "text"
+@@ -285,6 +298,15 @@ func (h *Handler) queryIssueTableRows(w http.ResponseWriter, r *http.Request, re
+ 		return issueTableRowsResponse{}, false
+ 	}
+ 	branchIdentity := issueTableGroupIdentity(request.Group) + ":hierarchy=" + strconv.FormatBool(request.Hierarchy.Enabled)
++	var pinOwner string
++	if request.PrioritizePins {
++		var ok bool
++		pinOwner, ok = requireUserID(w, r)
++		if !ok {
++			return issueTableRowsResponse{}, false
++		}
++		branchIdentity += ":pins:" + pinOwner
++	}
+ 	if cursor != nil && cursor.BranchIdentity != branchIdentity {
+ 		writeJSON(w, http.StatusConflict, map[string]any{
+ 			"error":   "cursor_query_mismatch",
+@@ -340,6 +362,19 @@ func (h *Handler) queryIssueTableRows(w http.ResponseWriter, r *http.Request, re
+ 	if !ok {
+ 		return issueTableRowsResponse{}, false
+ 	}
++	orderBy := resolvedSort.orderBy()
++	if request.PrioritizePins {
++		ownerRef := addArg(pinOwner)
++		pinned := func(id string) string {
++			return fmt.Sprintf("EXISTS (SELECT 1 FROM pinned_item p WHERE p.workspace_id=i.workspace_id AND p.user_id=%s::uuid AND p.item_type='issue' AND p.item_id=%s)", ownerRef, id)
++		}
++		thisPinned := pinned("i.id")
++		orderBy = thisPinned + " DESC, " + orderBy
++		if cursor != nil {
++			lastPinned := pinned(addArg(cursor.RowID) + "::uuid")
++			cursorPredicate = fmt.Sprintf("((NOT %s AND %s) OR (%s = %s AND (%s)))", thisPinned, lastPinned, thisPinned, lastPinned, cursorPredicate)
++		}
++	}
+ 	limitRef := addArg(limit + 1)
+ 
+ 	// Pick the requested page before computing hierarchy metadata. The old query
+@@ -392,7 +427,7 @@ func (h *Handler) queryIssueTableRows(w http.ResponseWriter, r *http.Request, re
+   WHERE (%s) AND %s
+   ORDER BY %s
+   LIMIT %s
+-)`, ctePrefix, resolvedSort.expression, pageSource, pagePredicate, cursorPredicate, resolvedSort.orderBy(), limitRef)
++)`, ctePrefix, resolvedSort.expression, pageSource, pagePredicate, cursorPredicate, orderBy, limitRef)
+ 	childCountExpr := "0::bigint"
+ 	if request.Hierarchy.Enabled {
+ 		childCountExpr = "(SELECT COUNT(*)::bigint FROM membership child WHERE child.parent_issue_id = i.id)"
+@@ -406,7 +441,7 @@ SELECT i.id, i.workspace_id, i.title, i.description, i.status, i.priority,
+ 	       i.revision, i.duplicate_of_issue_id,
+ 	       %s AS direct_child_count, i.table_sort_key
+ 	FROM page i
+-	ORDER BY %s`, cte, childCountExpr, resolvedSort.orderBy())
++	ORDER BY %s`, cte, childCountExpr, orderBy)
+ 
+ 	rows, err := h.DB.Query(r.Context(), query, args...)
+ 	if err != nil {
+diff --git a/server/internal/handler/project.go b/server/internal/handler/project.go
+index c5b2ca7..4768eb3 100644
+--- a/server/internal/handler/project.go
++++ b/server/internal/handler/project.go
+@@ -255,6 +255,10 @@ func validateProjectEnum(w http.ResponseWriter, field, value string, allowed []s
+ // error so transient DB failures are diagnosable (#3925 had no server-side
+ // signal) and return 500.
+ func (h *Handler) writeProjectWriteError(w http.ResponseWriter, r *http.Request, err error, action string) {
++	if isUniqueViolation(err) {
++		writeError(w, 409, "已存在同名项目")
++		return
++	}
+ 	if isCheckViolation(err) {
+ 		writeError(w, http.StatusBadRequest, "project "+action+" rejected: a field value failed a database constraint")
+ 		return
+@@ -269,8 +273,9 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
+ 		writeError(w, http.StatusBadRequest, "invalid request body")
+ 		return
+ 	}
+-	if req.Title == "" {
+-		writeError(w, http.StatusBadRequest, "title is required")
++	req.Title = strings.TrimSpace(req.Title)
++	if req.Title == "" || len([]rune(req.Title)) > 100 {
++		writeError(w, http.StatusBadRequest, "项目名称应为 1–100 字")
+ 		return
+ 	}
+ 	workspaceID := h.resolveWorkspaceID(r)
+@@ -278,6 +283,9 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
+ 	if !ok {
+ 		return
+ 	}
++	if _, ok := h.requireWorkspaceRole(w, r, workspaceID, "workspace not found", "owner", "admin", "member"); !ok {
++		return
++	}
+ 	status := req.Status
+ 	if status == "" {
+ 		status = "planned"
+@@ -304,6 +312,11 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
+ 		}
+ 		leadID = id
+ 	}
++	if status, msg := h.validateAssigneePair(r.Context(), r, workspaceID, leadType, leadID); status != 0 {
++		writeError(w, status, msg)
++		return
++	}
++
+ 	wsUUID, ok := parseUUIDOrBadRequest(w, workspaceID, "workspace_id")
+ 	if !ok {
+ 		return
+@@ -345,6 +358,10 @@ func (h *Handler) CreateProject(w http.ResponseWriter, r *http.Request) {
+ 		dueDate = d
+ 	}
+ 
++	if startDate.Valid && dueDate.Valid && startDate.Time.After(dueDate.Time) {
++		writeError(w, 422, "截止日期不能早于开始日期")
++		return
++	}
+ 	// Pre-validate every resource payload before opening a transaction so an
+ 	// invalid ref produces a clean 400 with no DB work. For local_directory we
+ 	// also enforce one row per daemon_id within the batch — the daemon-side
+@@ -527,7 +544,12 @@ func (h *Handler) UpdateProject(w http.ResponseWriter, r *http.Request) {
+ 	_, params.StartDateSet = rawFields["start_date"]
+ 	_, params.DueDateSet = rawFields["due_date"]
+ 	if req.Title != nil {
+-		params.Title = pgtype.Text{String: *req.Title, Valid: true}
++		title := strings.TrimSpace(*req.Title)
++		if title == "" || len([]rune(title)) > 100 {
++			writeError(w, 422, "项目名称应为 1–100 字")
++			return
++		}
++		params.Title = pgtype.Text{String: title, Valid: true}
+ 	}
+ 	if req.Status != nil {
+ 		if !validateProjectEnum(w, "status", *req.Status, validProjectStatuses) {
+@@ -573,6 +595,19 @@ func (h *Handler) UpdateProject(w http.ResponseWriter, r *http.Request) {
+ 			params.LeadID = pgtype.UUID{Valid: false}
+ 		}
+ 	}
++	if params.LeadIDSet || params.LeadTypeSet {
++		leadID, leadType := prevProject.LeadID, prevProject.LeadType
++		if params.LeadIDSet {
++			leadID = params.LeadID
++		}
++		if params.LeadTypeSet {
++			leadType = params.LeadType
++		}
++		if status, msg := h.validateAssigneePair(r.Context(), r, workspaceID, leadType, leadID); status != 0 {
++			writeError(w, status, msg)
++			return
++		}
++	}
+ 	// Dates follow the issue contract: a present key with an empty/null value
+ 	// clears the date; an absent key leaves the prior value untouched.
+ 	if _, ok := rawFields["start_date"]; ok {
+@@ -599,6 +634,17 @@ func (h *Handler) UpdateProject(w http.ResponseWriter, r *http.Request) {
+ 			params.DueDate = pgtype.Date{Valid: false} // explicit null = clear date
+ 		}
+ 	}
++	startDate, dueDate := prevProject.StartDate, prevProject.DueDate
++	if params.StartDateSet {
++		startDate = params.StartDate
++	}
++	if params.DueDateSet {
++		dueDate = params.DueDate
++	}
++	if startDate.Valid && dueDate.Valid && startDate.Time.After(dueDate.Time) {
++		writeError(w, 422, "截止日期不能早于开始日期")
++		return
++	}
+ 	project, err := h.Queries.UpdateProject(r.Context(), params)
+ 	if err != nil {
+ 		h.writeProjectWriteError(w, r, err, "update")
+@@ -669,6 +715,17 @@ func (h *Handler) DeleteProject(w http.ResponseWriter, r *http.Request) {
+ 		writeError(w, http.StatusInternalServerError, "failed to delete project views")
+ 		return
+ 	}
++	// Older deployments may lack foreign keys on issues or plan snapshots.
++	for _, statement := range []string{
++		"UPDATE issue SET project_id=NULL,updated_at=now() WHERE workspace_id=$1 AND project_id=$2",
++		"DELETE FROM project_blueprint_draft WHERE workspace_id=$1 AND project_id=$2",
++		"DELETE FROM project_blueprint_version WHERE workspace_id=$1 AND project_id=$2",
++	} {
++		if _, err := tx.Exec(r.Context(), statement, project.WorkspaceID, project.ID); err != nil {
++			planWriteError(w, err)
++			return
++		}
++	}
+ 	if err := qtx.DeleteProject(r.Context(), db.DeleteProjectParams{
+ 		ID:          project.ID,
+ 		WorkspaceID: project.WorkspaceID,
+diff --git a/server/internal/handler/project_planning.go b/server/internal/handler/project_planning.go
+index 1f31b97..7ed6aa3 100644
+--- a/server/internal/handler/project_planning.go
++++ b/server/internal/handler/project_planning.go
+@@ -29,6 +29,7 @@ type planningTask struct {
+ 	Status      string `json:"status"`
+ }
+ type planningInput struct {
++	SquadID            string                  `json:"squad_id,omitempty"`
+ 	ReferenceDate      string                  `json:"reference_date,omitempty"`
+ 	Timezone           string                  `json:"timezone,omitempty"`
+ 	InputHash          string                  `json:"input_hash"`
+@@ -143,31 +144,39 @@ func (h *Handler) ProjectPlanning(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 	if !req.Preview {
+-		aid, ok = parseUUIDOrBadRequest(w, req.AgentID, "agent_id")
+-		if !ok {
+-			return
+-		}
+ 		if req.RequestID == "" || len(req.RequestID) > 100 || len(req.Instructions) > 12000 || len(req.Materials) > 50000 {
+ 			writeError(w, 422, "规划请求标识或指令无效")
+ 			return
+ 		}
+-		if status, msg := h.validateAssigneePair(r.Context(), r, uuidToString(p.WorkspaceID), pgtype.Text{String: "agent", Valid: true}, aid); status != 0 {
+-			writeError(w, status, msg)
+-			return
+-		}
+-		agent, err = h.Queries.GetAgentInWorkspace(r.Context(), db.GetAgentInWorkspaceParams{ID: aid, WorkspaceID: p.WorkspaceID})
+-		if err != nil {
+-			planWriteError(w, err)
+-			return
+-		}
+-		rt, err = h.Queries.GetAgentRuntime(r.Context(), agent.RuntimeID)
+-		if err != nil || rt.Provider != "pi" || rt.ProfileID.Valid || !runtimeHasCapability(rt.Metadata, planningCapability) {
+-			writeError(w, 503, "此执行端不支持受限规划；请选择已升级的 Pi 智能体，手工编辑仍可使用")
+-			return
+-		}
+-		if rt.Status == "offline" || !rt.LastSeenAt.Valid || time.Since(rt.LastSeenAt.Time) > 90*time.Second {
+-			writeError(w, 503, "规划助手执行端离线，请在所属客户端启用后重试")
+-			return
++
++		if req.AgentID == "work" && req.Purpose == "blueprint" {
++			if err = h.DB.QueryRow(r.Context(), "SELECT id FROM workspace_work WHERE workspace_id=$1", p.WorkspaceID).Scan(&aid); err != nil {
++				planWriteError(w, err)
++				return
++			}
++		} else {
++			aid, ok = parseUUIDOrBadRequest(w, req.AgentID, "agent_id")
++			if !ok {
++				return
++			}
++			if status, msg := h.validateAssigneePair(r.Context(), r, uuidToString(p.WorkspaceID), pgtype.Text{String: "agent", Valid: true}, aid); status != 0 {
++				writeError(w, status, msg)
++				return
++			}
++			agent, err = h.Queries.GetAgentInWorkspace(r.Context(), db.GetAgentInWorkspaceParams{ID: aid, WorkspaceID: p.WorkspaceID})
++			if err != nil {
++				planWriteError(w, err)
++				return
++			}
++			rt, err = h.Queries.GetAgentRuntime(r.Context(), agent.RuntimeID)
++			if err != nil || rt.Provider != "pi" || rt.ProfileID.Valid || !runtimeHasCapability(rt.Metadata, planningCapability) {
++				writeError(w, 503, "此执行端不支持受限规划；请选择已升级的 Pi 智能体，手工编辑仍可使用")
++				return
++			}
++			if rt.Status == "offline" || !rt.LastSeenAt.Valid || time.Since(rt.LastSeenAt.Time) > 90*time.Second {
++				writeError(w, 503, "规划助手执行端离线，请在所属客户端启用后重试")
++				return
++			}
+ 		}
+ 	}
+ 	tx, err := (service.BlueprintService{Issues: h.IssueService}).Begin(r.Context(), p)
+diff --git a/server/internal/handler/project_start.go b/server/internal/handler/project_start.go
+index 1dd201d..0e109ea 100644
+--- a/server/internal/handler/project_start.go
++++ b/server/internal/handler/project_start.go
+@@ -48,6 +48,9 @@ func (h *Handler) projectStartState(r *http.Request, tx pgx.Tx, p db.Project) (i
+ 			return 0, nil, err
+ 		}
+ 		i, err := q.GetIssueInWorkspace(r.Context(), db.GetIssueInWorkspaceParams{ID: uid, WorkspaceID: p.WorkspaceID})
++		if errors.Is(err, pgx.ErrNoRows) || (err == nil && (i.ProjectID != p.ID || i.Status == "done" || i.Status == "cancelled")) {
++			continue
++		}
+ 		if err != nil {
+ 			return 0, nil, err
+ 		}
+@@ -67,6 +70,10 @@ func (h *Handler) projectStartState(r *http.Request, tx pgx.Tx, p db.Project) (i
+ 							return 0, nil, e
+ 						}
+ 						previous, e := q.GetIssueInWorkspace(r.Context(), db.GetIssueInWorkspaceParams{ID: upID, WorkspaceID: p.WorkspaceID})
++						if errors.Is(e, pgx.ErrNoRows) || (e == nil && previous.ProjectID != p.ID) {
++							reason = "前置任务已不可用"
++							continue
++						}
+ 						if e != nil {
+ 							return 0, nil, e
+ 						}
+@@ -82,17 +89,16 @@ func (h *Handler) projectStartState(r *http.Request, tx pgx.Tx, p db.Project) (i
+ 		if !i.AssigneeID.Valid {
+ 			reason = "请先指定负责人"
+ 		}
+-		if i.AssigneeType.String == "member" && i.Status != "backlog" {
+-			reason = "已安排给成员，请在任务页跟进"
+-			if i.Status == "in_progress" {
+-				reason = "任务进行中，请在任务页跟进"
+-			}
+-			if i.Status == "in_review" {
+-				reason = "任务审核中，请在任务页核对交付"
+-			}
++		switch i.Status {
++		case "blocked":
++			reason = "任务已阻塞"
++		case "in_progress":
++			reason = "任务正在推进"
++		case "in_review":
++			reason = "任务审核中"
+ 		}
+ 		var arranged bool
+-		if err = tx.QueryRow(r.Context(), `SELECT EXISTS(SELECT 1 FROM project_start_request WHERE project_id=$1 AND issue_id=$2 AND result->>'status' IN ('notified','queued') AND (COALESCE(result->>'assignee_id','')='' OR result->>'assignee_id'=$3))`, p.ID, uid, uuidToString(i.AssigneeID)).Scan(&arranged); err != nil {
++		if err = tx.QueryRow(r.Context(), `SELECT EXISTS(SELECT 1 FROM project_start_request WHERE project_id=$1 AND issue_id=$2 AND version=$4 AND result->>'status' IN ('notified','queued') AND (COALESCE(result->>'assignee_id','')='' OR result->>'assignee_id'=$3))`, p.ID, uid, uuidToString(i.AssigneeID), number).Scan(&arranged); err != nil {
+ 			return 0, nil, err
+ 		}
+ 		if arranged {
+@@ -112,12 +118,6 @@ func (h *Handler) projectStartState(r *http.Request, tx pgx.Tx, p db.Project) (i
+ 		if active {
+ 			reason = "任务已有活动运行"
+ 		}
+-		if i.Status == "done" || i.Status == "cancelled" {
+-			reason = "任务已完成，无需再次推进"
+-			if i.Status == "cancelled" {
+-				reason = "任务已取消，不能推进"
+-			}
+-		}
+ 		body, _ := json.Marshal([]any{number, i.Title, i.Description.String, i.AssigneeType.String, uuidToString(i.AssigneeID), i.Status, prerequisites})
+ 		hash := sha256.Sum256(body)
+ 		items = append(items, projectStartItem{AssigneeID: uuidToString(i.AssigneeID), AssigneeType: i.AssigneeType.String, PredecessorIDs: predecessorIDs, IssueID: n.IssueID, Title: i.Title, InputHash: hex.EncodeToString(hash[:]), Reason: reason, Status: "ready"})
+@@ -164,7 +164,7 @@ func (h *Handler) StartProjectTasks(w http.ResponseWriter, r *http.Request) {
+ 	}
+ 	results := []projectStartItem{}
+ 	for _, item := range req.Items {
+-		result := item
++		result := projectStartItem{IssueID: item.IssueID}
+ 		result.Status = "failed"
+ 		result.Reason = ""
+ 		uid, valid := parsePlanUUID(item.IssueID)
+@@ -187,8 +187,7 @@ func (h *Handler) StartProjectTasks(w http.ResponseWriter, r *http.Request) {
+ 			if !errors.Is(e, pgx.ErrNoRows) {
+ 				return e
+ 			}
+-			var locked pgtype.UUID
+-			if e = tx.QueryRow(r.Context(), "SELECT id FROM issue WHERE id=$1 AND workspace_id=$2 AND project_id=$3 FOR UPDATE", uid, p.WorkspaceID, p.ID).Scan(&locked); e != nil {
++			if _, e = tx.Exec(r.Context(), `SELECT id FROM issue WHERE workspace_id=$1 AND project_id=$2 ORDER BY id FOR UPDATE`, p.WorkspaceID, p.ID); e != nil {
+ 				return e
+ 			}
+ 			v, states, e := h.projectStartState(r, tx, p)
+@@ -222,29 +221,39 @@ func (h *Handler) StartProjectTasks(w http.ResponseWriter, r *http.Request) {
+ 			if e != nil {
+ 				return e
+ 			}
+-			if status, msg := h.validateAssigneePair(r.Context(), r, uuidToString(p.WorkspaceID), i.AssigneeType, i.AssigneeID); status != 0 {
+-				return errors.New(msg)
+-			}
+-			if _, e = tx.Exec(r.Context(), "UPDATE issue SET status=CASE WHEN status='backlog' THEN 'todo' ELSE status END,updated_at=now() WHERE id=$1", uid); e != nil {
++			var task db.AgentTaskQueue
++			dispatch, e := tx.Begin(r.Context())
++			if e != nil {
+ 				return e
+ 			}
+-			if i.Status == "backlog" {
+-				i.Status = "todo"
+-			}
+-			var task db.AgentTaskQueue
+-			if i.AssigneeType.String == "member" {
+-				_, e = q.CreateInboxItem(r.Context(), db.CreateInboxItemParams{WorkspaceID: p.WorkspaceID, RecipientType: "member", RecipientID: i.AssigneeID, Type: "issue_assigned", Severity: "info", IssueID: i.ID, Title: i.Title, Body: pgtype.Text{String: "项目已明确安排此任务，请查看生效计划与前置交付。", Valid: true}, ActorType: pgtype.Text{String: "member", Valid: true}, ActorID: m.UserID, Details: []byte(`{}`)})
++			if status, msg := h.validateAssigneePair(r.Context(), r, uuidToString(p.WorkspaceID), i.AssigneeType, i.AssigneeID); status != 0 {
++				e = errors.New(msg)
++				result.Reason = msg
++			} else if i.AssigneeType.String == "member" {
++				_, e = h.Queries.WithTx(dispatch).CreateInboxItem(r.Context(), db.CreateInboxItemParams{WorkspaceID: p.WorkspaceID, RecipientType: "member", RecipientID: i.AssigneeID, Type: "issue_assigned", Severity: "info", IssueID: i.ID, Title: i.Title, Body: pgtype.Text{String: "项目已明确安排此任务，请查看生效计划与前置交付。", Valid: true}, ActorType: pgtype.Text{String: "member", Valid: true}, ActorID: m.UserID, Details: []byte(`{}`)})
+ 				result.Status = "notified"
+ 			} else {
+-				task, e = h.TaskService.EnqueueProjectTaskInTransaction(r.Context(), tx, i, m.UserID)
+-				result.TaskID = uuidToString(task.ID)
+-				result.Status = "queued"
++				task, e = h.TaskService.EnqueueProjectTaskInTransaction(r.Context(), dispatch, i, m.UserID)
++				if e == nil {
++					result.TaskID = uuidToString(task.ID)
++					result.Status = "queued"
++				}
+ 			}
+ 			if e != nil {
++				if rollbackErr := dispatch.Rollback(r.Context()); rollbackErr != nil {
++					return rollbackErr
++				}
++				result.Status = "failed"
++				result.TaskID = ""
++				task = db.AgentTaskQueue{}
++				if result.Reason == "" {
++					result.Reason = "交接失败，可检查运行环境并重新请求"
++				}
++			} else if e = dispatch.Commit(r.Context()); e != nil {
+ 				return e
+ 			}
+ 			raw, _ := json.Marshal(result)
+-			if _, e = tx.Exec(r.Context(), `INSERT INTO project_start_request(project_id,issue_id,request_id,result) VALUES($1,$2,$3,$4)`, p.ID, uid, req.RequestID, raw); e != nil {
++			if _, e = tx.Exec(r.Context(), `INSERT INTO project_start_request(project_id,issue_id,request_id,result,version) VALUES($1,$2,$3,$4,$5)`, p.ID, uid, req.RequestID, raw, v); e != nil {
+ 				return e
+ 			}
+ 			if e = tx.Commit(r.Context()); e != nil {
+diff --git a/server/internal/handler/squad.go b/server/internal/handler/squad.go
+index aa2f21a..cb44aa2 100644
+--- a/server/internal/handler/squad.go
++++ b/server/internal/handler/squad.go
+@@ -235,10 +235,11 @@ func (h *Handler) CreateSquad(w http.ResponseWriter, r *http.Request) {
+ 	}
+ 
+ 	var req struct {
+-		Name        string  `json:"name"`
+-		Description string  `json:"description"`
+-		LeaderID    string  `json:"leader_id"`
+-		AvatarURL   *string `json:"avatar_url"`
++		Name         string  `json:"name"`
++		Description  string  `json:"description"`
++		Instructions string  `json:"instructions"`
++		LeaderID     string  `json:"leader_id"`
++		AvatarURL    *string `json:"avatar_url"`
+ 	}
+ 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+ 		writeError(w, http.StatusBadRequest, "invalid request body")
+@@ -287,7 +288,21 @@ func (h *Handler) CreateSquad(w http.ResponseWriter, r *http.Request) {
+ 		avatarURL = pgtype.Text{String: accepted, Valid: true}
+ 	}
+ 
+-	squad, err := h.Queries.CreateSquad(r.Context(), db.CreateSquadParams{
++	tx, err := h.TxStarter.Begin(r.Context())
++	if err != nil {
++		writeError(w, http.StatusInternalServerError, "failed to start squad transaction")
++		return
++	}
++	defer tx.Rollback(r.Context())
++	qtx := h.Queries.WithTx(tx)
++	lockedLeader, err := qtx.LockAgentForAutopilotAssignment(r.Context(), db.LockAgentForAutopilotAssignmentParams{
++		ID: leaderUUID, WorkspaceID: wsUUID,
++	})
++	if err != nil || lockedLeader.ArchivedAt.Valid {
++		writeError(w, http.StatusBadRequest, "leader must be an active agent in this workspace")
++		return
++	}
++	squad, err := qtx.CreateSquad(r.Context(), db.CreateSquadParams{
+ 		WorkspaceID: wsUUID,
+ 		Name:        req.Name,
+ 		Description: req.Description,
+@@ -301,13 +316,29 @@ func (h *Handler) CreateSquad(w http.ResponseWriter, r *http.Request) {
+ 	}
+ 
+ 	// Auto-add leader as a member with role "leader".
+-	h.Queries.AddSquadMember(r.Context(), db.AddSquadMemberParams{
++	_, err = qtx.AddSquadMember(r.Context(), db.AddSquadMemberParams{
+ 		SquadID:    squad.ID,
+ 		MemberType: "agent",
+ 		MemberID:   leaderUUID,
+ 		Role:       "leader",
+ 	})
+ 
++	if err != nil {
++		writeError(w, http.StatusInternalServerError, "failed to add squad leader")
++		return
++	}
++	if req.Instructions != "" {
++		squad, err = qtx.UpdateSquad(r.Context(), db.UpdateSquadParams{ID: squad.ID, Instructions: pgtype.Text{String: req.Instructions, Valid: true}})
++		if err != nil {
++			writeError(w, http.StatusInternalServerError, "failed to save instructions")
++			return
++		}
++	}
++	if err := tx.Commit(r.Context()); err != nil {
++		writeError(w, http.StatusInternalServerError, "failed to commit squad")
++		return
++	}
++
+ 	resp, err := h.squadToResponseWithPreview(r.Context(), squad)
+ 	if err != nil {
+ 		writeError(w, http.StatusInternalServerError, "failed to load squad member preview")
+@@ -419,8 +450,8 @@ func (h *Handler) UpdateSquad(w http.ResponseWriter, r *http.Request) {
+ 			ID:          lid,
+ 			WorkspaceID: wsUUID,
+ 		})
+-		if err != nil {
+-			writeError(w, http.StatusBadRequest, "leader must be a valid agent in this workspace")
++		if err != nil || newLeader.ArchivedAt.Valid {
++			writeError(w, http.StatusBadRequest, "leader must be an active agent in this workspace")
+ 			return
+ 		}
+ 		// A non-admin creator may only promote an agent they can @-trigger.
+@@ -501,35 +532,45 @@ func (h *Handler) DeleteSquad(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 
+-	// Transfer issues assigned to this squad to the leader agent.
+-	if err := h.Queries.TransferSquadAssignees(r.Context(), db.TransferSquadAssigneesParams{
+-		AssigneeID:   squad.ID,
+-		AssigneeID_2: squad.LeaderID,
+-	}); err != nil {
+-		slog.Warn("transfer squad assignees failed", "squad_id", uuidToString(squad.ID), "error", err)
+-	}
+-
+-	// Mirror the issue-assignee transfer for autopilots that target this
+-	// squad. Without this, autopilot.assignee_id would still point at the
+-	// archived squad row and every subsequent dispatch would skip with
+-	// "assignee squad is archived" — visible to ops but useless to the
+-	// owner. Rewriting to the leader keeps the autopilot semantics
+-	// unchanged (Path A from MUL-2429 is leader-only execution anyway).
+-	if err := h.Queries.TransferSquadAutopilotsToLeader(r.Context(), db.TransferSquadAutopilotsToLeaderParams{
+-		AssigneeID:   squad.ID,
+-		AssigneeID_2: squad.LeaderID,
+-	}); err != nil {
+-		slog.Warn("transfer squad autopilots failed", "squad_id", uuidToString(squad.ID), "error", err)
++	ctx := r.Context()
++	tx, err := h.TxStarter.Begin(ctx)
++	if err != nil {
++		writeError(w, http.StatusInternalServerError, "failed to begin squad archive")
++		return
++	}
++	defer tx.Rollback(ctx)
++	qtx := h.Queries.WithTx(tx)
++	squad, err = qtx.LockSquadForUpdate(ctx, db.LockSquadForUpdateParams{ID: squad.ID, WorkspaceID: squad.WorkspaceID})
++	if err != nil {
++		writeError(w, http.StatusInternalServerError, "failed to lock squad")
++		return
++	}
++	if !canManageSquad(member, squad) {
++		writeError(w, http.StatusForbidden, "insufficient permissions")
++		return
++	}
++	if squad.ArchivedAt.Valid {
++		writeError(w, http.StatusConflict, "squad is already archived")
++		return
+ 	}
+-
+ 	userID := requestUserID(r)
+-	userUUID, _ := parseUUIDOrBadRequest(w, userID, "user_id")
+-
+-	if _, err := h.Queries.ArchiveSquad(r.Context(), db.ArchiveSquadParams{
+-		ID:         squad.ID,
+-		ArchivedBy: userUUID,
+-	}); err != nil {
+-		writeError(w, http.StatusInternalServerError, "failed to archive squad")
++	_, err = qtx.ArchiveSquad(ctx, db.ArchiveSquadParams{ID: squad.ID, ArchivedBy: parseUUID(userID)})
++	if err != nil {
++		if unavailableAssignment(err) {
++			writeError(w, http.StatusConflict, "小队队长不可用，请先更换队长再交接未完成任务")
++			return
++		}
++		writeError(w, http.StatusInternalServerError, "failed to archive squad and transfer issues")
++		return
++	}
++	err = qtx.TransferSquadAutopilotsToLeader(ctx, db.TransferSquadAutopilotsToLeaderParams{
++		AssigneeID: squad.ID, AssigneeID_2: squad.LeaderID,
++	})
++	if err == nil {
++		err = tx.Commit(ctx)
++	}
++	if err != nil {
++		writeError(w, http.StatusInternalServerError, "failed to commit squad archive")
+ 		return
+ 	}
+ 
+diff --git a/server/internal/handler/task_draft.go b/server/internal/handler/task_draft.go
+index a35f750..74a358f 100644
+--- a/server/internal/handler/task_draft.go
++++ b/server/internal/handler/task_draft.go
+@@ -68,31 +68,65 @@ func (h *Handler) TaskDraft(w http.ResponseWriter, r *http.Request) {
+ 	if !ok {
+ 		return
+ 	}
+-	aid, ok := parseUUIDOrBadRequest(w, req.AgentID, "agent_id")
+-	if !ok {
+-		return
++	var aid pgtype.UUID
++	var err error
++	squadID := strings.TrimPrefix(req.AgentID, "squad:")
++	if squadID != req.AgentID {
++		squad, valid := parseUUIDOrBadRequest(w, squadID, "squad_id")
++		if !valid {
++			return
++		}
++		var built bool
++		err = h.DB.QueryRow(r.Context(), `SELECT s.leader_id,COALESCE(a.system_key='mobilework',false) FROM squad s JOIN agent a ON a.id=s.leader_id AND a.workspace_id=s.workspace_id WHERE s.id=$1 AND s.workspace_id=$2 AND s.archived_at IS NULL AND a.archived_at IS NULL`, squad, m.WorkspaceID).Scan(&aid, &built)
++		if err != nil {
++			writeError(w, 404, "小队或队长不可用")
++			return
++		}
++		req.AgentID = uuidToString(aid)
++		if built {
++			req.AgentID = "work"
++		}
++	} else {
++		squadID = ""
++	}
++	builtin := req.AgentID == "work"
++	if builtin {
++		err = h.DB.QueryRow(r.Context(), "SELECT id FROM workspace_work WHERE workspace_id=$1", m.WorkspaceID).Scan(&aid)
++		if err != nil {
++			planWriteError(w, err)
++			return
++		}
++	} else {
++		aid, ok = parseUUIDOrBadRequest(w, req.AgentID, "agent_id")
++		if !ok {
++			return
++		}
+ 	}
+ 	if len(req.Prompt) > 50000 || strings.TrimSpace(req.Prompt) == "" {
+ 		writeError(w, 422, "请填写需要整理的任务要求")
+ 		return
+ 	}
+-	if status, msg := h.validateAssigneePair(r.Context(), r, ws, pgtype.Text{String: "agent", Valid: true}, aid); status != 0 {
+-		writeError(w, status, msg)
+-		return
+-	}
+-	a, err := h.Queries.GetAgentInWorkspace(r.Context(), db.GetAgentInWorkspaceParams{ID: aid, WorkspaceID: m.WorkspaceID})
+-	if err != nil {
+-		planWriteError(w, err)
+-		return
+-	}
+-	rt, err := h.Queries.GetAgentRuntime(r.Context(), a.RuntimeID)
+-	if err != nil || (rt.Provider != "mc" && rt.Provider != "pi" && rt.Provider != "codex" && rt.Provider != "claude" && rt.Provider != "opencode") || rt.ProfileID.Valid || !runtimeHasCapability(rt.Metadata, "task-draft-v1") {
+-		writeError(w, 422, "请升级并重启执行端后生成任务草稿")
+-		return
+-	}
+-	if rt.Status == "offline" || !rt.LastSeenAt.Valid || time.Since(rt.LastSeenAt.Time) > 90*time.Second {
+-		writeError(w, 503, "智能体执行端离线，请启用后重试")
+-		return
++	var a db.Agent
++	var rt db.AgentRuntime
++	if !builtin {
++		if status, msg := h.validateAssigneePair(r.Context(), r, ws, pgtype.Text{String: "agent", Valid: true}, aid); status != 0 {
++			writeError(w, status, msg)
++			return
++		}
++		a, err = h.Queries.GetAgentInWorkspace(r.Context(), db.GetAgentInWorkspaceParams{ID: aid, WorkspaceID: m.WorkspaceID})
++		if err != nil {
++			planWriteError(w, err)
++			return
++		}
++		rt, err = h.Queries.GetAgentRuntime(r.Context(), a.RuntimeID)
++		if err != nil || (rt.Provider != "mc" && rt.Provider != "pi" && rt.Provider != "codex" && rt.Provider != "claude" && rt.Provider != "opencode") || rt.ProfileID.Valid || !runtimeHasCapability(rt.Metadata, "task-draft-v1") {
++			writeError(w, 422, "请升级并重启执行端后生成任务草稿")
++			return
++		}
++		if rt.Status == "offline" || !rt.LastSeenAt.Valid || time.Since(rt.LastSeenAt.Time) > 90*time.Second {
++			writeError(w, 503, "智能体执行端离线，请启用后重试")
++			return
++		}
+ 	}
+ 	location := time.UTC
+ 	if req.Timezone != "" {
+@@ -103,7 +137,7 @@ func (h *Handler) TaskDraft(w http.ResponseWriter, r *http.Request) {
+ 			return
+ 		}
+ 	}
+-	input := planningInput{Purpose: "task_draft", Instructions: req.Prompt, Model: a.Model.String, ReferenceDate: time.Now().In(location).Format("2006-01-02"), Timezone: location.String()}
++	input := planningInput{SquadID: squadID, Purpose: "task_draft", Instructions: req.Prompt, Model: a.Model.String, ReferenceDate: time.Now().In(location).Format("2006-01-02"), Timezone: location.String()}
+ 	var project pgtype.UUID
+ 	if req.ProjectID != "" {
+ 		project, ok = parseUUIDOrBadRequest(w, req.ProjectID, "project_id")
+diff --git a/server/internal/handler/workbench.go b/server/internal/handler/workbench.go
+index 2c5dde2..c076656 100644
+--- a/server/internal/handler/workbench.go
++++ b/server/internal/handler/workbench.go
+@@ -17,6 +17,7 @@ import (
+ )
+ 
+ type benchMessage struct {
++	Inputs         json.RawMessage   `json:"files,omitempty"`
+ 	ID             string            `json:"id"`
+ 	ConversationID string            `json:"conversationId"`
+ 	Prompt         string            `json:"prompt"`
+@@ -80,7 +81,7 @@ func benchVisible(result *workbench.Result, c workbench.Corpus) bool {
+ func (h *Handler) benchMessage(ctx context.Context, m db.Member, id string) (benchMessage, error) {
+ 	var msg benchMessage
+ 	var raw []byte
+-	err := h.DB.QueryRow(ctx, `SELECT id,conversation_id,prompt,status,progress,error,result,created_at FROM workbench_message WHERE id=$1 AND workspace_id=$2 AND owner_id=$3`, id, m.WorkspaceID, m.UserID).Scan(&msg.ID, &msg.ConversationID, &msg.Prompt, &msg.Status, &msg.Progress, &msg.Error, &raw, &msg.CreatedAt)
++	err := h.DB.QueryRow(ctx, `SELECT id,conversation_id,prompt,status,progress,error,result,created_at,(SELECT coalesce(jsonb_agg(jsonb_build_object('id',f.id,'filename',f.filename) ORDER BY f.position),'[]') FROM workbench_input_file f WHERE f.message_id=workbench_message.id) FROM workbench_message WHERE id=$1 AND workspace_id=$2 AND owner_id=$3`, id, m.WorkspaceID, m.UserID).Scan(&msg.ID, &msg.ConversationID, &msg.Prompt, &msg.Status, &msg.Progress, &msg.Error, &raw, &msg.CreatedAt, &msg.Inputs)
+ 	msg.Result = benchDecodeResult(raw)
+ 	return msg, err
+ }
+@@ -190,8 +191,8 @@ func (h *Handler) WorkbenchState(w http.ResponseWriter, r *http.Request) {
+ 			messages = append(messages, msg)
+ 		}
+ 	}
+-	runtimeStatus := h.WorkbenchPi.Status()
+-	writeJSON(w, 200, map[string]any{"conversations": conversations, "messages": messages, "pins": pins, "catalog": corpus.Catalog(), "modelReady": runtimeStatus == "ready", "runtimeStatus": runtimeStatus, "models": benchModels(h.WorkbenchPi), "fingerprint": corpus.Fingerprint})
++	runtimeStatus := h.workRuntimeStatus()
++	writeJSON(w, 200, map[string]any{"conversations": conversations, "messages": messages, "pins": pins, "catalog": corpus.Catalog(), "mock": mockWork(), "modelReady": runtimeStatus == "ready", "runtimeStatus": runtimeStatus, "models": benchModels(h.WorkbenchPi), "fingerprint": corpus.Fingerprint})
+ }
+ func (h *Handler) WorkbenchConversation(w http.ResponseWriter, r *http.Request) {
+ 	m, ok := h.benchAccess(w, r)
+@@ -225,6 +226,7 @@ func (h *Handler) WorkbenchSend(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 	var req struct {
++		Files          []workInput               `json:"files"`
+ 		RequestID      string                    `json:"requestId"`
+ 		ConversationID string                    `json:"conversationId"`
+ 		Prompt         string                    `json:"prompt"`
+@@ -232,7 +234,11 @@ func (h *Handler) WorkbenchSend(w http.ResponseWriter, r *http.Request) {
+ 		SourcePinID    string                    `json:"sourcePinId"`
+ 		LayoutState    map[string]map[string]any `json:"layoutState,omitempty"`
+ 	}
+-	if !decodePlan(w, r, &req) {
++	if !decodeWithFiles(w, r, &req) || !validWorkInputs(w, req.Files) {
++		return
++	}
++	if req.ModelID != "" {
++		writeError(w, 422, "Work 使用预配置模型")
+ 		return
+ 	}
+ 	id, ok := parseUUIDOrBadRequest(w, req.RequestID, "requestId")
+@@ -248,27 +254,38 @@ func (h *Handler) WorkbenchSend(w http.ResponseWriter, r *http.Request) {
+ 		writeError(w, 400, "问题为空或过长")
+ 		return
+ 	}
+-	if old, err := h.benchMessage(r.Context(), m, req.RequestID); err == nil {
+-		if old.ConversationID != req.ConversationID || old.Prompt != req.Prompt || (req.ModelID != "" && old.Result != nil && old.Result.RequestedModel != "" && old.Result.RequestedModel != req.ModelID) {
++	replay := func() bool {
++		old, err := h.benchMessage(r.Context(), m, req.RequestID)
++		if errors.Is(err, pgx.ErrNoRows) {
++			return false
++		}
++		if err != nil {
++			roomError(w, err)
++			return true
++		}
++		same, err := h.sameWorkInputs(r.Context(), req.RequestID, m, req.Files)
++		if err != nil {
++			roomError(w, err)
++			return true
++		}
++		if old.ConversationID != req.ConversationID || old.Prompt != req.Prompt || !same {
+ 			writeError(w, 409, "同一请求不能更改内容")
+-			return
++			return true
+ 		}
+ 		writeJSON(w, 200, old)
+-		return
+-	}
+-	if !h.WorkbenchPi.Enabled() {
+-		writeError(w, 503, "工作台模型尚未配置")
+-		return
++		return true
+ 	}
+-	model, err := h.WorkbenchPi.Select(req.ModelID)
+-	if err != nil {
+-		writeError(w, 400, err.Error())
++	if replay() {
+ 		return
+ 	}
+-	if err := h.WorkbenchPi.RequireReady(); err != nil {
+-		w.Header().Set("Retry-After", "5")
+-		writeError(w, 503, err.Error())
+-		return
++	action, _ := workAction(req.Prompt)
++	model := "MobileWork"
++	if action == "" {
++		var ready bool
++		model, ready = h.readyWorkModel(w)
++		if !ready {
++			return
++		}
+ 	}
+ 	var base *workbench.Result
+ 	if req.SourcePinID != "" {
+@@ -301,20 +318,40 @@ func (h *Handler) WorkbenchSend(w http.ResponseWriter, r *http.Request) {
+ 		}
+ 	}
+ 	initial := workbench.Result{RequestedModel: model, Model: model, View: workbench.View{SchemaVersion: 2, Blocks: []workbench.Block{}, Queries: []workbench.Query{}, Limitations: []string{}}, Evidence: []workbench.Evidence{}, GeneratedAt: time.Now().UTC().Format(time.RFC3339), Dynamic: workbench.NewDynamic()}
+-	tag, err := h.DB.Exec(r.Context(), `INSERT INTO workbench_message(id,conversation_id,workspace_id,owner_id,prompt,result) SELECT $1,id,workspace_id,owner_id,$5,$6 FROM workbench_conversation WHERE id=$2 AND workspace_id=$3 AND owner_id=$4 ON CONFLICT(id) DO NOTHING`, id, conv, m.WorkspaceID, m.UserID, req.Prompt, benchJSON(initial))
++	tx, err := h.TxStarter.Begin(r.Context())
++	if err != nil {
++		roomError(w, err)
++		return
++	}
++	defer tx.Rollback(r.Context())
++	tag, err := tx.Exec(r.Context(), `INSERT INTO workbench_message(id,conversation_id,workspace_id,owner_id,prompt,result) SELECT $1,id,workspace_id,owner_id,$5,$6 FROM workbench_conversation WHERE id=$2 AND workspace_id=$3 AND owner_id=$4 ON CONFLICT(id) DO NOTHING`, id, conv, m.WorkspaceID, m.UserID, req.Prompt, benchJSON(initial))
+ 	if err != nil {
+ 		planWriteError(w, err)
+ 		return
+ 	}
+ 	if tag.RowsAffected() == 0 {
+-		writeError(w, 409, "对话不可访问或请求已接收，请读取原请求")
++		_ = tx.Rollback(r.Context())
++		if !replay() {
++			writeError(w, 404, "会话不可用")
++		}
++		return
++	}
++	if err = persistWorkInputs(r.Context(), tx, req.RequestID, req.Files); err != nil {
++		roomError(w, err)
+ 		return
+ 	}
+-	go h.runWorkbench(m, req.RequestID, req.Prompt, req.ConversationID, "", model, base)
++	if err = tx.Commit(r.Context()); err != nil {
++		roomError(w, err)
++		return
++	}
++	go h.runWorkbenchWithInput(m, req.RequestID, req.Prompt, req.ConversationID, "", model, inputContext(req.Files), base)
+ 	msg, _ := h.benchMessage(r.Context(), m, req.RequestID)
+ 	writeJSON(w, 202, msg)
+ }
+ func (h *Handler) runWorkbench(m db.Member, id, prompt, conversation, pinID, model string, bases ...*workbench.Result) {
++	h.runWorkbenchWithInput(m, id, prompt, conversation, pinID, model, "", bases...)
++}
++func (h *Handler) runWorkbenchWithInput(m db.Member, id, prompt, conversation, pinID, model, input string, bases ...*workbench.Result) {
+ 	ctx, cancel := context.WithTimeout(context.Background(), 180*time.Second)
+ 	defer cancel()
+ 	h.benchRuns.Store(id, cancel)
+@@ -387,7 +424,7 @@ func (h *Handler) runWorkbench(m db.Member, id, prompt, conversation, pinID, mod
+ 					if previous == nil || !benchVisible(previous, corpus) {
+ 						continue
+ 					}
+-					if base == nil {
++					if base == nil && previous.Action == "" {
+ 						base = previous
+ 					}
+ 					summary := map[string]any{"intent": previous.View.Intent}
+@@ -407,21 +444,32 @@ func (h *Handler) runWorkbench(m db.Member, id, prompt, conversation, pinID, mod
+ 		}
+ 	}
+ 	var result workbench.Result
+-	if err == nil {
+-		result, err = workbench.GenerateDynamic(ctx, h.WorkbenchPi, corpus, id, model, uuidToString(m.UserID), prompt, history, progress, check, func(partial workbench.Result) error {
+-			latest, e := workbench.Load(ctx, h.DB, uuidToString(m.WorkspaceID), time.Now())
+-			if e != nil {
++	if action, _ := workAction(prompt); err == nil && action != "" && pinID == "" {
++		result = workActionResult(corpus, prompt)
++	} else if err == nil && mockWork() {
++		result, err = mockWorkbench(corpus, prompt, base)
++	} else if err == nil {
++		var personal string
++		err = h.DB.QueryRow(ctx, `SELECT coalesce((SELECT jsonb_build_object('个人指令',instructions,'回复语气',tone)::text FROM mobilework_preference WHERE user_id=$1),'{}')`, m.UserID).Scan(&personal)
++		if err == nil {
++			history += "\n以下是当前用户主动保存的个人偏好，授权仍以服务端为准。\n" + personal
++		}
++		if err == nil {
++			result, err = workbench.GenerateDynamic(ctx, h.WorkbenchPi, corpus, id, model, uuidToString(m.UserID), prompt, history+input, progress, check, func(partial workbench.Result) error {
++				latest, e := workbench.Load(ctx, h.DB, uuidToString(m.WorkspaceID), time.Now())
++				if e != nil {
++					return e
++				}
++				if !benchVisible(&partial, latest) {
++					return fmt.Errorf("部分依据已不可访问")
++				}
++				if pinID != "" {
++					return nil
++				}
++				_, e = h.DB.Exec(ctx, `UPDATE workbench_message SET result=$2,updated_at=now() WHERE id=$1 AND status='running'`, id, benchJSON(partial))
+ 				return e
+-			}
+-			if !benchVisible(&partial, latest) {
+-				return fmt.Errorf("部分依据已不可访问")
+-			}
+-			if pinID != "" {
+-				return nil
+-			}
+-			_, e = h.DB.Exec(ctx, `UPDATE workbench_message SET result=$2,updated_at=now() WHERE id=$1 AND status='running'`, id, benchJSON(partial))
+-			return e
+-		}, base)
++			}, base)
++		}
+ 	}
+ 	if err == nil {
+ 		err = check()
+@@ -450,10 +498,20 @@ func (h *Handler) runWorkbench(m db.Member, id, prompt, conversation, pinID, mod
+ 	saveCtx, done := context.WithTimeout(context.Background(), 5*time.Second)
+ 	defer done()
+ 	if pinID == "" {
++		if status == "completed" && result.Action == "" {
++			_, saveErr := h.DB.Exec(saveCtx, `WITH saved AS (UPDATE workbench_message SET status='completed',result=$2,error='',progress='',updated_at=now() WHERE id=$1 AND status='running' RETURNING id)
++ INSERT INTO workbench_artifact(message_id,filename,content) SELECT id,'Work-'||left(id::text,8)||'.md',$3 FROM saved`, id, raw, workMarkdown(result))
++			if saveErr == nil {
++				return
++			}
++			status = "failed"
++			failure = "无法保存 Work 产物，请重试"
++			raw = nil
++		}
+ 		_, _ = h.DB.Exec(saveCtx, `UPDATE workbench_message SET status=$2,result=COALESCE($3,result),error=$4,progress='',updated_at=now() WHERE id=$1 AND status='running'`, id, status, raw, failure)
+ 	} else {
+ 		if err == nil {
+-			_, _ = h.DB.Exec(saveCtx, `UPDATE saved_view SET result=$2,fingerprint=$3,status='ready',error='',refresh_id=NULL,updated_at=now() WHERE id=$1 AND refresh_id=$4`, pinID, raw, result.Fingerprint, id)
++			_, _ = h.DB.Exec(saveCtx, `UPDATE saved_view SET result=$2,definition=($2::jsonb)->'view',revision=revision+1,fingerprint=$3,status='ready',error='',refresh_id=NULL,updated_at=now() WHERE id=$1 AND refresh_id=$4`, pinID, raw, result.Fingerprint, id)
+ 		} else {
+ 			_, _ = h.DB.Exec(saveCtx, `UPDATE saved_view SET status='failed',error=$2,refresh_id=NULL WHERE id=$1 AND refresh_id=$3`, pinID, failure, id)
+ 		}
+@@ -646,31 +704,17 @@ func (h *Handler) WorkbenchRefresh(w http.ResponseWriter, r *http.Request) {
+ 		planWriteError(w, err)
+ 		return
+ 	}
+-	if fingerprint == c.ViewFingerprint(view) || status == "refreshing" {
++	if (r.URL.Query().Get("force") != "1" && fingerprint == c.ViewFingerprint(view)) || status == "refreshing" {
+ 		writeJSON(w, 200, map[string]string{"status": status})
+ 		return
+ 	}
+-	if !h.WorkbenchPi.Enabled() {
+-		writeError(w, 503, "工作台模型尚未配置")
+-		return
+-	}
+ 	previous := benchDecodeResult(previousRaw)
+ 	if !benchVisible(previous, c) {
+ 		writeError(w, 403, "部分依据已不可访问")
+ 		return
+ 	}
+-	modelID := ""
+-	if previous != nil {
+-		modelID = previous.RequestedModel
+-	}
+-	model, err := h.WorkbenchPi.Select(modelID)
+-	if err != nil {
+-		writeError(w, 400, err.Error())
+-		return
+-	}
+-	if err := h.WorkbenchPi.RequireReady(); err != nil {
+-		w.Header().Set("Retry-After", "5")
+-		writeError(w, 503, err.Error())
++	model, ready := h.readyWorkModel(w)
++	if !ready {
+ 		return
+ 	}
+ 	run := uuid.NewString()
+@@ -693,7 +737,7 @@ func (h *Handler) WorkbenchRefresh(w http.ResponseWriter, r *http.Request) {
+ 			}
+ 			plan["layoutExamples"] = examples
+ 		}
+-		go h.runWorkbench(m, run, intent+"\n重新检索当前候选并更新全部分析。保留布局意图，不沿用旧成员资格或旧结论。以下layoutExamples只是排版参考，不是可直接回传的协议事件；每个section使用当前dataRefs/facts和内嵌分析组件重新生成，不可复用旧绑定路径或内部claim ID："+string(benchJSON(plan)), "", id, model)
++		go h.runWorkbench(m, run, intent+"\n重新检索当前候选并更新全部分析。保留布局意图，不沿用旧成员资格或旧结论。以下layoutExamples只是排版参考，不是可直接回传的协议事件；每个section使用当前dataRefs/facts和内嵌分析组件重新生成，不可复用旧绑定路径或内部claim ID："+string(benchJSON(plan)), "", id, model, previous)
+ 	}
+ 	writeJSON(w, 202, map[string]string{"status": "refreshing"})
+ }
+diff --git a/server/internal/handler/workspace.go b/server/internal/handler/workspace.go
+index 62edc40..565689e 100644
+--- a/server/internal/handler/workspace.go
++++ b/server/internal/handler/workspace.go
+@@ -199,6 +199,8 @@ func (h *Handler) GetWorkspace(w http.ResponseWriter, r *http.Request) {
+ }
+ 
+ type CreateWorkspaceRequest struct {
++	AvatarURL   string  `json:"avatar_url"`
++	Demo        bool    `json:"demo"`
+ 	Name        string  `json:"name"`
+ 	Slug        string  `json:"slug"`
+ 	Description *string `json:"description"`
+@@ -249,7 +251,7 @@ func (h *Handler) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
+ 
+ 	req.Name = strings.TrimSpace(req.Name)
+ 	req.Slug = strings.ToLower(strings.TrimSpace(req.Slug))
+-	if req.Name == "" || req.Slug == "" {
++	if req.Name == "" || len([]rune(req.Name)) > 30 || (req.Description != nil && len([]rune(*req.Description)) > 200) || req.Slug == "" {
+ 		writeError(w, http.StatusBadRequest, "name and slug are required")
+ 		return
+ 	}
+@@ -302,6 +304,22 @@ func (h *Handler) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 
++	if req.AvatarURL != "" {
++		if len(req.AvatarURL) > 256*1024 {
++			writeError(w, http.StatusBadRequest, "avatar is too large")
++			return
++		}
++		avatar, ok := h.acceptAvatarURL(w, r, req.AvatarURL, "")
++		if !ok {
++			return
++		}
++		ws, err = qtx.UpdateWorkspace(r.Context(), db.UpdateWorkspaceParams{ID: ws.ID, AvatarUrl: pgtype.Text{String: avatar, Valid: true}})
++		if err != nil {
++			writeError(w, http.StatusInternalServerError, "failed to save workspace avatar")
++			return
++		}
++	}
++
+ 	_, err = qtx.CreateMember(r.Context(), db.CreateMemberParams{
+ 		WorkspaceID: ws.ID,
+ 		UserID:      parseUUID(userID),
+@@ -322,6 +340,12 @@ func (h *Handler) CreateWorkspace(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 
++	if req.Demo {
++		if err := h.seedDemoWorkspace(r.Context(), tx, ws.ID, parseUUID(userID)); err != nil {
++			planWriteError(w, err)
++			return
++		}
++	}
+ 	// NOTE: CreateWorkspace deliberately does NOT mark the user as
+ 	// onboarded. The `onboarded_at` flag is owned by CompleteOnboarding
+ 	// (Step 3 of the flow) and by AcceptInvitation (invitee joining an
+@@ -412,6 +436,10 @@ func (h *Handler) UpdateWorkspace(w http.ResponseWriter, r *http.Request) {
+ 		return
+ 	}
+ 
++	if (req.Name != nil && len([]rune(strings.TrimSpace(*req.Name))) > 30) || (req.Description != nil && len([]rune(*req.Description)) > 200) || (req.Context != nil && len([]rune(*req.Context)) > 2000) || (req.AvatarURL != nil && len(*req.AvatarURL) > 256*1024) {
++		writeError(w, http.StatusBadRequest, "workspace profile exceeds field length limit")
++		return
++	}
+ 	params := db.UpdateWorkspaceParams{
+ 		ID: idUUID,
+ 	}
+diff --git a/server/internal/service/issue.go b/server/internal/service/issue.go
+index 7bf8e73..28c1e71 100644
+--- a/server/internal/service/issue.go
++++ b/server/internal/service/issue.go
+@@ -83,7 +83,8 @@ type IssueCreateParams struct {
+ 	// so the issue is never committed with a partial or wrong label set. An
+ 	// unknown or non-issue label id fails the whole create with
+ 	// ErrIssueLabelNotFound rather than being silently dropped.
+-	LabelIDs []pgtype.UUID
++	LabelIDs   []pgtype.UUID
++	LabelNames []string
+ 	// Properties is keyed only by property-definition UUID. Create validates
+ 	// and canonicalizes every value while holding the same per-definition locks
+ 	// used by the standalone PUT path, then inserts the complete bag atomically.
+@@ -414,6 +415,11 @@ func (s *IssueService) CreateInTransaction(ctx context.Context, tx pgx.Tx, p Iss
+ 	// wrong-scope selection fails the create cheaply. The de-duplicated rows
+ 	// are attached to the issue below, inside this same transaction, and
+ 	// echoed back as the authoritative snapshot in the result.
++	namedIDs, err := ResolveIssueLabelNames(ctx, tx, p.WorkspaceID, p.LabelNames)
++	if err != nil {
++		return IssueCreateResult{}, err
++	}
++	p.LabelIDs = append(p.LabelIDs, namedIDs...)
+ 	labels, err := validateIssueLabels(ctx, qtx, p.WorkspaceID, p.LabelIDs)
+ 	if err != nil {
+ 		return IssueCreateResult{}, err
+@@ -1031,3 +1037,20 @@ func (s *IssueService) enqueueSquadLeaderTask(ctx context.Context, issue db.Issu
+ 		s.TaskService.RecordHumanDelegation(ctx, attribution.DirectHumanRun(issue.CreatorID, attribution.EvidenceIssueAssignment, issue.ID))
+ 	}
+ }
++
++// ResolveIssueLabelNames finds or creates issue labels within the caller's transaction.
++func ResolveIssueLabelNames(ctx context.Context, tx pgx.Tx, workspace pgtype.UUID, names []string) ([]pgtype.UUID, error) {
++	ids := make([]pgtype.UUID, 0, len(names))
++	for _, name := range names {
++		var id pgtype.UUID
++		err := tx.QueryRow(ctx, `INSERT INTO issue_label (workspace_id, resource_type, name, color)
++            VALUES ($1, 'issue', $2, '#1890ff')
++            ON CONFLICT (workspace_id, resource_type, lower(name)) DO UPDATE SET name = issue_label.name
++            RETURNING id`, workspace, name).Scan(&id)
++		if err != nil {
++			return nil, fmt.Errorf("resolve task label: %w", err)
++		}
++		ids = append(ids, id)
++	}
++	return ids, nil
++}
+diff --git a/server/internal/service/project_blueprint.go b/server/internal/service/project_blueprint.go
+index 5322860..d664566 100644
+--- a/server/internal/service/project_blueprint.go
++++ b/server/internal/service/project_blueprint.go
+@@ -151,16 +151,20 @@ func (s BlueprintService) hydrate(ctx context.Context, tx pgx.Tx, p db.Project,
+ 			if err != nil {
+ 				return err
+ 			}
+-			if reset {
+-				if previous := base[n.IssueID]; previous != nil {
+-					merged, err := projectplan.RefreshContract(previous.Contract, n.Contract, b.Contract)
+-					if err != nil {
+-						return planConflict(n.Title + "：" + err.Error())
+-					}
+-					n.Contract = merged
+-				} else {
+-					n.Contract = b.Contract
++			previous := base[n.IssueID]
++			if previous == nil {
++				// On first inclusion the client may have observed an older issue.
++				// Merge its edits against the current issue before storing the DB baseline.
++				previous = n.Baseline
++			}
++			if previous != nil {
++				merged, err := projectplan.RefreshContract(previous.Contract, n.Contract, b.Contract)
++				if err != nil {
++					return planConflict(n.Title + "：" + err.Error())
+ 				}
++				n.Contract = merged
++			} else if reset {
++				n.Contract = b.Contract
+ 			}
+ 			n.Baseline = &b
+ 		}
+@@ -279,6 +283,9 @@ func (s BlueprintService) prepare(ctx context.Context, tx pgx.Tx, p db.Project,
+ 	if d.Status != "active" || revision != d.Revision || base != d.BaseVersion || base != v.Number {
+ 		return d, preview, planConflict("草案或当前版本已更新，请重新核对")
+ 	}
++	if len(d.Graph.Nodes) == 0 {
++		return d, preview, &PlanError{422, "空蓝图不能发布"}
++	}
+ 	if err = d.Graph.Validate(); err != nil {
+ 		return d, preview, &PlanError{422, err.Error()}
+ 	}
+diff --git a/server/internal/service/task.go b/server/internal/service/task.go
+index 198e7e5..ac96af4 100644
+--- a/server/internal/service/task.go
++++ b/server/internal/service/task.go
+@@ -2354,7 +2354,10 @@ func (s *TaskService) PromoteDeferredChannelIssueTask(ctx context.Context, taskI
+ // DirectChatSendResult carries the rows a transactional direct-chat send
+ // persisted, so the handler can broadcast the user message and shape its
+ // response without re-reading them.
++var ErrChatRequestChanged = errors.New("同一请求不能更改内容")
++
+ type DirectChatSendResult struct {
++	Replayed           bool
+ 	Task               db.AgentTaskQueue
+ 	Message            db.ChatMessage
+ 	BoundAttachmentIDs []pgtype.UUID
+@@ -2384,6 +2387,7 @@ func (s *TaskService) SendDirectChatMessage(
+ 	attachmentIDs []pgtype.UUID,
+ 	uploaderType string,
+ 	uploaderID pgtype.UUID,
++	requestIDs ...pgtype.UUID,
+ ) (*DirectChatSendResult, error) {
+ 	// Build the per-task Composio overlay before the transaction — it can do
+ 	// network I/O and must not run with a DB transaction open.
+@@ -2402,6 +2406,11 @@ func (s *TaskService) SendDirectChatMessage(
+ 	attrSource, _, attrEvidenceKind, attrEvidenceRef := attributionCreateParams(attr)
+ 
+ 	var out DirectChatSendResult
++	var requestID pgtype.UUID
++	if len(requestIDs) > 0 {
++		requestID = requestIDs[0]
++	}
++	input, _ := json.Marshal([]any{content, attachmentIDs})
+ 	if err := s.runInTx(ctx, func(qtx *db.Queries) error {
+ 		// Serialise this send against a concurrent runtime rebind of the same
+ 		// session (MUL-5163). The lock must be taken first and the agent re-read
+@@ -2414,6 +2423,22 @@ func (s *TaskService) SendDirectChatMessage(
+ 		if _, err := qtx.LockChatSessionForRuntimeBind(ctx, session.ID); err != nil {
+ 			return fmt.Errorf("lock chat session: %w", err)
+ 		}
++		if requestID.Valid {
++			raw, same, e := qtx.ChatSendReceipt(ctx, session.ID, requestID, input)
++			if e == nil {
++				if !same {
++					return ErrChatRequestChanged
++				}
++				if e = json.Unmarshal(raw, &out); e != nil {
++					return e
++				}
++				out.Replayed = true
++				return nil
++			}
++			if !errors.Is(e, pgx.ErrNoRows) {
++				return e
++			}
++		}
+ 		currentSession, err := qtx.GetChatSession(ctx, session.ID)
+ 		if err != nil {
+ 			return fmt.Errorf("reload chat session: %w", err)
+@@ -2557,6 +2582,13 @@ func (s *TaskService) SendDirectChatMessage(
+ 		if err := qtx.TouchChatSession(ctx, session.ID); err != nil {
+ 			return fmt.Errorf("touch chat session: %w", err)
+ 		}
++		if requestID.Valid {
++			raw, e := json.Marshal(out)
++			if e != nil {
++				return e
++			}
++			return qtx.SaveChatReceipt(ctx, session.ID, requestID, input, raw)
++		}
+ 		return nil
+ 	}); err != nil {
+ 		slog.Error("direct chat send failed",
+@@ -2566,6 +2598,9 @@ func (s *TaskService) SendDirectChatMessage(
+ 		return nil, err
+ 	}
+ 
++	if out.Replayed {
++		return &out, nil
++	}
+ 	slog.Info("direct chat task enqueued",
+ 		"task_id", util.UUIDToString(out.Task.ID),
+ 		"chat_session_id", util.UUIDToString(session.ID),
+@@ -6267,13 +6302,18 @@ func (s *TaskService) CancelTasksForArchivedAgent(ctx context.Context, agentID p
+ 	if err != nil {
+ 		return nil, err
+ 	}
++	s.NotifyArchivedAgentCancellations(ctx, cancelled)
++	return cancelled, nil
++}
++
++// NotifyArchivedAgentCancellations publishes the committed chat cancellations.
++func (s *TaskService) NotifyArchivedAgentCancellations(ctx context.Context, cancelled []db.AgentTaskQueue) {
+ 	s.CaptureCancelledTasks(ctx, cancelled)
+ 	for _, task := range cancelled {
+ 		if task.ChatSessionID.Valid {
+ 			s.broadcastTaskEvent(ctx, protocol.EventTaskCancelled, task)
+ 		}
+ 	}
+-	return cancelled, nil
+ }
+ 
+ func (s *TaskService) terminateTasksInTx(ctx context.Context, fail func(*db.Queries) ([]db.AgentTaskQueue, error)) ([]db.AgentTaskQueue, error) {
+diff --git a/server/internal/workbench/contract.go b/server/internal/workbench/contract.go
+index 5338958..95ad525 100644
+--- a/server/internal/workbench/contract.go
++++ b/server/internal/workbench/contract.go
+@@ -71,6 +71,7 @@ type Evidence struct {
+ 	RelatedIDs []string `json:"relatedIds"`
+ }
+ type Result struct {
++	Action           string     `json:"action,omitempty"`
+ 	FirstTokenMS     int64      `json:"firstTokenMs,omitempty"`
+ 	RetrievalMS      int64      `json:"retrievalMs,omitempty"`
+ 	ValidationErrors []string   `json:"validationErrors,omitempty"`

@@ -3,8 +3,8 @@
 import { json, WorkbenchError } from './upstream.js'
 
 const collections = new Set([
-  'agent-task-snapshot', 'agents', 'attachments', 'inbox', 'invitations', 'issue-statuses',
-  'issues', 'me', 'model-probes', 'projects', 'runtimes', 'squads', 'task-drafts', 'tasks',
+  'agent-task-snapshot', 'agents', 'config', 'chat', 'comments', 'attachments', 'inbox', 'invitations', 'issue-statuses',
+  'issues', 'issue-views', 'labels', 'me', 'model-probes', 'pins', 'projects', 'runtimes', 'squads', 'task-drafts', 'tasks',
   'upload-file', 'workbench', 'workspaces',
 ])
 const requestHeaders = ['accept', 'content-type', 'x-workspace-id', 'x-workspace-slug', 'x-request-id', 'range']

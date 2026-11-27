@@ -3,6 +3,18 @@ import { HashRouter, Routes, Route, Navigate } from 'react-router-dom'
 import TeamPage from './views/team/team-page'
 import { Pages } from './views/pages'
 import { PAGE_SLOT } from './contract'
+import projectDesk from './views/team/project-desk.css?inline'
+import board from './views/team/task-board.css?inline'
+import filesStyles from './views/team/files.css?inline'
+import roomStyles from './views/team/room.css?inline'
+import runtimeStyles from './views/team/runtime-directory.css?inline'
+import directoryStyles from './views/team/directory.css?inline'
+import spaceStyles from './views/team/space-overview.css?inline'
+import managementStyles from "./views/team/team-management.css?inline"
+import noticeStyles from "./views/team/notification-center.css?inline"
+import homeStyles from './views/workbench/home.css?inline'
+import resizeStyles from './views/workbench/sidebar-resize.css?inline'
+import v3Shell from './views/team/v3-shell.css?inline'
 import sheet from './views/shell.css?inline'
 import baseStyles from '@/app/index.css?inline'
 import teamStyles from './views/team/team.css?inline'
@@ -46,7 +58,7 @@ export function apply(ctx) {
   root.lang = 'zh-CN'
   document.title = '团队工作台'
   const style = document.createElement('style')
-  style.textContent = [baseStyles, surfaceStyles, dynamicStyles, workbenchStyles, projectStyles, teamStyles, sheet].join('\n')
+  style.textContent = [baseStyles, surfaceStyles, dynamicStyles, workbenchStyles, projectStyles, teamStyles, sheet, projectDesk, board, v3Shell, directoryStyles, spaceStyles, resizeStyles, homeStyles, noticeStyles, managementStyles, roomStyles, runtimeStyles, filesStyles].join('\n')
   document.head.append(style)
   ctx.effect(() => () => {
     style.remove()

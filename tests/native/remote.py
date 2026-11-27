@@ -60,20 +60,40 @@ def run(app,out):
         pid=launch(app)
         page=wait_page(driver)
         try:
+            page.locator('form,button[aria-label="账户菜单"]').first.wait_for()
+            if btn(page,'账户菜单').is_visible():
+                click(page,'账户菜单')
+                click(page,'退出账号')
             register(page,user,secrets.token_urlsafe(20))
-            click(page,'成员与智能体')
-            click(page,'连接远程主机')
+            if btn(page,'账户菜单').is_visible():
+                click(page,'账户菜单')
+                click(page,'运行时')
+            else:
+                click(page,'成员与智能体')
+            def open_remote():
+                toggle = page.locator('summary[aria-label="添加运行时"]')
+                toggle.wait_for()
+                if not toggle.evaluate('summary => summary.parentElement.open'):
+                    toggle.click()
+                click(page,'连接远程主机')
+            open_remote()
             d=dialog(page)
-            field(d,'主机地址').fill('127.0.0.1')
-            field(d,'主机用户名').fill('workbench')
             def submit():
-                # Each connection is an independent experiment with the same explicit inputs.
+                # The native dialog assigns initial focus after its opening transition.
+                d.evaluate('''async el => {
+                    await new Promise(done => requestAnimationFrame(() => requestAnimationFrame(done)));
+                    await Promise.all(el.getAnimations({subtree:true}).map(animation => animation.finished.catch(()=>{})));
+                }''')
                 field(d,'主机地址').fill('127.0.0.1')
                 field(d,'主机用户名').fill('workbench')
                 d.get_by_role('spinbutton').fill(str(port))
                 field(d,'远端可访问的协作服务地址').fill('http://127.0.0.1:19115')
                 password=d.locator('input[type=password]')
                 password.fill('local-fixture')
+                expect(field(d,'主机地址')).to_have_value('127.0.0.1')
+                expect(field(d,'主机用户名')).to_have_value('workbench')
+                expect(d.get_by_role('spinbutton')).to_have_value(str(port))
+                expect(field(d,'远端可访问的协作服务地址')).to_have_value('http://127.0.0.1:19115')
                 expect(password).to_have_value('local-fixture')
                 expect(btn(d,'连接远程主机')).to_be_enabled()
                 click(d,'连接远程主机')
@@ -89,18 +109,18 @@ def run(app,out):
                 expect(d.get_by_role('status')).to_be_visible(timeout=16000)
                 add('首次信任','SSH 密码认证成功，受控远端校验转交凭据属于当前账号，返回协议级运行回执')
                 click(d,'关闭')
-                click(page,'连接远程主机')
+                open_remote()
                 submit()
                 expect(d.get_by_role('status')).to_be_visible(timeout=10000)
                 add('相同指纹','再次连接已信任的本机服务，无须再次确认')
                 click(d,'关闭')
             with server(app,user,port):
-                click(page,'连接远程主机')
+                open_remote()
                 submit()
                 expect(d).to_contain_text('主机指纹与已保存记录不一致')
                 add('更换指纹','同地址端口替换密钥后拒绝建立 SSH 会话，保留原表单')
                 close(page)
-            click(page,'连接远程主机')
+            open_remote()
             submit()
             expect(d).to_contain_text('连接失败')
             add('停止服务','回环端口关闭后显示连接失败，可改字段重试')

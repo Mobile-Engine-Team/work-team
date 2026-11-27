@@ -1,6 +1,8 @@
-# DSH 团队工作台
+# MobileWork V3
 
 产品以 DSH Client 装配工作区、任务、成员、智能体小队和收件箱。DSH Host 管理本机连接、登录会话和执行端，[Multica](https://github.com/multica-ai/multica) 保存协作、计划版本、私人会话与执行回执。
+
+[V3 首版开发与测试交接](docs/v3/首版交接.md) · [启动、测试与样例](docs/v3/运行与复验.md) · [逐项验收与差异](docs/v3/验收矩阵.md)
 
 ## 同事在 macOS 上试用
 
@@ -13,11 +15,11 @@ brew install node@24 go postgresql@18 pgvector
 ./scripts/deploy open
 ```
 
-`model` 用来输入试用者自己的 DeepSeek API Key。可以跳过并先体验注册、工作区和协作。浏览器打开后注册一个新账号，到 **成员与智能体 → 启用本机执行端**，然后选择 Pi 新建智能体。查看服务和执行端说明见[本机部署与验证](docs/local-deployment.md)。
+`model` 用来输入试用者自己的 DeepSeek API Key。可以跳过并先体验注册、工作区和协作。浏览器打开后注册一个新账号，到 **账户菜单 → 运行时 → 启用本机执行端**，然后选择 Pi 新建智能体。查看服务和执行端说明见[本机部署与验证](docs/local-deployment.md)。
 
-## 迁移和验收资料
+## 历史迁移和验收资料
 
-- [本次交付与验收入口](docs/migration-evidence/README.md)
+- [V2 历史交付与验收入口](docs/migration-evidence/README.md)
 - [冻结 Demo V2 桌面迁移基线](docs/demo-v2-baseline/README.md)
 - [逐项差异与复验记录](docs/migration-evidence/matrix.md)
 - [桌面包、运行资料、模型和回放配置](docs/desktop-runtime.md)

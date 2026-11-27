@@ -166,3 +166,9 @@ export async function connectRemoteHost(payload: { host: string; port: number; u
     throw new Error(text(key));
   }
 }
+
+export async function readDaemonLog(daemonId:string) {
+  const result=await teamDesktopBridge().invoke("team:daemonLogs",{daemonId});
+  if(!result.ok) throw new Error(result.error || text("failed"));
+  return z.array(z.object({time:z.string(),level:z.string(),event:z.string()})).parse(result.entries);
+}

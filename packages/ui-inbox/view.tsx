@@ -29,6 +29,7 @@ export function TeamInbox({
             ? teamApi.markInboxUnread(id)
             : teamApi.markInboxRead(id),
   );
+  const markAll=useTeamAction(()=>teamApi.markAllInboxRead());
   const grouped = (
     archived
       ? deduplicateArchivedInboxItems(items.data || [])
@@ -48,12 +49,12 @@ export function TeamInbox({
   return (
     <>
       <div className="team-toolbar">
-        <h1>{text("inbox")}</h1>
+        <h1>{text("inbox")}</h1><Action disabled={markAll.isPending||!items.data?.some(i=>!i.read)} onClick={()=>markAll.mutate()}>全部标为已读</Action>
         <Action onClick={() => setArchived(!archived)}>
           {text(archived ? "current" : "archived")}
         </Action>
       </div>
-      <Failure error={items.error || action.error} />
+      <Failure error={items.error || action.error || markAll.error} />
       {grouped.length === 0 && <Empty>{text("noNotifications")}</Empty>}
       <div className="team-list">
         {grouped.map(({ item, previous }) => (
@@ -62,7 +63,7 @@ export function TeamInbox({
             key={item.id}
           >
             <div>
-              <strong>{item.title}</strong>{" "}
+              {typeof item.details?.room_id==="string"?<Action onClick={()=>navigate("/team/"+workspace.slug+"?view=rooms&room="+item.details!.room_id+"&message="+item.details!.message_id)}>{item.title}</Action>:<strong>{item.title}</strong>}{" "}
               {!item.read && <small>{text("unread")}</small>}
               <p>
                 <EventSummary action={item.type} details={item.details || {}} />
@@ -117,11 +118,11 @@ export function TeamInbox({
                   onClick={() => {
                     action.mutate({ id: item.id, mode: "read" });
                     navigate(
-                      `/team/${workspace.slug}?view=projects&project=${item.details!.project_id}&section=discussion&topic=${item.details!.topic_id}`,
+                      `/team/${workspace.slug}?view=projects&project=${item.details!.project_id}&section=overview`,
                     );
                   }}
                 >
-                  {text("project.openTopic")}
+                  查看所属项目
                 </Action>
               )}
               {item.issue_id && !item.details?.topic_id && (

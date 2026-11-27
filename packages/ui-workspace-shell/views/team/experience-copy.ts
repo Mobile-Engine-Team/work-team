@@ -1,5 +1,17 @@
 // Workbench-specific wording for per-account execution profiles.
 export const experienceCopy: Record<string, { zh: string; en: string }> = {
+  "project.noCandidates": {zh:"没有可加入的任务", en:"No matching tasks"},
+  archiveAgent: {zh:"归档智能体", en:"Archive agent"},
+  confirmArchiveAgent: {zh:"确认归档", en:"Confirm archive"},
+  archivingAgent: {zh:"正在归档…", en:"Archiving…"},
+  confirmArchiveName: {zh:"确定归档“{name}”吗？", en:"Archive “{name}”?"},
+  replaceSquadLeader: {zh:"请先更换小队队长", en:"Replace the squad leader first"},
+  replaceSquadLeaderHint: {zh:"“{name}”是以下小队的队长。请先在小队详情中指定另一位队长。", en:"“{name}” leads the following squads. Choose another leader in each squad first."},
+  archiveSquadHint: {zh:"小队将从列表中移除，未完成任务转交给原队长。归档后不能恢复。", en:"The squad will leave the list and its unfinished tasks will transfer to its current leader. Archiving a squad is permanent."},
+  archiveAgentHint: {
+    zh:"归档后不能接收新任务，未完成任务将取消；历史记录保留，可在“已归档”中恢复。",
+    en:"Archiving cancels unfinished assigned tasks and active or queued runs. History is retained. You can restore the agent from Archived.",
+  },
   joinedWorkspaceUnavailable: {
     zh: "已接受邀请，暂时无法读取新工作区。请重试。",
     en: "The invitation was accepted. The new workspace is temporarily unavailable. Try again.",

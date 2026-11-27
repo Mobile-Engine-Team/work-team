@@ -1,9 +1,10 @@
+import {CommentActions,saveTaskComment} from "./issue-followup";
 import { MemberExecutions } from "./member-executions";
 import { isRecoveryNotice, waitingAtEvaluation } from "./timeline-presentation";
-import { ensureAgentAuth, runFailureHint, failureForEntry } from "./model-auth";
+import { runFailureHint, failureForEntry } from "./model-auth";
 import { CollapsibleMessage } from "./collapsible-message";
-import { useEffect, useRef, useState } from "react";
-import { AtSign, Send, CornerDownRight, X } from "lucide-react";
+import { useEffect, useRef, useState, type ReactNode, type RefObject } from "react";
+import { AtSign, ArrowUp, Send, CornerDownRight, X } from "../icons";
 import type {
   Issue,
   TimelineEntry,
@@ -22,34 +23,27 @@ export function TimelineComposer({
   entries,
   people,
   runs,
-  heading,
+  heading, children, subscription, fileInput,
 }: {
   heading?: string;
+  children?: ReactNode;
+  subscription?: ReactNode;
+  fileInput?: RefObject<HTMLInputElement | null>;
   issue: Issue;
   entries: TimelineEntry[];
   runs: AgentTask[];
   people: ReturnType<typeof useTeamPeople>;
 }) {
-  const { workspace, user } = useTeam();
+  const { workspace } = useTeam();
+ const commentRows=useTeamQuery(["issue-comments",issue.id],()=>teamApi.listComments(issue.id));
   const [draft, setDraft] = useState("");
-  const [debounced, setDebounced] = useState("");
   const [reply, setReply] = useState<TimelineEntry | null>(null);
   const [menu, setMenu] = useState(false);
   const [activeMention, setActiveMention] = useState(0);
   const mentionList = useRef<HTMLDivElement>(null);
-  const [suppressed, setSuppressed] = useState<string[]>([]);
   const [files, setFiles] = useState<Attachment[]>([]);
   const [uploading, setUploading] = useState(false);
   const editor = useRef<MentionEditorHandle>(null);
-  useEffect(() => {
-    const timer = setTimeout(() => setDebounced(draft), 300);
-    return () => clearTimeout(timer);
-  }, [draft]);
-  const preview = useTeamQuery(
-    ["trigger", issue.id, debounced, reply?.id],
-    () => teamApi.previewCommentTriggers(issue.id, debounced, reply?.id),
-    !!debounced.trim() || files.length > 0,
-  );
   const sending = useRef(false);
   const requestID = useRef(crypto.randomUUID());
   const requestPayload = useRef("");
@@ -60,39 +54,20 @@ export function TimelineComposer({
       draft,
       reply?.id,
       files.map((f) => f.id),
-      suppressed,
     ]);
     if (requestPayload.current && requestPayload.current !== payload)
       requestID.current = crypto.randomUUID();
     requestPayload.current = payload;
     try {
-      const triggers = await teamApi.previewCommentTriggers(
-        issue.id,
-        draft,
-        reply?.id,
-      );
-      for (const agent of triggers.agents.filter(
-        (a) => !suppressed.includes(a.id),
-      ))
-        await ensureAgentAuth(agent.id, user.id, workspace.id);
-      const posted = await teamApi.createComment(
-        issue.id,
-        draft,
-        "comment",
-        reply?.id,
-        files.map((f) => f.id),
-        suppressed,
-        undefined,
-        requestID.current,
-      );
+      const posted = await saveTaskComment(workspace.id,"issues/"+issue.id+"/comments","POST",{
+        content:draft,type:"comment",parent_id:reply?.id,attachment_ids:files.map(file=>file.id),request_id:requestID.current
+      });
       requestID.current = crypto.randomUUID();
       requestPayload.current = "";
       editor.current?.clear();
       setDraft("");
-      setDebounced("");
       setReply(null);
       setFiles([]);
-      setSuppressed([]);
       return posted;
     } finally {
       sending.current = false;
@@ -162,12 +137,21 @@ export function TimelineComposer({
       ? text(runFailureHint(failure.error, failure.failure_reason))
       : excerpt(entry);
   };
+  const detail = Boolean(children);
+  const canSend = !send.isPending && !uploading && Boolean(draft.trim() || files.length);
   const replying = reply ? entries.find((e) => e.id === reply.id) : null;
   return (
     <section
       className="team-timeline"
       onKeyDownCapture={(e) => {
-        if (!menu || e.nativeEvent.isComposing || e.keyCode === 229) return;
+        if (e.nativeEvent.isComposing || e.keyCode === 229) return;
+        if (detail && !menu && e.key === "Enter" && (e.metaKey || e.ctrlKey) &&
+            e.target instanceof Element && e.target.closest(".team-editor-wrap")) {
+          e.preventDefault();
+          if (canSend) send.mutate();
+          return;
+        }
+        if (!menu) return;
         if (e.key === "Escape") {
           e.preventDefault();
           e.stopPropagation();
@@ -197,8 +181,11 @@ export function TimelineComposer({
         }
       }}
     >
-      <h3>{heading || text("collaboration")}</h3>
-      {entries.length === 0 && <Empty>{text("noComments")}</Empty>}
+      <div className={detail ? "v3-issue-scroll" : undefined}>
+      {children}
+      {detail ? <header className="v3-activity-heading"><h2>{heading} <small>{entries.length}</small></h2>{subscription}</header>
+        : <h3>{heading || text("collaboration")}</h3>}
+      {!detail && entries.length === 0 && <Empty>{text("noComments")}</Empty>}
       {entries.map((entry) => {
         const failedRun = failureForEntry(entry, runs);
         const parent = entries.find((e) => e.id === entry.parent_id);
@@ -281,6 +268,7 @@ export function TimelineComposer({
                 />
               )}
               <div className="team-related-runs">
+                {entry.type==="comment"&&!entry.deleted_at&&commentRows.data?.filter(c=>c.id===entry.id).map(c=><CommentActions key={c.id} comment={c}/>)}
                 {entry.type === "comment" && !entry.deleted_at && (
                   <button
                     className="team-text-action"
@@ -299,7 +287,8 @@ export function TimelineComposer({
           </article>
         );
       })}
-      <div className="team-composer">
+      </div>
+      <div className={detail ? "v3-fixed-comment" : undefined}><div className="team-composer">
         {replying && (
           <div className="team-reply-target">
             <button
@@ -329,6 +318,7 @@ export function TimelineComposer({
         )}
         <div className="team-editor-wrap">
           <MentionEditor
+            placeholder={detail ? "留下评论…" : undefined}
             editorRef={editor}
             disabled={send.isPending}
             onChange={(value) => {
@@ -337,67 +327,20 @@ export function TimelineComposer({
             }}
           />
         </div>
-        <div className="team-trigger-preview">
-          {draft !== debounced || preview.isFetching ? (
-            <span>{text("checkingTrigger")}</span>
-          ) : preview.data?.agents.length ? (
-            <>
-              <span>{text("willTrigger")}</span>
-              {preview.data.agents.map((agent) => (
-                <label key={agent.id}>
-                  <input
-                    type="checkbox"
-                    checked={!suppressed.includes(agent.id)}
-                    onChange={(e) =>
-                      setSuppressed((s) =>
-                        e.target.checked
-                          ? s.filter((id) => id !== agent.id)
-                          : [...s, agent.id],
-                      )
-                    }
-                  />
-                  {agent.name}
-                </label>
-              ))}
-            </>
-          ) : (
-            <span>{text("onlyComment")}</span>
-          )}
-          {preview.data?.blocked?.length ? (
-            <span>
-              {text(
-                preview.data.blocked.some(
-                  (o) => o.reason_code === "invocation_scope_conflict",
-                )
-                  ? "scopeConflict"
-                  : "triggerBlocked",
-              )}
-            </span>
-          ) : null}
-        </div>
-        <Failure error={send.error || preview.error || people.squads.error} />
-        {send.data?.trigger_outcomes?.some((o) => o.status === "blocked") && (
-          <div role="status" className="team-notice">
-            {text(
-              send.data.trigger_outcomes?.some(
-                (o) => o.reason_code === "invocation_scope_conflict",
-              )
-                ? "scopeConflict"
-                : "commentSavedBlocked",
-            )}
-          </div>
-        )}
+        <Failure error={send.error || people.squads.error} />
         <UploadFiles
+          inputRef={fileInput}
+          buttonLabel={detail ? "评论添加附件" : undefined}
           onPendingChange={setUploading}
           files={files}
           onChange={setFiles}
           disabled={send.isPending}
         >
           <div className="team-mention-container">
-            <Action onClick={() => setMenu(!menu)}>
+            {!detail && <Action onClick={() => setMenu(!menu)}>
               <AtSign size={16} />
               {text("mention")}
-            </Action>
+            </Action>}
             {menu && (
               <div
                 className="team-mention-menu"
@@ -433,23 +376,17 @@ export function TimelineComposer({
               </div>
             )}
           </div>
+          {detail && <small className="v3-comment-shortcut">⌘ Enter 发送</small>}
           <Action
             primary
-            disabled={
-              send.isPending ||
-              uploading ||
-              (!draft.trim() && !files.length) ||
-              draft !== debounced ||
-              preview.isFetching ||
-              !!preview.error
-            }
+            aria-label={detail ? "发送评论" : undefined}
+            disabled={!canSend}
             onClick={() => send.mutate()}
           >
-            <Send size={15} />
-            {text(send.isPending ? "sending" : "send")}
+            {detail ? <ArrowUp size={16}/> : <><Send size={15}/>{text(send.isPending ? "sending" : "send")}</>}
           </Action>
         </UploadFiles>
-      </div>
+      </div></div>
     </section>
   );
 }

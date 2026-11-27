@@ -27,6 +27,7 @@ export const ResultSchema = z.object({
     }),
   ]),
   dynamic: DynamicSchema.optional(),
+  action:z.string().optional(),
   requestedModel: z.string().optional(),
   provider: z.string().optional(),
   runtime: z.string().optional(),
@@ -44,6 +45,7 @@ export const ResultSchema = z.object({
 export type Result = z.infer<typeof ResultSchema>;
 export type Evidence = z.infer<typeof EvidenceSchema>;
 export const MessageSchema = z.object({
+  files:z.array(z.object({id:z.string(),filename:z.string()})).optional(),
   id: z.string(),
   conversationId: z.string(),
   prompt: z.string(),
@@ -81,6 +83,7 @@ export const StateSchema = z.object({
     coverage: z.string(),
   }),
   modelReady: z.boolean(),
+  mock:z.boolean().optional(),
   runtimeStatus: z.enum(["disabled", "warming", "ready", "unavailable"]).optional().catch(undefined),
   models: z
     .array(

@@ -1,3 +1,6 @@
+import { AssignedWork, ObjectLinks } from "./assigned-work";
+import { Directory } from "./directory";
+import { IDSchema, request } from "../workbench/api";
 import { useState } from "react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -29,6 +32,8 @@ export function SquadsPage() {
   const [params, setParams] = useSearchParams();
   const selected = params.get("squad");
   const people = useTeamPeople();
+  const { user } = useTeam();
+  const [scope, setScope] = useState("全部小队");
   const [create, setCreate] = useState(false);
   const open = (id?: string) =>
     setParams({ view: "squads", ...(id ? { squad: id } : {}) });
@@ -39,16 +44,6 @@ export function SquadsPage() {
         <SquadDetail key={selected} id={selected} onBack={() => open()} />
       ) : (
         <>
-          <div className="team-toolbar">
-            <div>
-              <h1>{text("squads")}</h1>
-              <p>{text("squadsHint")}</p>
-            </div>
-            <Action primary onClick={() => setCreate(true)}>
-              <Plus size={16} />
-              {text("createSquad")}
-            </Action>
-          </div>
           <Failure
             error={
               people.squads.error || people.agents.error || people.members.error
@@ -59,46 +54,26 @@ export function SquadsPage() {
               void people.members.refetch();
             }}
           />
-          {people.squads.isPending ? (
-            <Empty>{text("loading")}</Empty>
-          ) : !people.squads.isError && squads.length === 0 ? (
-            <section className="team-welcome">
-              <Users size={32} />
-              <h2>{text("noSquads")}</h2>
-              <p>{text("squadEmptyHint")}</p>
-              <Action primary onClick={() => setCreate(true)}>
-                {text("createSquad")}
-              </Action>
-            </section>
-          ) : (
-            <div className="team-squad-grid">
-              {squads.map((s) => (
-                <button
-                  className="team-squad-card"
-                  key={s.id}
-                  onClick={() => open(s.id)}
-                >
-                  <span className="team-squad-card-top">
-                    <span className="team-workspace-icon">
-                      <Users size={22} />
-                    </span>
-                    <ArrowRight size={18} />
-                  </span>
-                  <strong>{s.name}</strong>
-                  <p>{s.description || text("squadNoDescription")}</p>
-                  <span className="team-squad-card-footer">
-                    <span>
-                      <Crown size={14} />
-                      {people.name(s.leader_id)}
-                    </span>
-                    <small>
-                      {text("squadMembers")} · {s.member_count ?? 0}
-                    </small>
-                  </span>
-                </button>
-              ))}
-            </div>
-          )}
+          <Directory
+            kind="小队"
+            loading={people.squads.isPending}
+            scope={scope}
+            onScope={setScope}
+            onOpen={open}
+            onCreate={() => setCreate(true)}
+            items={squads.map((s) => ({
+              id: s.id,
+              name: s.name,
+              avatar: s.avatar_url,
+              description: s.description,
+              owner: people.name(s.creator_id),
+              mine: s.creator_id === user.id,
+              first: people.name(s.leader_id),
+              second: "",
+              people:s.member_preview?.map(m=>({id:m.member_type+":"+m.member_id,label:people.name(m.member_id),agent:m.member_type==="agent"})),
+              members: s.member_count ?? s.member_preview?.length ?? 0,
+            }))}
+          />
         </>
       )}
       {create && (
@@ -131,23 +106,23 @@ function SquadEditor({
   const [leader, setLeader] = useState(squad?.leader_id || "");
   const [instructions, setInstructions] = useState(squad?.instructions || "");
   const action = useTeamAction(async () => {
+    const fields = {
+      name: name.trim(),
+      description: description.trim(),
+      leader_id: leader,
+      instructions,
+    };
     const result = squad
-      ? await teamApi.updateSquad(squad.id, {
-          name: name.trim(),
-          description: description.trim(),
-          leader_id: leader,
-          instructions,
-        })
-      : await teamApi.createSquad({
-          name: name.trim(),
-          description: description.trim(),
-          leader_id: leader,
-        });
+      ? await teamApi.updateSquad(squad.id, fields)
+      : await teamApi.createSquad(fields);
     onSaved(result);
   });
   const admin = people.role === "owner" || people.role === "admin";
   const leaders = (people.agents.data || []).filter(
-    (a) => !a.archived_at && !!a.runtime_id && (admin || people.allowed(a)),
+    (a) =>
+      !a.archived_at &&
+      (!!a.runtime_id || a.system_key === "mobilework") &&
+      (admin || people.allowed(a)),
   );
   return (
     <Modal
@@ -185,16 +160,14 @@ function SquadEditor({
         <p className="team-squad-help">
           {text(squad ? "squadLeaderHint" : "squadCreateHint")}
         </p>
-        {squad && (
-          <Field label={text("squadInstructions")}>
-            <Textarea
-              rows={6}
-              value={instructions}
-              onChange={(e) => setInstructions(e.target.value)}
-              placeholder={text("squadInstructionsHint")}
-            />
-          </Field>
-        )}
+        <Field label={text("squadInstructions")}>
+          <Textarea
+            rows={6}
+            value={instructions}
+            onChange={(e) => setInstructions(e.target.value)}
+            placeholder={text("squadInstructionsHint")}
+          />
+        </Field>
       </fieldset>
       <Failure error={action.error || people.agents.error} />
       <div className="team-modal-actions">
@@ -214,7 +187,7 @@ function SquadEditor({
 }
 
 function SquadDetail({ id, onBack }: { id: string; onBack: () => void }) {
-  const { user } = useTeam();
+  const { user, workspace } = useTeam();
   const people = useTeamPeople();
   const squad = useTeamQuery(["squad", id], () => teamApi.getSquad(id));
   const members = useTeamQuery(["squadMembers", id], () =>
@@ -223,6 +196,11 @@ function SquadDetail({ id, onBack }: { id: string; onBack: () => void }) {
   const status = useTeamQuery(["squadStatus", id], () =>
     teamApi.getSquadMemberStatus(id),
   );
+  const [, routeTo] = useSearchParams();
+  const openRoom = useTeamAction(async () => {
+    const room = await request(workspace.id, "/squad-room/" + id, IDSchema, {});
+    routeTo({ view: "rooms", room: room.id });
+  });
   const [edit, setEdit] = useState(false);
   const [archive, setArchive] = useState(false);
   const [memberEditor, setMemberEditor] = useState<SquadMember | "new" | null>(
@@ -278,6 +256,25 @@ function SquadDetail({ id, onBack }: { id: string; onBack: () => void }) {
             <div>
               <small>{text("mentionSquad")}</small>
               <h1>{s.name}</h1>
+              <ObjectLinks id={s.id} />
+              <Action
+                onClick={() =>
+                  routeTo({
+                    view: "tasks",
+                    create: "1",
+                    owner: "squad:" + s.id,
+                  })
+                }
+              >
+                分配工作
+              </Action>
+              <Action
+                disabled={openRoom.isPending}
+                onClick={() => openRoom.mutate()}
+              >
+                用小队开聊
+              </Action>
+              <Failure error={openRoom.error} />
               <p>{s.description || text("squadNoDescription")}</p>
             </div>
             {canManage && (
@@ -294,6 +291,7 @@ function SquadDetail({ id, onBack }: { id: string; onBack: () => void }) {
               </div>
             )}
           </div>
+          <AssignedWork key={s.id} id={s.id} />
           {s.archived_at && (
             <div className="team-notice">{text("squadArchived")}</div>
           )}
@@ -404,6 +402,7 @@ function SquadDetail({ id, onBack }: { id: string; onBack: () => void }) {
           )}
           {(archive || remove) && (
             <Modal
+              className={archive ? "directory-archive-dialog" : undefined}
               title={text(archive ? "archiveSquad" : "removeSquadMember")}
               onClose={() => {
                 if (!action.isPending) {
@@ -412,13 +411,14 @@ function SquadDetail({ id, onBack }: { id: string; onBack: () => void }) {
                 }
               }}
             >
-              <p>
-                {archive
-                  ? text("archiveSquadHint")
-                  : `${text("removeSquadMemberHint")} ${remove ? people.name(remove.member_id) : ""}`}
-              </p>
-              <Failure error={action.error} />
-              <div className="team-modal-actions">
+              <div className={archive ? "directory-archive-body" : undefined}>
+                {archive ? <>
+                  <p>{text("confirmArchiveName").replace("{name}", s.name)}</p>
+                  <p className="directory-archive-help">{text("archiveSquadHint")}</p>
+                </> : <p>{text("removeSquadMemberHint")} {remove ? people.name(remove.member_id) : ""}</p>}
+                <Failure error={action.error} />
+              </div>
+              <div className={archive ? "directory-archive-footer" : "team-modal-actions"}>
                 <Action
                   disabled={action.isPending}
                   onClick={() => {
@@ -433,7 +433,7 @@ function SquadDetail({ id, onBack }: { id: string; onBack: () => void }) {
                   disabled={action.isPending}
                   onClick={() => action.mutate(archive ? "archive" : "remove")}
                 >
-                  {text(archive ? "archiveSquad" : "remove")}
+                  {text(archive ? "confirmArchiveAgent" : "remove")}
                 </Action>
               </div>
             </Modal>
@@ -463,7 +463,10 @@ function MemberEditor({
   const options = [
     ...(people.agents.data || [])
       .filter(
-        (a) => !a.archived_at && !!a.runtime_id && (admin || people.allowed(a)),
+        (a) =>
+          !a.archived_at &&
+          (!!a.runtime_id || a.system_key === "mobilework") &&
+          (admin || people.allowed(a)),
       )
       .map((a) => ({
         value: `agent:${a.id}`,

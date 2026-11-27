@@ -22,6 +22,9 @@ const AttachmentSchema = z.object({
 export const DraftSchema = z.object({
   title: z.string().default(""),
   description: z.string().default(""),
+  startDate: z.string().default(""),
+  labels: z.string().default(""),
+  priority: z.enum(["none", "low", "medium", "high", "urgent"]).default("none"),
   dueDate: z.string().default(""),
   projectID: z.string().default(""),
   owner: z.string().default("none"),

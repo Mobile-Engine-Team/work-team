@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """Start and stop only the local workbench processes recorded in this checkout."""
 import argparse
+import base64
 import fcntl
 import getpass
 import json
@@ -139,6 +140,15 @@ def settings():
     file = STATE / 'api-signing-key'
     if not file.exists():
         file.write_text(secrets.token_urlsafe(48))
+    credential_key = STATE / 'provider-encryption-key'
+    if not credential_key.exists():
+        with tempfile.NamedTemporaryFile(dir=STATE) as key_file:
+            key_file.write(base64.b64encode(secrets.token_bytes(32)))
+            key_file.flush()
+            try:
+                os.link(key_file.name, credential_key)
+            except FileExistsError:
+                pass
     password = STATE / 'db-password'
     if not password.exists():
         password.write_text(secrets.token_urlsafe(32))
@@ -148,9 +158,11 @@ def settings():
         'DATABASE_URL': db_url,
         'PGPASSWORD': password.read_text(),
         'JWT_SECRET': file.read_text(),
+        'MULTICA_VCS_SECRET_KEY': credential_key.read_text(),
         'PORT': str(PORTS['api']),
-        'APP_ENV': 'development',
-        'MW_DEMO_PASSWORD_AUTH': '1',
+        'APP_ENV': 'production',
+        'WORKBENCH_PASSWORD_AUTH': '1',
+        'MOBILEWORK_WORK_ADAPTER': os.environ.get('MOBILEWORK_WORK_ADAPTER',''),
         'RATE_LIMIT_AUTH': '25',
         'LOCAL_UPLOAD_DIR': str(STATE / 'uploads'),
         'FRONTEND_ORIGIN': URL + str(PORTS['a']),

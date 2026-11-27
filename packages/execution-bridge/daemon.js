@@ -114,6 +114,28 @@ async function state(directory, identity) {
   return { state: health.status, daemonId: identity.daemonId }
 }
 
+// The same device log can include commands and conversation payloads. Expose
+// only exact daemon lifecycle event names, without their free-form attributes.
+const lifecycleMessages = new Map([
+  ['starting daemon','启动守护进程'], ['daemon config resolved','已读取执行端配置'],
+  ['authenticated','身份验证成功'], ['health server listening','健康检查服务已启动'],
+  ['register response','收到注册回执'], ['registered runtimes','运行时注册完成'],
+  ['heartbeat: pending actions','收到心跳响应'], ['deregistering runtimes on shutdown','正在注销运行时'],
+  ['deregistered runtimes','运行时注销完成'], ['daemon main loop returning','守护进程退出'],
+])
+
+async function lifecycleLog(directory, identity, daemonId) {
+  if (!identity || identity.daemonId !== daemonId) throw new WorkbenchError(404, '执行端不可用。')
+  const raw = await cli(directory, identity, ['logs', '--lines', '200'])
+  const entries = []
+  for (const line of raw.split('\n')) {
+    const match = /^(\d{2}:\d{2}:\d{2}(?:\.\d+)?)\s+(DBG|INF|WRN|ERR)\s+(.+?)\s+component=/.exec(line)
+    const event = match && lifecycleMessages.get(match[3])
+    if (event) entries.push({time: match[1], level: match[2], event})
+  }
+  return {entries}
+}
+
 async function verify(directory, userId) {
   const identity = await read(identityPath(directory))
   if (identity && (identity.owner !== userId || identity.origin !== origin() ||
@@ -150,10 +172,27 @@ export async function stopOwnedDaemons(root) {
   let users
   try { users = await readdir(root, { withFileTypes: true }) }
   catch (error) { if (error.code === 'ENOENT') return; throw error }
-  for (const user of users.filter(item => item.isDirectory())) {
-    const directory = join(root, id(user.name))
-    await stop(directory, await verify(directory, user.name))
+  const conflicts = []
+  const failures = []
+  async function stopUser(userId) {
+    const directory = join(root, id(userId))
+    await stop(directory, await verify(directory, userId))
   }
+  for (const user of users.filter(entry => entry.isDirectory())) {
+    try {
+      await stopUser(user.name)
+    } catch (error) {
+      if (error.status === 409) conflicts.push(user.name)
+      else failures.push(error)
+    }
+  }
+  // A stopped profile can share its assigned port with another owned profile.
+  // Recheck its identity after all independently verified processes have stopped.
+  for (const userId of conflicts) {
+    try { await stopUser(userId) }
+    catch (error) { failures.push(error) }
+  }
+  if (failures.length) throw failures[0]
 }
 
 async function testAgent(auth, args, directory, identity) {
@@ -207,6 +246,7 @@ export function daemonController(root) {
     const job = previous.catch(() => {}).then(async () => {
       let identity = await verify(directory, userId)
       if (operation === 'daemon.status') return state(directory, identity)
+      if (operation === 'daemon.logs') return lifecycleLog(directory, identity, args.daemonId)
       if (operation === 'daemon.stop') {
         agents.get(userId)?.cancel()
         return stop(directory, identity, auth.call)

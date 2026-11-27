@@ -22,7 +22,9 @@ fi
 runtime="${WORKBENCH_RUNTIME:-$root/.local/v2-runtime}"
 mkdir -p "$runtime/bin" "$runtime/logs" "$runtime/upstream"
 patch="$root/deploy/multica.patch"
-if [ -x "$runtime/bin/api" ] && [ -x "$runtime/bin/migrate" ] &&
+v3="$root/deploy/v3"
+v3_hash=$(cd "$v3" && find . -type f | LC_ALL=C sort | while IFS= read -r path; do shasum -a 256 "$path"; done | shasum -a 256 | cut -d ' ' -f 1)
+if [ -f "$runtime/bin/v3.sha256" ] && [ "$(cat "$runtime/bin/v3.sha256")" = "$v3_hash" ] && [ -x "$runtime/bin/api" ] && [ -x "$runtime/bin/migrate" ] &&
    [ -x "$runtime/bin/multica" ] && [ -d "$runtime/migrations" ] && cmp -s "$0" "$runtime/bin/prepare-multica.sh"; then
   if [ "$standalone" != 1 ] || { cmp -s "$patch" "$runtime/bin/multica.patch" &&
        [ -x "$runtime/workbench-pi/node_modules/.bin/pi" ]; }; then
@@ -50,6 +52,8 @@ if [ "$standalone" = 1 ]; then
 else
   git -C "$multica" archive HEAD server | tar -xf - -C "$src"
 fi
+GIT_CEILING_DIRECTORIES="$(dirname "$src")" git -C "$src" apply --whitespace=nowarn "$v3/backend.patch"
+cp -R "$v3/server/." "$src/server/"
 # Keep this development API loopback-only; leave profiling and maintenance disabled.
 python3 - "$src/server" <<'PY'
 from pathlib import Path
@@ -123,7 +127,9 @@ if [ "$standalone" = 1 ]; then
   mv "$src/server/migrations" "$runtime/migrations"
   mv "$src/server/workbench-pi" "$runtime/workbench-pi"
   cp "$patch" "$runtime/bin/multica.patch"
-elif [ ! -d "$runtime/migrations" ]; then
-  mv "$src/server/migrations" "$runtime/migrations"
+else
+  mkdir -p "$runtime/migrations"
+  cp -R "$src/server/migrations/." "$runtime/migrations/"
 fi
+printf '%s\n' "$v3_hash" > "$runtime/bin/v3.sha256"
 cp "$0" "$runtime/bin/prepare-multica.sh"

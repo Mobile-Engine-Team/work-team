@@ -12,6 +12,7 @@ import {
   useQuery,
   useQueryClient,
 } from "@tanstack/react-query";
+import {configStore} from "@multica/core/config";
 import { ApiClient, setApiInstance } from "@multica/core/api";
 import { setCurrentWorkspace } from "@multica/core/platform/workspace-storage";
 import type { Workspace, User } from "@multica/core/types";
@@ -29,7 +30,22 @@ export const text = (key: string) => {
 export const teamServer = location.origin;
 const tokenKey = "workbench.session.account";
 export const teamToken = () => sessionStorage.getItem(tokenKey);
-export const teamApi = new ApiClient(teamServer, {
+class WorkbenchApiClient extends ApiClient {
+  private async checkAgentCapabilities(data:{conversation_starters?:unknown}) {
+    if (data.conversation_starters===undefined) return;
+    const flags=await this.getConfig();
+    configStore.getState().setAgentConversationStartersSupported(flags.agent_conversation_starters_supported);
+  }
+  override async createAgent(data: Parameters<ApiClient["createAgent"]>[0]) {
+    await this.checkAgentCapabilities(data);
+    return super.createAgent(data);
+  }
+  override async updateAgent(id:string,data: Parameters<ApiClient["updateAgent"]>[1]) {
+    await this.checkAgentCapabilities(data);
+    return super.updateAgent(id,data);
+  }
+}
+export const teamApi = new WorkbenchApiClient(teamServer, {
   fetchTransport: teamFetch,
   getToken: () => sessionStorage.getItem(tokenKey),
   onUnauthorized: () => {
@@ -146,7 +162,7 @@ export function TeamScope({
       const message = JSON.parse(event.data);
       if (typeof message.type !== "string") return;
       const kind = message.type.split(":")[0];
-      refresh(["workbench"]);
+      refresh(["workbench","navigation"]);
       if (kind === "member") {
         client.removeQueries({ queryKey: ["team", workspace.id, "workbench"] });
         void client.invalidateQueries({ queryKey: ["team", "workspaces"] });

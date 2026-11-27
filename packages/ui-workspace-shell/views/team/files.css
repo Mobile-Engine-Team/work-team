@@ -1,0 +1,21 @@
+.team-root .wb-main>.team-content:has(.v3-files) {width:100%;max-width:none;padding:0}
+.v3-files {min-width:0;padding:30px 40px 64px;font-family:"PingFang SC",sans-serif;color:var(--mw-gray-1)}
+.v3-files h1 {margin:0;font-size:24px;font-weight:700;line-height:36px}
+.v3-files>p {margin:4px 0 20px;font-size:14px;line-height:20px}
+.v3-files nav {display:flex;gap:24px;margin-bottom:16px;border-bottom:1px solid var(--mw-divider)}
+.v3-files nav button {padding:0 0 10px;border-bottom:2px solid transparent;font-size:14px;line-height:20px}
+.v3-files nav button[aria-pressed=true] {border-color:currentColor}
+.v3-file-filters {display:flex;flex-wrap:wrap;align-items:stretch;gap:12px;margin-bottom:16px}
+.v3-file-filters select,.v3-file-filters label,.v3-file-filters>button {max-width:100%;border:1px solid var(--mw-gray-7);border-radius:8px;background:var(--mw-surface);padding:8px 12px;font-size:14px}
+.v3-file-filters select {width:130px;min-height:40px}
+.v3-file-filters label {display:flex;align-items:center;gap:8px}
+.v3-file-filters input {width:208px;max-width:100%;min-width:0;border:0;background:transparent;outline:0;font-size:14px}
+.v3-file-filters label:focus-within {outline:2px solid var(--mw-brand)}
+.v3-files ul {margin:0;padding:0;list-style:none}
+.v3-files li+li {border-top:1px solid var(--mw-divider)}
+.v3-files li button {display:flex;flex-wrap:wrap;align-items:center;gap:12px;width:100%;min-width:0;padding:16px 12px;text-align:left;font-size:14px;line-height:20px;overflow-wrap:anywhere}
+.v3-files li button:hover {background:var(--mw-hover)}
+.v3-files .v3-files-empty {margin:0;padding:48px 0;text-align:center;font-size:14px}
+.v3-files-empty svg {margin:0 auto 12px}
+.v3-file-dialog footer {display:flex;align-items:center;justify-content:flex-end;gap:12px}
+@media(max-width:760px) {.v3-files {padding:24px 18px 40px}}

@@ -1,5 +1,5 @@
 import { ApiError, errorCode, dispatchReasonCode } from "@multica/core/api";
-import { useEffect, useState, useSyncExternalStore, type ReactNode } from "react";
+import { useEffect, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { sleep } from "@/app/lib/backoff";
 import { Button } from "@/components/ui/button";
@@ -115,6 +115,7 @@ export function Picker({
   label,
   disabled,
   emptyLabel,
+  selectedLabel,
 }: {
   value: string;
   options: { value: string; label: string; disabled?: boolean }[];
@@ -122,6 +123,7 @@ export function Picker({
   label: string;
   disabled?: boolean;
   emptyLabel?: string;
+  selectedLabel?: string;
 }) {
   return (
     <Select
@@ -133,7 +135,7 @@ export function Picker({
     >
       <SelectTrigger className="team-select-trigger" aria-label={label}>
         <SelectValue>
-          {options.find((o) => o.value === value)?.label || label}
+          {selectedLabel || options.find((o) => o.value === value)?.label || label}
         </SelectValue>
       </SelectTrigger>
       <SelectContent className="team-select-popup" align="start">
@@ -162,13 +164,16 @@ export function Modal({
   onClose,
   wide,
   className = "",
+  focusClose = false,
 }: {
   title: string;
+  focusClose?: boolean;
   children: ReactNode;
   onClose: () => void;
   wide?: boolean;
   className?: string;
 }) {
+  const popup=useRef<HTMLDivElement>(null);
   return (
     <Dialog
       open
@@ -176,7 +181,19 @@ export function Modal({
         if (!open) onClose();
       }}
     >
-      <DialogContent
+      <DialogContent ref={popup} initialFocus={() => {
+        const dialog = popup.current;
+        if (dialog && !dialog.contains(document.activeElement)) {
+          // Apply focus now. A deferred animation frame can otherwise steal
+          // focus after the user has already moved to the second field.
+          const first = Array.from(dialog.querySelectorAll<HTMLElement>(
+            'input:not(:disabled):not([type="hidden"]), textarea:not(:disabled), select:not(:disabled), button:not(:disabled), a[href], [tabindex="0"]'
+          )).find(el => el.tabIndex >= 0 && el.getClientRects().length > 0);
+          const close = focusClose && dialog.querySelector<HTMLElement>('[data-slot="dialog-close"]');
+          (close || first || dialog).focus({preventScroll:true});
+        }
+        return false;
+      }}
         className={`${wide ? "team-modal team-modal-wide" : "team-modal"} ${className}`}
       >
         <DialogHeader>
