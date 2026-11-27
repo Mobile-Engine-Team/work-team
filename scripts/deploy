@@ -1,0 +1,49 @@
+#!/bin/sh
+set -eu
+umask 077
+root="$(cd "$(dirname "$0")/.." && pwd -P)"
+
+export WORKBENCH_STANDALONE=1
+export WORKBENCH_RUNTIME="${WORKBENCH_RUNTIME:-$root/.local/standalone}"
+export WORKBENCH_DSH_BIN="$WORKBENCH_RUNTIME/tools/node_modules/.bin/dsh"
+if command -v brew >/dev/null 2>&1; then
+  node="$(brew --prefix node@24)/bin"
+  if [ -x "$node/node" ]; then
+    export PATH="$node:$PATH"
+  fi
+  export WORKBENCH_PG_BIN="${WORKBENCH_PG_BIN:-$(brew --prefix postgresql@18)/bin}"
+fi
+export WORKBENCH_NODE_DIR="$(dirname "$(command -v node || printf '/missing/node')")"
+export WORKBENCH_PG_BIN="${WORKBENCH_PG_BIN:-$(command -v pg_config >/dev/null && pg_config --bindir || printf '/missing/postgresql')}"
+
+case "${1:-}" in
+  setup)
+    if ! node -e 'process.exit(Number(process.versions.node.split(".")[0]) >= 24 ? 0 : 1)' 2>/dev/null; then
+      printf '%s\n' '请安装 Node.js 24。macOS 上可运行 brew install node@24。' >&2
+      exit 1
+    fi
+    if ! command -v go >/dev/null; then
+      printf '%s\n' '请先安装 Go。macOS 上可运行 brew install go。' >&2
+      exit 1
+    fi
+    if [ ! -x "$WORKBENCH_PG_BIN/pg_config" ] ||
+       [ ! -f "$("$WORKBENCH_PG_BIN/pg_config" --sharedir)/extension/vector.control" ]; then
+      printf '%s\n' '请安装 PostgreSQL 和对应主版本的 pgvector。macOS 上可运行 brew install postgresql@18 pgvector。' >&2
+      exit 1
+    fi
+    exec "$root/scripts/local" prepare
+    ;;
+  open)
+    profile="${2:-a}"
+    case "$profile" in a|b) ;; *) printf '%s\n' '客户端只能选 a 或 b。' >&2; exit 1 ;; esac
+    "$root/scripts/local" start "$profile"
+    exec "$root/scripts/local" open-browser "$profile"
+    ;;
+  model|start|stop|status)
+    exec "$root/scripts/local" "$@"
+    ;;
+  *)
+    printf '%s\n' '用法：scripts/deploy setup | model | open [a|b] | start [a|b] | status | stop' >&2
+    exit 2
+    ;;
+esac

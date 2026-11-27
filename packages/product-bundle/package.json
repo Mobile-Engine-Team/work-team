@@ -1,0 +1,20 @@
+{
+  "name": "@team-workbench/product-bundle",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "@team-workbench/execution-bridge": "workspace:*",
+    "@team-workbench/multica-host": "workspace:*",
+    "@team-workbench/ui-inbox": "workspace:*",
+    "@team-workbench/ui-members": "workspace:*",
+    "@team-workbench/ui-squads": "workspace:*",
+    "@team-workbench/ui-tasks": "workspace:*",
+    "@team-workbench/ui-workspace-shell": "workspace:*"
+  },
+  "dsh": {
+    "bundle": {
+      "patch": "./cordis.patch.yml"
+    }
+  }
+}

@@ -1,0 +1,710 @@
+{
+  "catalogId": "https://mobilework.local/catalog/answer/v1",
+  "protocolVersion": "1.0",
+  "components": {
+    "Stack": {
+      "type": "object",
+      "properties": {
+        "children": {
+          "$ref": "#/$defs/ChildList"
+        }
+      },
+      "required": [
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "Section": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "children": {
+          "$ref": "#/$defs/ChildList"
+        }
+      },
+      "required": [
+        "title",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "Split": {
+      "type": "object",
+      "properties": {
+        "ratio": {
+          "type": "string",
+          "enum": [
+            "main",
+            "even"
+          ]
+        },
+        "children": {
+          "$ref": "#/$defs/ChildList"
+        }
+      },
+      "required": [
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "Grid": {
+      "type": "object",
+      "properties": {
+        "columns": {
+          "type": "integer",
+          "minimum": 2,
+          "maximum": 4
+        },
+        "children": {
+          "$ref": "#/$defs/ChildList"
+        }
+      },
+      "required": [
+        "columns",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "AnswerSummary": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "fact",
+            "statement",
+            "decision",
+            "inference",
+            "gap",
+            "suggestion"
+          ]
+        },
+        "text": {
+          "$ref": "#/$defs/DynamicString"
+        },
+        "evidenceIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "factIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "gapType": {
+          "type": "string",
+          "enum": [
+            "null_field",
+            "not_supplied",
+            "unresolved_name",
+            "not_searched",
+            "no_record"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "evidenceIds"
+      ],
+      "additionalProperties": false
+    },
+    "Finding": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "fact",
+            "statement",
+            "decision",
+            "inference",
+            "gap",
+            "suggestion"
+          ]
+        },
+        "text": {
+          "$ref": "#/$defs/DynamicString"
+        },
+        "evidenceIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "factIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "gapType": {
+          "type": "string",
+          "enum": [
+            "null_field",
+            "not_supplied",
+            "unresolved_name",
+            "not_searched",
+            "no_record"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "evidenceIds"
+      ],
+      "additionalProperties": false
+    },
+    "Questions": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "fact",
+            "statement",
+            "decision",
+            "inference",
+            "gap",
+            "suggestion"
+          ]
+        },
+        "text": {
+          "$ref": "#/$defs/DynamicString"
+        },
+        "evidenceIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "factIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "gapType": {
+          "type": "string",
+          "enum": [
+            "null_field",
+            "not_supplied",
+            "unresolved_name",
+            "not_searched",
+            "no_record"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "evidenceIds"
+      ],
+      "additionalProperties": false
+    },
+    "EmptyState": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "fact",
+            "statement",
+            "decision",
+            "inference",
+            "gap",
+            "suggestion"
+          ]
+        },
+        "text": {
+          "$ref": "#/$defs/DynamicString"
+        },
+        "evidenceIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "factIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "gapType": {
+          "type": "string",
+          "enum": [
+            "null_field",
+            "not_supplied",
+            "unresolved_name",
+            "not_searched",
+            "no_record"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "evidenceIds"
+      ],
+      "additionalProperties": false
+    },
+    "Coverage": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "fact",
+            "statement",
+            "decision",
+            "inference",
+            "gap",
+            "suggestion"
+          ]
+        },
+        "text": {
+          "$ref": "#/$defs/DynamicString"
+        },
+        "evidenceIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "factIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "gapType": {
+          "type": "string",
+          "enum": [
+            "null_field",
+            "not_supplied",
+            "unresolved_name",
+            "not_searched",
+            "no_record"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "rows": {
+          "$ref": "#/$defs/DynamicValue"
+        },
+        "rowIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "maxItems": 80
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "evidenceIds",
+        "rows"
+      ],
+      "additionalProperties": false
+    },
+    "Contrast": {
+      "type": "object",
+      "properties": {
+        "kind": {
+          "type": "string",
+          "enum": [
+            "fact",
+            "statement",
+            "decision",
+            "inference",
+            "gap",
+            "suggestion"
+          ]
+        },
+        "text": {
+          "$ref": "#/$defs/DynamicString"
+        },
+        "evidenceIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "factIds": {
+          "$ref": "#/$defs/DynamicStringList"
+        },
+        "gapType": {
+          "type": "string",
+          "enum": [
+            "null_field",
+            "not_supplied",
+            "unresolved_name",
+            "not_searched",
+            "no_record"
+          ]
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "rows": {
+          "$ref": "#/$defs/DynamicValue"
+        },
+        "rowIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "maxItems": 80
+        }
+      },
+      "required": [
+        "kind",
+        "text",
+        "evidenceIds",
+        "rows"
+      ],
+      "additionalProperties": false
+    },
+    "RecordList": {
+      "type": "object",
+      "properties": {
+        "rows": {
+          "$ref": "#/$defs/DynamicValue"
+        },
+        "rowIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "maxItems": 80
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "title",
+              "status",
+              "assigneeName",
+              "leadName",
+              "dueDate",
+              "startDate",
+              "description",
+              "content",
+              "authorName",
+              "updatedAt",
+              "acceptanceCriteria",
+              "issueTitle",
+              "issueStatus",
+              "dependsOnTitle",
+              "dependsOnStatus",
+              "text"
+            ]
+          },
+          "maxItems": 6
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        }
+      },
+      "required": [
+        "rows"
+      ],
+      "additionalProperties": false
+    },
+    "ComparisonTable": {
+      "type": "object",
+      "properties": {
+        "rows": {
+          "$ref": "#/$defs/DynamicValue"
+        },
+        "rowIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "maxItems": 80
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "title",
+              "status",
+              "assigneeName",
+              "leadName",
+              "dueDate",
+              "startDate",
+              "description",
+              "content",
+              "authorName",
+              "updatedAt",
+              "acceptanceCriteria",
+              "issueTitle",
+              "issueStatus",
+              "dependsOnTitle",
+              "dependsOnStatus",
+              "text"
+            ]
+          },
+          "maxItems": 6
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        }
+      },
+      "required": [
+        "rows"
+      ],
+      "additionalProperties": false
+    },
+    "ActivityList": {
+      "type": "object",
+      "properties": {
+        "rows": {
+          "$ref": "#/$defs/DynamicValue"
+        },
+        "rowIds": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "maxItems": 80
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "enum": [
+              "title",
+              "status",
+              "assigneeName",
+              "leadName",
+              "dueDate",
+              "startDate",
+              "description",
+              "content",
+              "authorName",
+              "updatedAt",
+              "acceptanceCriteria",
+              "issueTitle",
+              "issueStatus",
+              "dependsOnTitle",
+              "dependsOnStatus",
+              "text"
+            ]
+          },
+          "maxItems": 6
+        },
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        }
+      },
+      "required": [
+        "rows"
+      ],
+      "additionalProperties": false
+    },
+    "KeyFacts": {
+      "type": "object",
+      "properties": {
+        "items": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "label": {
+                "type": "string",
+                "maxLength": 160
+              },
+              "value": {
+                "$ref": "#/$defs/DynamicValue"
+              }
+            },
+            "required": [
+              "label",
+              "value"
+            ],
+            "additionalProperties": false
+          },
+          "maxItems": 6
+        }
+      },
+      "required": [
+        "items"
+      ],
+      "additionalProperties": false
+    },
+    "Disclosure": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "children": {
+          "$ref": "#/$defs/ChildList"
+        }
+      },
+      "required": [
+        "title",
+        "children"
+      ],
+      "additionalProperties": false
+    },
+    "Stat": {
+      "type": "object",
+      "properties": {
+        "label": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "value": {
+          "$ref": "#/$defs/DynamicValue"
+        },
+        "tone": {
+          "type": "string",
+          "enum": [
+            "neutral",
+            "info",
+            "positive",
+            "warning"
+          ]
+        },
+        "caption": {
+          "type": "string",
+          "maxLength": 120
+        }
+      },
+      "required": [
+        "label",
+        "value"
+      ],
+      "additionalProperties": false
+    },
+    "Distribution": {
+      "type": "object",
+      "properties": {
+        "title": {
+          "type": "string",
+          "maxLength": 160
+        },
+        "data": {
+          "$ref": "#/$defs/DynamicValue"
+        },
+        "variant": {
+          "type": "string",
+          "enum": [
+            "bars",
+            "table"
+          ]
+        }
+      },
+      "required": [
+        "title",
+        "data"
+      ],
+      "additionalProperties": false
+    },
+    "Prose": {
+      "type": "object",
+      "properties": {
+        "body": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 24000
+        }
+      },
+      "required": [
+        "body"
+      ],
+      "additionalProperties": false
+    }
+  },
+  "$defs": {
+    "DynamicString": {
+      "oneOf": [
+        {
+          "type": "string",
+          "maxLength": 6000
+        },
+        {
+          "type": "object",
+          "properties": {
+            "@path": {
+              "type": "string",
+              "maxLength": 400
+            }
+          },
+          "required": [
+            "@path"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "DynamicStringList": {
+      "oneOf": [
+        {
+          "type": "array",
+          "items": {
+            "type": "string",
+            "maxLength": 200
+          },
+          "maxItems": 30
+        },
+        {
+          "type": "object",
+          "properties": {
+            "@path": {
+              "type": "string",
+              "maxLength": 400
+            }
+          },
+          "required": [
+            "@path"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "DynamicValue": {
+      "oneOf": [
+        {
+          "type": [
+            "string",
+            "number",
+            "boolean",
+            "array",
+            "null"
+          ]
+        },
+        {
+          "type": "object",
+          "properties": {
+            "@path": {
+              "type": "string",
+              "maxLength": 400
+            }
+          },
+          "required": [
+            "@path"
+          ],
+          "additionalProperties": false
+        }
+      ]
+    },
+    "ChildList": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "pattern": "^[A-Za-z][A-Za-z0-9_-]{0,63}$"
+      },
+      "maxItems": 80
+    }
+  }
+}

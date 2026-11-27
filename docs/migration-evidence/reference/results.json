@@ -1,0 +1,30 @@
+{
+  "accounts": {
+    "冻结": "review_ad41d4b46",
+    "产品": "review_a372e77c8"
+  },
+  "checks": [
+    {
+      "ids": [
+        "BP-08"
+      ],
+      "condition": "同一组动作、同一 Multica 构建、各自新团队",
+      "observation": "撤销删除后是否恢复连线为 False，重做后是否有连线为 False，两端相同。",
+      "role": "A",
+      "status": "pass"
+    }
+  ],
+  "build": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+  "frozenClient": "dbf36f4",
+  "frozenMultica": "a7859a4",
+  "冻结": {
+    "undoRestoredEdge": false,
+    "redoHasEdge": false,
+    "slug": "baseline-d41d4b46"
+  },
+  "产品": {
+    "undoRestoredEdge": false,
+    "redoHasEdge": false,
+    "slug": "baseline-372e77c8"
+  }
+}

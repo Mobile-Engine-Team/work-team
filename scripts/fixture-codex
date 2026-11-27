@@ -1,0 +1,69 @@
+#!/usr/bin/python3
+"""Deterministic subset of the Codex app-server stdio protocol. No network or tools."""
+import json
+import os
+from pathlib import Path
+import sys
+import time
+import uuid
+
+if '--version' in sys.argv:
+    print('codex-cli 0.130.0')
+    sys.exit(0)
+if sys.argv[1:3] == ['debug', 'models']:
+    auth = Path(os.environ['CODEX_HOME']) / 'auth.json'
+    configured = auth.is_file() and '--bundled' not in sys.argv
+    model = 'fixture-authorized-model' if configured else 'fixture-bundled-model'
+    label = 'Fixture Authorized Model' if configured else 'Fixture Bundled Model'
+    print(json.dumps({'models': [{'slug': model, 'display_name': label, 'visibility': 'list'}]}))
+    sys.exit(0)
+if sys.argv[-1] == 'login':
+    home = Path(os.environ['CODEX_HOME'])
+    if home.name != '.codex' or home.parent.parent.name != 'daemons':
+        sys.exit('Fixture login requires a workbench test profile')
+    time.sleep(.25)
+    fd = os.open(home/'auth.json', os.O_WRONLY | os.O_CREAT | os.O_EXCL, 0o600)
+    with os.fdopen(fd, 'w') as file:
+        json.dump({'OPENAI_API_KEY': 'fixture-authorization'}, file)
+    sys.exit(0)
+if len(sys.argv) < 2 or sys.argv[1] != 'app-server':
+    sys.exit(2)
+
+def send(**payload):
+    print(json.dumps({'jsonrpc': '2.0', **payload}), flush=True)
+
+def notify(method, **params):
+    send(method=method, params=params)
+
+thread = str(uuid.uuid4())
+for line in sys.stdin:
+    request = json.loads(line)
+    if 'id' not in request:
+        continue
+    method = request.get('method')
+    params = request.get('params') or {}
+    key = request['id']
+    if method == 'initialize':
+        send(id=key, result={'userAgent': 'workbench-fixture/1.0'})
+    elif method in ('thread/start', 'thread/resume', 'thread/fork'):
+        if method == 'thread/resume':
+            thread = params.get('threadId', thread)
+        send(id=key, result={'thread': {'id': thread}})
+    elif method == 'model/list':
+        send(id=key, result={'data': [{'id': 'workbench-fixture', 'model': 'workbench-fixture',
+                                      'displayName': 'Workbench Fixture', 'isDefault': True}], 'nextCursor': None})
+    elif method == 'turn/start':
+        turn = str(uuid.uuid4())
+        send(id=key, result={'turn': {'id': turn, 'status': 'inProgress'}})
+        notify('turn/started', threadId=thread, turn={'id': turn})
+        time.sleep(2)
+        prompts = [item.get('text', '') for item in params.get('input', []) if isinstance(item, dict)]
+        check = any('Reply with exactly MW_CONNECTION_OK.' in prompt for prompt in prompts)
+        notify('item/completed', threadId=thread, turnId=turn,
+               item={'type': 'agentMessage', 'id': str(uuid.uuid4()), 'phase': 'final_answer',
+                     'text': 'MW_CONNECTION_OK' if check else 'WORKBENCH_FIXTURE_OK'})
+        notify('turn/completed', threadId=thread, turn={'id': turn, 'status': 'completed'})
+    elif method in ('thread/name/set', 'thread/archive', 'turn/interrupt'):
+        send(id=key, result={})
+    else:
+        send(id=key, error={'code': -32601, 'message': 'Unsupported fixture method'})

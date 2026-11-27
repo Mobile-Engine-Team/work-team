@@ -1,0 +1,32 @@
+{
+  "ids": [
+    "OS-01",
+    "OS-02",
+    "D-01"
+  ],
+  "application": "Team Workbench.app",
+  "launch": "/usr/bin/open <bundle>",
+  "build": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+  "process": 26783,
+  "accessibilityLabels": [
+    "密码",
+    "没有账号？注册账号",
+    "账号",
+    "账号密码登录"
+  ],
+  "additionalArguments": [],
+  "bundledServices": {
+    "a": {
+      "pid": 26844,
+      "productEntry": "scripts/local"
+    },
+    "api": {
+      "pid": 26834,
+      "productEntry": "libexec/bin/api"
+    },
+    "db": {
+      "pid": 26820,
+      "productEntry": "libexec/pg-tools/bin/postgres"
+    }
+  }
+}

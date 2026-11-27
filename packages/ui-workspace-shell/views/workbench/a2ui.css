@@ -1,0 +1,1065 @@
+/* Answer board: light canvas, white panels for card regions, plain regions sit
+   on the canvas. Only consumes app tokens; dark mode follows [data-theme]. */
+.wb-a2ui {
+  --a2-canvas: var(--mw-gray-9);
+  --a2-panel: var(--mw-surface);
+  --a2-tile: var(--mw-gray-10);
+  --a2-line: var(--mw-card-line);
+  --a2-line-soft: var(--mw-gray-7);
+  --a2-track: var(--mw-gray-8);
+  --a2-ink: var(--mw-text-title);
+  --a2-body: var(--mw-text-body);
+  --a2-muted: var(--mw-text-muted);
+  --a2-faint: var(--mw-text-faint);
+  --a2-accent: var(--mw-brand);
+  --a2-accent-bg: var(--mw-brand-bg);
+  --a2-positive: var(--mw-success-normal);
+  --a2-review: var(--violet-9);
+  --a2-warning: var(--mw-warning);
+  --a2-caution: var(--mw-approval-caution);
+  --a2-quiet: var(--mw-gray-5);
+  --a2-tint: 12%;
+  color: var(--a2-body);
+  font-size: 14px;
+  line-height: 1.65;
+  min-width: 0;
+}
+[data-theme="dark"] .wb-a2ui {
+  --a2-canvas: var(--mw-page);
+  --a2-tile: var(--mw-gray-9);
+  --a2-tint: 20%;
+}
+.wb-result.wb-a2ui {
+  background: var(--a2-canvas);
+  border-radius: 16px;
+  padding: 22px 24px 24px;
+}
+.wb-a2ui h4,
+.wb-a2ui h5,
+.wb-result.wb-a2ui p,
+.wb-a2ui dl,
+.wb-a2ui ol,
+.wb-a2ui ul,
+.wb-a2ui figure {
+  margin: 0;
+}
+.wb-a2ui ol,
+.wb-a2ui ul {
+  list-style: none;
+  padding: 0;
+}
+.wb-a2ui button {
+  cursor: pointer;
+}
+.wb-a2ui button:focus-visible,
+.wb-a2ui input:focus-visible {
+  outline: 2px solid var(--a2-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+.wb-a2ui [data-render="workbench-a2ui@1"] {
+  animation: a2-reveal 140ms ease-out;
+}
+@keyframes a2-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Data boards use the available width; the model still owns their layout. */
+@media (min-width: 901px) {
+  .wb-shell:has(.wb-a2ui) .wb-chat-content {
+    padding-inline: max(28px, calc((100% - 1280px) / 2));
+  }
+  .wb-shell:has(.wb-a2ui) .wb-composer {
+    margin-inline: max(28px, calc((100% - 1280px) / 2));
+  }
+}
+
+/* ---- Board header & regions (container from dynamic-view) ---- */
+.wb-result.wb-a2ui > header {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin-bottom: 18px;
+}
+.wb-result.wb-a2ui > header h2 {
+  font-size: 22px;
+  line-height: 1.4;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+  color: var(--a2-ink);
+}
+.wb-result.wb-a2ui > header > small {
+  margin: 0;
+  opacity: 1;
+  font-size: 12px;
+  color: var(--a2-muted);
+}
+.wb-a2ui .wb-regions {
+  gap: 14px;
+}
+.wb-a2ui .wb-region {
+  min-width: 0;
+  container-type: inline-size;
+  counter-reset: a2-question;
+  border-radius: 12px;
+}
+.wb-a2ui .wb-region-card {
+  background: var(--a2-panel);
+  border: 1px solid var(--a2-line);
+  padding: 18px 20px 20px;
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--mw-gray-1) 4%, transparent);
+}
+.wb-a2ui .wb-region-plain {
+  border: 0;
+  padding: 4px 2px;
+  background: transparent;
+}
+.wb-a2ui .wb-region-muted {
+  border: 1px dashed var(--a2-line);
+  padding: 16px 18px;
+  background: transparent;
+}
+.wb-a2ui .wb-region > h3 {
+  font-size: 15px;
+  line-height: 1.4;
+  font-weight: 650;
+  color: var(--a2-ink);
+  margin: 0 0 14px;
+}
+.wb-a2ui .wb-region-muted > h3 {
+  font-size: 14px;
+  color: var(--a2-body);
+}
+.wb-a2ui .wb-region > h3:empty {
+  display: none;
+}
+.wb-a2ui .wb-regions-main-sidebar:has(> :nth-child(3)) > .wb-role-primary:first-child {
+  grid-column: 1/-1;
+}
+.wb-a2ui .wb-regions-main-sidebar > .wb-role-secondary {
+  grid-column: 2;
+}
+.wb-a2ui .wb-limitations {
+  font-size: 12px;
+  border: 0;
+  padding: 14px 2px 0;
+  color: var(--a2-muted);
+  opacity: 1;
+}
+.wb-a2ui .wb-followups button {
+  background: var(--a2-panel);
+  border-color: var(--a2-line);
+  color: var(--a2-body);
+}
+.wb-a2ui .wb-followups button:hover {
+  border-color: var(--a2-accent);
+  color: var(--a2-accent);
+}
+
+/* ---- Layout primitives ---- */
+.a2-stack,
+.a2-section {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  min-width: 0;
+}
+.a2-section {
+  gap: 10px;
+}
+.a2-section > h4 {
+  font-size: 13px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--a2-ink);
+}
+/* A2UI wraps every child in a display:contents host element. */
+.a2-stack > :has(> .a2-section) + :has(> .a2-section) > .a2-section {
+  border-top: 1px solid var(--a2-line-soft);
+  padding-top: 16px;
+}
+.a2-grid,
+.a2-split {
+  display: grid;
+  gap: 12px;
+  min-width: 0;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+.a2-grid[data-columns="3"] {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.a2-grid[data-columns="4"] {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.a2-split {
+  gap: 20px;
+}
+.a2-split[data-ratio="main"] {
+  grid-template-columns: minmax(0, 1.7fr) minmax(0, 1fr);
+}
+/* Grid cells read as tiles; a tile is lighter than its panel, or a panel
+   itself when the region sits directly on the canvas. */
+.a2-grid > * > .a2-section,
+.a2-stat {
+  background: var(--a2-tile);
+  border: 1px solid var(--a2-line-soft);
+  border-radius: 10px;
+  padding: 14px 16px;
+  min-width: 0;
+}
+.wb-region-plain .a2-grid > * > .a2-section,
+.wb-region-plain .a2-stat,
+.wb-region-muted .a2-grid > * > .a2-section,
+.wb-region-muted .a2-stat {
+  background: var(--a2-panel);
+  border-color: var(--a2-line);
+}
+/* Figure/ground without forcing regions into cards: on the canvas, prose
+   stays flat while data blocks get their own panel (unless already in a tile). */
+:is(.wb-region-plain, .wb-region-muted)
+  :is(.a2-records, .a2-dist, .a2-facts):not(.a2-grid .a2-section *) {
+  background: var(--a2-panel);
+  border: 1px solid var(--a2-line);
+  border-radius: 10px;
+  padding: 14px 16px;
+}
+:is(.wb-region-plain, .wb-region-muted)
+  .a2-records:not(.a2-grid .a2-section *) {
+  padding-block: 8px;
+}
+.a2-component {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+.a2-component > h5,
+.a2-finding-head h5,
+.a2-questions-block > h5,
+.a2-dist-head h5 {
+  font-size: 14px;
+  line-height: 1.45;
+  font-weight: 600;
+  color: var(--a2-ink);
+}
+
+/* ---- Claims ---- */
+.a2-kind {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 11px;
+  line-height: 18px;
+  font-weight: 600;
+  color: var(--a2-muted);
+  white-space: nowrap;
+}
+.a2-kind::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--a2-quiet);
+}
+.a2-kind[data-kind="fact"]::before,
+.a2-kind[data-kind="decision"]::before {
+  background: var(--a2-accent);
+}
+.a2-kind[data-kind="inference"]::before {
+  background: var(--a2-review);
+}
+.a2-kind[data-kind="gap"]::before {
+  background: var(--a2-caution);
+}
+.a2-kind[data-kind="suggestion"]::before {
+  background: var(--a2-positive);
+}
+.a2-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 2px 0 2px 16px;
+  border-left: 3px solid var(--a2-accent);
+}
+.a2-summary[data-kind="gap"] {
+  border-left-color: var(--a2-caution);
+}
+.a2-summary-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.a2-summary-head h4 {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--a2-body);
+}
+.wb-a2ui .a2-lead {
+  font-size: 18px;
+  line-height: 1.55;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--a2-ink);
+  overflow-wrap: anywhere;
+}
+.wb-a2ui .a2-dek {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--a2-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.a2-summary > .a2-sources {
+  margin: 2px 0 0;
+}
+.a2-finding {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.a2-finding-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 8px;
+}
+.a2-finding > p {
+  font-size: 14px;
+  line-height: 1.75;
+  color: var(--a2-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.a2-finding[data-kind="gap"] {
+  background: color-mix(in srgb, var(--a2-caution) 7%, var(--a2-panel));
+  border-radius: 8px;
+  padding: 10px 12px;
+}
+.a2-contrast {
+  border-left: 2px solid var(--a2-line);
+  padding-left: 12px;
+}
+.a2-emptystate {
+  border: 1px dashed var(--a2-line);
+  border-radius: 8px;
+  padding: 12px 14px;
+}
+.a2-questions-block {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.a2-questions > li {
+  counter-increment: a2-question;
+  display: grid;
+  grid-template-columns: 26px minmax(0, 1fr);
+  gap: 10px;
+  align-items: start;
+  padding: 9px 0;
+  border-bottom: 1px solid var(--a2-line-soft);
+  color: var(--a2-ink);
+  line-height: 1.6;
+  overflow-wrap: anywhere;
+}
+.a2-questions > li:last-child {
+  border-bottom: 0;
+}
+.a2-questions > li::before {
+  content: counter(a2-question, decimal-leading-zero);
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--a2-accent-bg);
+  color: var(--a2-accent);
+  font-size: 11px;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  margin-top: -1px;
+}
+.a2-questions-block > .a2-sources {
+  margin-left: 36px;
+}
+
+/* ---- Evidence: one compact entry ---- */
+.a2-sources {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px;
+  margin-left: 8px;
+  vertical-align: 1px;
+  line-height: 1;
+  white-space: nowrap;
+}
+.a2-sources-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 20px;
+  padding: 0 7px;
+  border-radius: 999px;
+  border: 1px solid var(--a2-line-soft);
+  font-size: 11px;
+  color: var(--a2-muted);
+  background: transparent;
+}
+.a2-sources-toggle b {
+  font-weight: 600;
+  color: var(--a2-body);
+  font-variant-numeric: tabular-nums;
+}
+.a2-sources-toggle:hover,
+.a2-sources[data-open="true"] .a2-sources-toggle {
+  color: var(--a2-accent);
+  border-color: color-mix(in srgb, var(--a2-accent) 40%, transparent);
+}
+.a2-source {
+  min-width: 20px;
+  height: 20px;
+  padding: 0 5px;
+  border-radius: 6px;
+  background: var(--a2-accent-bg);
+  color: var(--a2-accent);
+  font-size: 11px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+.a2-source:hover {
+  background: var(--a2-accent);
+  color: var(--mw-surface);
+}
+
+/* ---- Entities, people, status ---- */
+.a2-entity {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  max-width: 100%;
+  text-align: left;
+  font-weight: 550;
+  color: var(--a2-ink);
+  overflow-wrap: anywhere;
+}
+.a2-entity svg {
+  flex-shrink: 0;
+  color: var(--a2-faint);
+  align-self: center;
+}
+.a2-entity:hover {
+  color: var(--a2-accent);
+}
+.a2-entity:hover svg {
+  color: currentColor;
+}
+.a2-person {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  color: var(--a2-body);
+  white-space: nowrap;
+}
+.a2-avatar[data-slot="avatar"] {
+  width: 22px;
+  height: 22px;
+}
+.a2-avatar [data-slot="avatar-fallback"] {
+  background: var(--a2-accent-bg);
+  color: var(--a2-accent);
+  font-size: 11px;
+  font-weight: 600;
+}
+.a2-person[data-known="false"] {
+  color: var(--a2-muted);
+}
+.a2-person[data-known="false"] [data-slot="avatar-fallback"] {
+  background: var(--a2-track);
+  color: var(--a2-faint);
+}
+.a2-status {
+  --tone: var(--a2-quiet);
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  color: var(--a2-body);
+  background: color-mix(in srgb, var(--tone) var(--a2-tint), transparent);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.a2-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--tone);
+}
+.a2-status[data-tone="positive"] {
+  --tone: var(--a2-positive);
+}
+.a2-status[data-tone="info"] {
+  --tone: var(--a2-accent);
+}
+.a2-status[data-tone="review"] {
+  --tone: var(--a2-review);
+}
+.a2-status[data-tone="warning"] {
+  --tone: var(--a2-warning);
+}
+.a2-status[data-tone="quiet"] {
+  color: var(--a2-muted);
+}
+
+/* ---- Records ---- */
+.a2-records {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.a2-filter[data-slot="input"],
+.a2-records > .a2-filter {
+  height: 30px;
+  max-width: 240px;
+  font-size: 13px;
+  margin-bottom: 6px;
+}
+.a2-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--a2-line-soft);
+  min-width: 0;
+}
+.a2-row:first-child {
+  padding-top: 2px;
+}
+.a2-row:last-child {
+  border-bottom: 0;
+  padding-bottom: 2px;
+}
+.a2-row-main {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.a2-row-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 12px;
+  font-size: 12px;
+  color: var(--a2-muted);
+}
+.a2-meta-label {
+  color: var(--a2-faint);
+  margin-right: 4px;
+}
+.wb-a2ui .a2-row-prose {
+  font-size: 13px;
+  line-height: 1.65;
+  color: var(--a2-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.a2-original {
+  margin-top: 6px !important;
+  padding: 8px 10px;
+  border-radius: 8px;
+  background: var(--a2-tile);
+  font-size: 12px;
+  color: var(--a2-muted);
+  max-height: 240px;
+  overflow: auto;
+}
+.a2-row-side {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 10px;
+  min-width: 0;
+}
+.a2-row-side > .a2-sources {
+  margin-left: 0;
+}
+.a2-icon-button {
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
+  color: var(--a2-muted);
+}
+.a2-icon-button:hover {
+  background: var(--a2-track);
+  color: var(--a2-ink);
+}
+.a2-icon-button svg,
+.a2-more svg {
+  transition: transform 120ms ease;
+}
+.a2-icon-button[aria-expanded="true"] svg,
+.a2-more[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+.a2-more {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 4px;
+  margin-top: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--a2-accent);
+}
+.a2-more:hover {
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.a2-disclosure-body {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.wb-a2ui .a2-table {
+  font-size: 13px;
+}
+.wb-a2ui .a2-table th {
+  height: 32px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--a2-muted);
+}
+.wb-a2ui .a2-table td {
+  white-space: normal;
+  max-width: 340px;
+  overflow-wrap: anywhere;
+  vertical-align: middle;
+  padding-block: 9px;
+}
+.wb-a2ui .a2-table [data-numeric] {
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.a2-activity > li {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--a2-line-soft);
+}
+.a2-activity > li:first-child {
+  padding-top: 2px;
+}
+.a2-activity > li:last-child {
+  border-bottom: 0;
+}
+.a2-activity-head {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  color: var(--a2-muted);
+}
+.a2-activity-head > .a2-person {
+  font-weight: 550;
+  color: var(--a2-ink);
+}
+.a2-activity-meta {
+  font-size: 12px;
+}
+.a2-activity-head > .a2-sources {
+  margin-left: auto;
+}
+.wb-a2ui .a2-activity-body {
+  padding-left: 28px;
+  font-size: 13px;
+  line-height: 1.7;
+  color: var(--a2-body);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+/* ---- Numbers ---- */
+.a2-facts {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(104px, 1fr));
+  gap: 12px 20px;
+}
+.a2-facts > div {
+  display: flex;
+  flex-direction: column-reverse;
+  justify-content: flex-end;
+  gap: 2px;
+  min-width: 0;
+}
+.a2-facts dt {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--a2-muted);
+}
+.a2-facts dd {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 550;
+  color: var(--a2-ink);
+  overflow-wrap: anywhere;
+}
+.a2-facts [data-numeric="true"] dd {
+  font-size: 22px;
+  line-height: 1.25;
+  font-weight: 650;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+.a2-stat {
+  --tone: transparent;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  box-shadow: inset 3px 0 0 var(--tone);
+}
+.a2-stat[data-tone="info"] {
+  --tone: var(--a2-accent);
+}
+.a2-stat[data-tone="positive"] {
+  --tone: var(--a2-positive);
+}
+.a2-stat[data-tone="warning"] {
+  --tone: var(--a2-warning);
+}
+.wb-a2ui .a2-stat[data-tone="info"],
+.wb-a2ui .a2-stat[data-tone="positive"],
+.wb-a2ui .a2-stat[data-tone="warning"] {
+  background: color-mix(in srgb, var(--tone) 8%, var(--a2-panel));
+  border-color: color-mix(in srgb, var(--tone) 20%, var(--a2-line));
+}
+.a2-stat-label {
+  font-size: 12px;
+  color: var(--a2-muted);
+}
+.a2-stat-value {
+  font-size: 16px;
+  line-height: 1.4;
+  font-weight: 600;
+  color: var(--a2-ink);
+  overflow-wrap: anywhere;
+}
+.a2-stat[data-numeric="true"] .a2-stat-value {
+  font-size: 28px;
+  line-height: 1.15;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+}
+.a2-stat-caption {
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--a2-muted);
+}
+
+/* ---- Distribution ---- */
+.a2-dist {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-width: 0;
+}
+.a2-dist-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 8px 12px;
+}
+.a2-segmented {
+  display: inline-flex;
+  padding: 2px;
+  border-radius: 8px;
+  background: var(--a2-track);
+}
+.a2-segmented button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  height: 24px;
+  padding: 0 8px;
+  border-radius: 6px;
+  font-size: 12px;
+  color: var(--a2-muted);
+}
+.a2-segmented button[aria-pressed="true"] {
+  background: var(--a2-panel);
+  color: var(--a2-ink);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--mw-gray-1) 10%, transparent);
+}
+.a2-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  font-size: 12px;
+  color: var(--a2-body);
+}
+.a2-legend li {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.a2-swatch {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 2px;
+  margin-right: 6px;
+  background: var(--seg);
+  flex-shrink: 0;
+}
+.a2-legend .a2-swatch {
+  margin-right: 0;
+}
+.a2-bars {
+  display: flex;
+  flex-direction: column;
+}
+.a2-bar-row {
+  display: grid;
+  grid-template-columns: minmax(72px, 30%) minmax(0, 1fr) 3.5em;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+.a2-dist-name {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--a2-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.a2-dist-name > span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.a2-dist-name[data-unset="true"] {
+  color: var(--a2-muted);
+  font-style: italic;
+}
+.a2-bar-track {
+  display: block;
+  height: 12px;
+  border-radius: 4px;
+  background: var(--a2-track);
+  min-width: 0;
+}
+.a2-bar {
+  display: flex;
+  gap: 2px;
+  height: 100%;
+  border-radius: 4px;
+  overflow: hidden;
+}
+.a2-seg {
+  display: block;
+  min-width: 2px;
+  background: var(--seg);
+}
+.a2-bar-total {
+  text-align: right;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--a2-ink);
+  font-variant-numeric: tabular-nums;
+}
+.wb-a2ui .a2-dist-table [data-zero="true"] {
+  color: var(--a2-faint);
+}
+.wb-a2ui .a2-dist-table .a2-dist-sum {
+  font-weight: 600;
+  color: var(--a2-ink);
+}
+.a2-dist-table .a2-sources {
+  margin-left: 0;
+}
+.a2-empty {
+  font-size: 13px;
+  color: var(--a2-muted);
+  padding: 6px 0;
+}
+.a2-sr {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+/* Series colors: status keeps semantic meaning; other series take fixed
+   categorical slots; overflow folds into a neutral slot. */
+[data-color="cat-1"] { --seg: var(--mw-brand); }
+[data-color="cat-2"] { --seg: var(--teal-9); }
+[data-color="cat-3"] { --seg: var(--orange-9); }
+[data-color="cat-4"] { --seg: var(--violet-9); }
+[data-color="cat-5"] { --seg: var(--crimson-9); }
+[data-color="cat-other"],
+[data-color="s-other"] { --seg: var(--mw-gray-3); }
+[data-color="s-done"],
+[data-color="s-completed"] { --seg: var(--a2-positive); }
+[data-color="s-in_review"] { --seg: var(--a2-review); }
+[data-color="s-in_progress"],
+[data-color="s-active"] { --seg: var(--a2-accent); }
+[data-color="s-todo"] { --seg: var(--mw-gray-4); }
+[data-color="s-planned"] { --seg: color-mix(in srgb, var(--a2-accent) 40%, var(--a2-panel)); }
+[data-color="s-backlog"] { --seg: var(--mw-gray-5); }
+[data-color="s-on_hold"] { --seg: var(--a2-caution); }
+[data-color="s-cancelled"] { --seg: var(--mw-gray-6); }
+/* Blocked also carries texture so it never depends on hue alone. */
+[data-color="s-blocked"] {
+  --seg: var(--a2-warning);
+  background-image: repeating-linear-gradient(
+    135deg,
+    transparent 0 3px,
+    color-mix(in srgb, var(--a2-panel) 45%, transparent) 3px 5px
+  );
+}
+
+/* ---- Narrow containers (region width, not viewport) ---- */
+@container (max-width: 640px) {
+  .a2-grid[data-columns="3"],
+  .a2-grid[data-columns="4"] {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .a2-split,
+  .a2-split[data-ratio="main"] {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
+  }
+  .wb-a2ui .a2-lead {
+    font-size: 16px;
+  }
+}
+@container (max-width: 420px) {
+  .a2-grid,
+  .a2-grid[data-columns] {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .a2-row {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .a2-row-side {
+    justify-content: flex-start;
+  }
+  .a2-bar-row {
+    grid-template-columns: minmax(0, 1fr) 3em;
+    gap: 4px 10px;
+  }
+  .a2-bar-row > .a2-dist-name {
+    grid-column: 1 / -1;
+  }
+  .a2-facts [data-numeric="true"] dd {
+    font-size: 20px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .wb-a2ui [data-render] {
+    animation: none;
+  }
+  .a2-icon-button svg,
+  .a2-more svg {
+    transition: none;
+  }
+}
+@media (max-width: 900px) {
+  .wb-a2ui .wb-regions-main-sidebar > .wb-role-secondary {
+    grid-column: 1;
+  }
+}
+@media (max-width: 600px) {
+  .wb-result.wb-a2ui {
+    padding: 16px 14px 18px;
+    border-radius: 12px;
+  }
+  .wb-a2ui .wb-region-card {
+    padding: 14px 14px 16px;
+  }
+}
+@media (max-width: 600px) {
+  .wb-shell:has(.wb-a2ui) > .wb-sidebar {
+    width: 56px;
+    padding: 12px 6px;
+  }
+  .wb-shell:has(.wb-a2ui) > .wb-sidebar button {
+    font-size: 0;
+    padding: 10px;
+    min-height: 38px;
+    gap: 0;
+    justify-content: center;
+  }
+  .wb-shell:has(.wb-a2ui) > .wb-sidebar button svg {
+    width: 18px;
+    height: 18px;
+    flex-shrink: 0;
+  }
+  .wb-shell:has(.wb-a2ui) > .wb-sidebar button span,
+  .wb-shell:has(.wb-a2ui) > .wb-sidebar h4,
+  .wb-shell:has(.wb-a2ui) > .wb-sidebar small,
+  .wb-shell:has(.wb-a2ui) > .wb-sidebar footer {
+    display: none;
+  }
+  .wb-shell:has(.wb-a2ui) .wb-chat-content {
+    padding: 18px 12px;
+  }
+}
+@media (max-width: 600px) {
+  .wb-shell:has(.wb-a2ui) .wb-pin-toolbar {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+  .wb-shell:has(.wb-a2ui) .wb-pin-toolbar > span {
+    flex-basis: 100%;
+    margin-bottom: 6px;
+  }
+  .team-root:has(.wb-a2ui) .team-header {
+    padding-inline: 12px;
+    gap: 8px;
+  }
+  .team-root:has(.wb-a2ui) .team-heading {
+    min-width: 0;
+    gap: 8px;
+  }
+  .team-root:has(.wb-a2ui) .team-page-label {
+    white-space: nowrap;
+    flex-shrink: 0;
+  }
+}
+
+/* General conversation shares A2UI, without snapshot/report decoration. */
+.wb-result.wb-a2ui.wb-chat-answer { background: transparent; padding: 8px 4px; }
+.wb-a2ui .a2-prose { color: var(--a2-ink); font-size: 15px; line-height: 1.8; overflow-wrap: anywhere; }
+.wb-result.wb-a2ui .a2-prose > * + * { margin-top: 0.9em; }
+.wb-a2ui .a2-prose p { white-space: normal; color: inherit; }
+.wb-a2ui .a2-prose ul { list-style: disc; padding-left: 1.5em; }
+.wb-a2ui .a2-prose ol { list-style: decimal; padding-left: 1.5em; }
+.wb-a2ui .a2-prose li + li { margin-top: 0.3em; }
+.wb-a2ui .a2-prose h1, .wb-a2ui .a2-prose h2 { font-size: 1.35em; font-weight: 650; color: var(--a2-ink); }
+.wb-a2ui .a2-prose h3, .wb-a2ui .a2-prose h4 { font-size: 1.1em; font-weight: 650; color: var(--a2-ink); }
+.wb-a2ui .a2-prose pre { overflow-x: auto; padding: 14px; background: var(--a2-tile); border-radius: 8px; }
+.wb-a2ui .a2-prose code { font-size: 0.9em; }
+.wb-a2ui .a2-prose table { display: block; overflow-x: auto; border-collapse: collapse; max-width: 100%; }
+.wb-a2ui .a2-prose th, .wb-a2ui .a2-prose td { padding: 8px 12px; border: 1px solid var(--a2-line); text-align: left; }
+.wb-a2ui .a2-prose blockquote { border-left: 3px solid var(--a2-line); padding-left: 14px; color: var(--a2-muted); }
+.wb-a2ui .a2-document-sources { display: flex; align-items: center; gap: 12px; margin-top: 16px; }

@@ -1,0 +1,169 @@
+#!/usr/bin/env python3
+"""Assemble one Finder application with its DSH, Multica, database and renderer runtimes."""
+import hashlib
+import json
+import os
+import platform
+from pathlib import Path
+import plistlib
+import shutil
+import subprocess as sp
+import tempfile
+
+ROOT = Path(__file__).resolve().parents[1]
+STATE = Path(os.environ.get('WORKBENCH_RUNTIME', ROOT / '.local/v2-runtime'))
+OUT = Path(os.environ.get('WORKBENCH_BUNDLE_OUTPUT', STATE / 'desktop'))
+NAME = 'Team Workbench.app'
+SRC = Path(os.environ.get('WORKBENCH_V2_SRC', ROOT.parents[1] / '.local/demo-v2/src/mobile-work-client'))
+MULTICA = Path(os.environ.get('WORKBENCH_MULTICA_SRC', ROOT.parents[1] / '.local/demo-v2/src/multica'))
+ELECTRON = SRC / 'node_modules/.pnpm/electron@35.7.5/node_modules/electron/dist'
+PG = Path(os.environ.get('WORKBENCH_PG_BIN', ROOT.parents[1] / '.local/mvp-single-mac-2026-11-05/state/pg-tools/bin')).parent
+DSH = Path(os.environ.get('WORKBENCH_DSH_BIN', Path.home() / '.local/dsh-cli/bin/dsh')).absolute().parents[1]
+NODE = Path(os.environ.get('WORKBENCH_STANDALONE_NODE', Path.home() / '.cache/codex-runtimes/codex-primary-runtime/dependencies/node/bin/node'))
+
+def clone(source, target):
+    target.parent.mkdir(parents=True, exist_ok=True)
+    sp.run(['/bin/cp','-cR',str(source),str(target)], check=True)
+
+def package_files():
+    for package in sorted((ROOT/'packages').iterdir()):
+        if not (package/'package.json').exists():
+            continue
+        for source in sorted(package.rglob('*')):
+            parts = source.relative_to(package).parts
+            if 'node_modules' in parts or not source.is_file():
+                continue
+            if parts[0] == 'dist' or (len(parts) == 1 and source.suffix in {'.js','.json','.mjs','.yml'}):
+                yield source
+
+def fingerprint(files):
+    digest = hashlib.sha256()
+    digest.update(str(STATE).encode())
+    for f in files:
+        digest.update(f.name.encode())
+        digest.update(f.read_bytes())
+    for f in (NODE, STATE/'bin/api', STATE/'bin/multica', STATE/'bin/migrate',
+              ELECTRON/'version', DSH/'lib/node_modules/@deepseek-ai/dsh/package.json', PG/'bin/postgres',
+              MULTICA/'server/workbench-pi/main.mjs'):
+        digest.update(str((f, f.stat().st_mtime_ns, f.stat().st_size)).encode())
+    return digest.hexdigest()
+
+def install_packages(product, files):
+    for f in files:
+        dest = product/f.relative_to(ROOT)
+        dest.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy2(f,dest)
+    # Runtime packages are regular Node modules. Keep their dependency links relative to the bundle.
+    scope = product/'node_modules/@team-workbench'
+    scope.mkdir(parents=True)
+    for package in (product/'packages').iterdir():
+        (scope/package.name).symlink_to('../../packages/'+package.name, target_is_directory=True)
+    modules = product/'node_modules'
+    seen = set()
+    def copy_dependency(name, installed):
+        if name in seen:
+            return
+        seen.add(name)
+        real = installed.resolve(strict=True)
+        clone(real,modules/name)
+        # Dependency distributions sometimes include mock SSH keys in their test suites.
+        for folder in ('test','tests','examples'):
+            shutil.rmtree(modules/name/folder,ignore_errors=True)
+        manifest = json.loads((real/'package.json').read_text())
+        for child in manifest.get('dependencies',{}):
+            copy_dependency(child,real.parent/child)
+    # ssh2 uses pure JS when its optional platform acceleration is absent.
+    installed = ROOT/'packages/execution-bridge/node_modules/ssh2'
+    copy_dependency('ssh2',installed if installed.exists() else SRC/'apps/desktop/node_modules/ssh2')
+
+def audit_payload(product):
+    forbidden = {'.env','entry.private','Cookies','Login Data','Local State','api-signing-key','db-password',
+                 'model.private.json','credential.json','team-daemon.json','team-ssh-hosts.json','PG_VERSION',
+                 'auth.json','.pgpass','id_rsa','id_ed25519','personal_access_token'}
+    hits, external = [], []
+    for f in product.rglob('*'):
+        if f.name in forbidden or f.suffix in {'.pem','.key','.p12','.pfx'}:
+            hits.append(str(f.relative_to(product)))
+        if f.is_symlink() and not f.resolve().is_relative_to(product.resolve()):
+            external.append(str(f.relative_to(product)))
+    if hits or external:
+        raise SystemExit('Bundle payload contains private data candidates or external links: ' + str(hits + external))
+    return {'runtimeRootEntries':sorted(f.name for f in product.iterdir()),
+            'privateStateMatches':hits,'externalDependencyLinks':external}
+
+def extract_electron(directory):
+    arch = {'arm64':'arm64','x86_64':'x64'}[platform.machine()]
+    archive = f'electron-v35.7.5-darwin-{arch}.zip'
+    expected = json.loads((ELECTRON.parent/'checksums.json').read_text())[archive]
+    candidates = list((Path.home()/'Library/Caches/electron').glob('*/'+archive))
+    if not candidates:
+        raise SystemExit('缺少冻结 Electron 压缩包 ' + archive)
+    with candidates[0].open('rb') as f:
+        digest = hashlib.sha256()
+        for block in iter(lambda:f.read(1024*1024),b''):
+            digest.update(block)
+    if digest.hexdigest() != expected:
+        raise SystemExit('Electron 压缩包指纹不符')
+    sp.run(['/usr/bin/unzip','-q',candidates[0], 'Electron.app/*', '-d',directory],check=True)
+    return Path(directory)/'Electron.app'
+
+def main():
+    prepare = ROOT/'scripts/prepare-multica.sh'
+    receipt = STATE/'bin/prepare-multica.sh'
+    if not (STATE/'bin/api').is_file() or not receipt.is_file() or receipt.read_bytes() != prepare.read_bytes():
+        sp.run([ROOT/'scripts/prepare-multica.sh'],check=True)
+    OUT.mkdir(parents=True,exist_ok=True)
+    files = list(package_files())
+    native = [ROOT/'desktop'/n for n in ['main.mjs','menu.mjs','application-menu-locale.mjs','package.json','AppIcon.icns']]
+    scripts = [ROOT/'scripts'/n for n in ['local','fixture-codex','fixture-cli']]
+    stamp = fingerprint([Path(__file__),*native,*scripts,ROOT/'pnpm-lock.yaml',*files])
+    target = OUT/NAME
+    info_file = target/'Contents/Info.plist'
+    if info_file.exists() and plistlib.loads(info_file.read_bytes()).get('WorkbenchBuild') == stamp:
+        print(target)
+        return
+    with tempfile.TemporaryDirectory(prefix='build-', dir=OUT, ignore_cleanup_errors=True) as temp:
+        app = Path(temp)/NAME
+        extract_electron(temp).rename(app)
+        contents = app/'Contents'
+        resources = contents/'Resources'
+        (resources/'default_app.asar').unlink(missing_ok=True)
+        # The frozen Mac shell has no top-level locale stubs: AppKit's injected items are English.
+        for locale in resources.glob('*.lproj'):
+            shutil.rmtree(locale)
+
+        (resources/'app').mkdir()
+        for f in native:
+            shutil.copy2(f,resources if f.suffix == '.icns' else resources/'app')
+        sp.run(['/usr/bin/sips','-s','format','png','-z','36','36',ROOT/'desktop/AppIcon.icns',
+                '--out',resources/'tray.png'],check=True,stdout=sp.DEVNULL)
+        for f in ('LICENSE','LICENSES.chromium.html'):
+            shutil.copy2(ELECTRON/f,resources/('Electron-'+f))
+        product = resources/'product'
+        tools = product/'libexec'
+        for f in scripts:
+            clone(f,product/'scripts'/f.name)
+        for folder in ('bin','migrations'):
+            clone(STATE/folder,tools/folder)
+        clone(ROOT/'profiles',product/'profiles')
+        clone(PG,tools/'pg-tools')
+        clone(DSH,tools/'dsh-cli')
+        clone(NODE,tools/'bin/node')
+        clone(MULTICA/'server/workbench-pi',tools/'workbench-pi')
+        install_packages(product,files)
+        (resources/'payload-audit.json').write_text(json.dumps(audit_payload(product),indent=2))
+        (resources/'installation.json').write_text(json.dumps({'runtime':str(STATE)}))
+        file = contents/'Info.plist'
+        info = plistlib.loads(file.read_bytes())
+        info.pop('ElectronAsarIntegrity',None)
+        info.update(CFBundleName='团队工作台',CFBundleDisplayName='团队工作台',CFBundleIdentifier='com.mobilework.dsh-team-workbench',
+                    CFBundleIconFile='AppIcon.icns',CFBundleShortVersionString='0.2.0',CFBundleVersion='2',WorkbenchBuild=stamp)
+        file.write_bytes(plistlib.dumps(info))
+        sp.run(['/usr/bin/codesign','--force','--sign','-',app],check=True)
+        sp.run(['/usr/bin/codesign','--verify','--strict',app],check=True)
+        if target.exists():
+            target.rename(Path(temp)/'previous.app')
+        app.rename(target)
+    print(target)
+if __name__ == '__main__':
+    main()

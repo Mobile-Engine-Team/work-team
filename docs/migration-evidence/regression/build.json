@@ -1,0 +1,75 @@
+{
+  "WorkbenchBuild": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+  "commands": {
+    "pnpm build": {
+      "exitCode": 0,
+      "summary": [
+        "Built ui-inbox",
+        "Built ui-members",
+        "Built ui-squads",
+        "Built ui-tasks",
+        "Built ui-workspace-shell"
+      ]
+    },
+    "pnpm check:types": {
+      "exitCode": 0,
+      "summary": []
+    },
+    "pnpm test": {
+      "exitCode": 0,
+      "summary": [
+        "✔ business operations construct scoped paths and ignore incoming upstream override fields (1.961667ms)",
+        "✔ exact protected route validates provenance and JSON before running a business operation (19.831666ms)",
+        "✔ host keeps browser session files private, isolated by client and revocable (10.327375ms)",
+        "✔ deterministic provider reports a local terminal receipt through the app-server protocol (2100.431375ms)",
+        "✔ DSH transport relays workspace, method and raw body using the signed-in account (32.187ms)",
+        "ℹ tests 5",
+        "ℹ pass 5",
+        "ℹ fail 0"
+      ]
+    },
+    "pnpm test:browser": {
+      "exitCode": 0,
+      "report": "browser.json",
+      "summary": [
+        "19 stages, 69 journey assertions",
+        "22 project and workbench assertions",
+        "3 assembly and recovery assertions"
+      ]
+    }
+  },
+  "matchingProductFiles": {
+    "packages/ui-inbox/dist/client.js": "96d5b212da229739d0d310329bb0a1601d6724100dab3016ed3d4b754c573057",
+    "packages/ui-members/dist/client.js": "c0b3105cdccc6544f107f09c377c2d7131cc6f3fc763208e0b09003a7ab4349b",
+    "packages/ui-squads/dist/client.js": "38531e92f8b0963a62f62c7503610596368438d974d2a95e60dea008ed17d69c",
+    "packages/ui-tasks/dist/client.js": "a393f824ca5805b9d1cfa2b37bb6d15d17700e266e0a3b68da763fc93ecf81f1",
+    "packages/ui-workspace-shell/dist/client.js": "a3e80c9f949dc2ed503ca35c5c842c8a6ca1af366753a6fa7eb73443773e4a22",
+    "packages/execution-bridge/daemon.js": "3836370a3a18ca66b9efd85569e03f5bbac5aba7ce464ce923079ee7ff67f2e4",
+    "packages/execution-bridge/dialogs.js": "be2385da2162c18d50d161a1c43e6dcdec501b7d5be5bb46fcc6a9ed1a121e0a",
+    "packages/execution-bridge/index.js": "81a18d070404cdf4fc9e1c105012b859f90906be94d22699d218ba1707543020",
+    "packages/execution-bridge/stop.js": "d795615a8faa77be73bfa92349cd0f0289cbcb41571a7350daed38fb644225f0",
+    "packages/execution-bridge/team-model-auth.js": "205c3f9679b6368409999db9798a11802c84ae85b6299e794175002f4369f878",
+    "packages/execution-bridge/team-personal.js": "ec2073eaff6f378eb73a47b3853bfadd2806d9d080d4a93443bf12bdbb7a0d2d",
+    "packages/execution-bridge/team-remote.js": "40d61271a27ca150e06f85eebbbe19d4f44f3c885ea5780adecfd26b56fff1fe",
+    "packages/multica-host/client-api.js": "168c9737768adb1c431f2687e40449fa7110f2e8ea882de55e0703501f885f27",
+    "packages/multica-host/inbox.js": "a1b667e8062ab78b5539368201b5ed213cb0ee3ad30d9958ac8ad07a54700d61",
+    "packages/multica-host/index.js": "04787b2438dc0589290b7a976c5c63f7c2f6311d961febafe8fab7b25910cfd0",
+    "packages/multica-host/members.js": "6750a63467f5cdacc7b33f46c334ad7e59b1c5052c3c72014647b70f590abb28",
+    "packages/multica-host/service.js": "eb57b4c80699f777a2a17c05f897a74265a90cdce703cd30fcfa387a29aa6357",
+    "packages/multica-host/session.js": "9b2070552697761cf5805ca101c583782225dd23ecab324450b6b5abc02f28bb",
+    "packages/multica-host/squads.js": "1255d3509368d98c3019fc2fbb4f578535297e16fc5dd2d78a8ca9efd83324c5",
+    "packages/multica-host/tasks.js": "1112bcc040a0d3b6074cd4b8e334b1bfb7876f3d6d0f49d3ccfe6c5a14fd7554",
+    "packages/multica-host/transport.js": "bc22157dda1d6bf7bea295f328479644d1f97864647f15cfa83f861b35206534",
+    "packages/multica-host/upstream.js": "8ff15b2ed66660a281ca0e80471ff494dd2c4d1fc5d7f35ac449e2498b6ea91d",
+    "packages/multica-host/workspaces.js": "c0d38ea94763ac51f2ede99ff0e0c1be2166537eef54b523a5f9a4102f98f7fd",
+    "packages/ui-inbox/index.js": "5b2df8275a78de7a341e1ec852d93a8d31e85501c46f9359e8136d7e3033bbef",
+    "packages/ui-members/index.js": "5b2df8275a78de7a341e1ec852d93a8d31e85501c46f9359e8136d7e3033bbef",
+    "packages/ui-squads/index.js": "5b2df8275a78de7a341e1ec852d93a8d31e85501c46f9359e8136d7e3033bbef",
+    "packages/ui-tasks/index.js": "5b2df8275a78de7a341e1ec852d93a8d31e85501c46f9359e8136d7e3033bbef",
+    "packages/ui-workspace-shell/contract.js": "7f5d0a51c752d85f921484daf7b815db1d43eb93dba53c6c1c61628328fbd984",
+    "packages/ui-workspace-shell/index.js": "5b2df8275a78de7a341e1ec852d93a8d31e85501c46f9359e8136d7e3033bbef",
+    "packages/ui-workspace-shell/visual.js": "be2e6c1aab28ccb80d4ba7c2d85316fd3558b5dc2496424d0e00e32eb179c1b5",
+    "packages/product-bundle/cordis.patch.yml": "549399483d93bba38e3e4cfdc23cf83cfbd2e83af6ad7f2d8369b350fb302228",
+    "scripts/local": "bd8e20cac3c3b4a9c3c2c92545e29f0b84594f62ca7962b4b350812eb45c80c4"
+  }
+}

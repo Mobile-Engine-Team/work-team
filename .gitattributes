@@ -1,0 +1,2 @@
+# Context lines in this generated unified diff keep their original whitespace.
+deploy/multica.patch whitespace=-blank-at-eol,-space-before-tab

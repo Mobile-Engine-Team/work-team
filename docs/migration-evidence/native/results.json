@@ -1,0 +1,1269 @@
+{
+  "start": "2026-11-26T13:36:09+08:00",
+  "mode": "native",
+  "users": {
+    "A": "checka_4e052725",
+    "B": "checkb_4e052725",
+    "team": "verify-4e052725"
+  },
+  "build": {
+    "appBundle": ".local/v2-runtime/desktop/Team Workbench.app",
+    "macBuild": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+    "git": "f82d3471365bb73a7397bda8cfc95124854a94f8",
+    "productFiles": {
+      "packages/ui-inbox/dist/THIRD-PARTY-NOTICES.txt": "52fd98612b6611aac2285bb8a3615dd21cb3f5cdb11d8e7f4abf9e97a9996e00",
+      "packages/ui-inbox/dist/client.js": "96d5b212da229739d0d310329bb0a1601d6724100dab3016ed3d4b754c573057",
+      "packages/ui-members/dist/THIRD-PARTY-NOTICES.txt": "1571d7822e4261547d7745261f716ad954d70f1aa1ea9cfb4c83ab0b3481455c",
+      "packages/ui-members/dist/client.js": "c0b3105cdccc6544f107f09c377c2d7131cc6f3fc763208e0b09003a7ab4349b",
+      "packages/ui-squads/dist/THIRD-PARTY-NOTICES.txt": "1571d7822e4261547d7745261f716ad954d70f1aa1ea9cfb4c83ab0b3481455c",
+      "packages/ui-squads/dist/client.js": "38531e92f8b0963a62f62c7503610596368438d974d2a95e60dea008ed17d69c",
+      "packages/ui-tasks/dist/THIRD-PARTY-NOTICES.txt": "1571d7822e4261547d7745261f716ad954d70f1aa1ea9cfb4c83ab0b3481455c",
+      "packages/ui-tasks/dist/client.js": "a393f824ca5805b9d1cfa2b37bb6d15d17700e266e0a3b68da763fc93ecf81f1",
+      "packages/ui-workspace-shell/dist/THIRD-PARTY-NOTICES.txt": "bd9bdda41407002c2400cecd501475f9aac0b05e316fa522c9904e73ed7ad501",
+      "packages/ui-workspace-shell/dist/client.js": "a3e80c9f949dc2ed503ca35c5c842c8a6ca1af366753a6fa7eb73443773e4a22",
+      "packages/multica-host/client-api.js": "168c9737768adb1c431f2687e40449fa7110f2e8ea882de55e0703501f885f27",
+      "packages/multica-host/inbox.js": "a1b667e8062ab78b5539368201b5ed213cb0ee3ad30d9958ac8ad07a54700d61",
+      "packages/multica-host/index.js": "04787b2438dc0589290b7a976c5c63f7c2f6311d961febafe8fab7b25910cfd0",
+      "packages/multica-host/members.js": "6750a63467f5cdacc7b33f46c334ad7e59b1c5052c3c72014647b70f590abb28",
+      "packages/multica-host/package.json": "f19c766b9218d69df07603af4aabc8a514a2227e736325c15a982988f4e2b549",
+      "packages/multica-host/service.js": "eb57b4c80699f777a2a17c05f897a74265a90cdce703cd30fcfa387a29aa6357",
+      "packages/multica-host/session.js": "9b2070552697761cf5805ca101c583782225dd23ecab324450b6b5abc02f28bb",
+      "packages/multica-host/squads.js": "1255d3509368d98c3019fc2fbb4f578535297e16fc5dd2d78a8ca9efd83324c5",
+      "packages/multica-host/tasks.js": "1112bcc040a0d3b6074cd4b8e334b1bfb7876f3d6d0f49d3ccfe6c5a14fd7554",
+      "packages/multica-host/transport.js": "bc22157dda1d6bf7bea295f328479644d1f97864647f15cfa83f861b35206534",
+      "packages/multica-host/upstream.js": "8ff15b2ed66660a281ca0e80471ff494dd2c4d1fc5d7f35ac449e2498b6ea91d",
+      "packages/multica-host/workspaces.js": "c0d38ea94763ac51f2ede99ff0e0c1be2166537eef54b523a5f9a4102f98f7fd",
+      "packages/execution-bridge/daemon.js": "3836370a3a18ca66b9efd85569e03f5bbac5aba7ce464ce923079ee7ff67f2e4",
+      "packages/execution-bridge/dialogs.js": "be2385da2162c18d50d161a1c43e6dcdec501b7d5be5bb46fcc6a9ed1a121e0a",
+      "packages/execution-bridge/index.js": "81a18d070404cdf4fc9e1c105012b859f90906be94d22699d218ba1707543020",
+      "packages/execution-bridge/package.json": "039fa2c5bbad4cc4a96768bf8ada60586cf5c6215f16f2465e2cb8a01fe91f7e",
+      "packages/execution-bridge/stop.js": "d795615a8faa77be73bfa92349cd0f0289cbcb41571a7350daed38fb644225f0",
+      "packages/execution-bridge/team-model-auth.js": "205c3f9679b6368409999db9798a11802c84ae85b6299e794175002f4369f878",
+      "packages/execution-bridge/team-personal.js": "ec2073eaff6f378eb73a47b3853bfadd2806d9d080d4a93443bf12bdbb7a0d2d",
+      "packages/execution-bridge/team-remote.js": "40d61271a27ca150e06f85eebbbe19d4f44f3c885ea5780adecfd26b56fff1fe",
+      "packages/product-bundle/cordis.patch.yml": "549399483d93bba38e3e4cfdc23cf83cfbd2e83af6ad7f2d8369b350fb302228",
+      "packages/product-bundle/package.json": "368009f30ad20548bd987bf9199a33e61f241241fb64dcaf9103ba7b2424852d"
+    },
+    "assemblySha256": "9f391a733a624fce020a5d42988bd94dac88f2cfecfb36414c9206bd64e17eeb"
+  },
+  "status": "pass",
+  "checks": [
+    {
+      "ids": [
+        "OS-01",
+        "AU-01"
+      ],
+      "condition": "新测试资料打开产品",
+      "observation": "中文登录页，账号聚焦，密码为空。",
+      "role": "A",
+      "status": "pass",
+      "image": "01-login.png"
+    },
+    {
+      "ids": [
+        "AU-02",
+        "AU-03",
+        "WB-01"
+      ],
+      "condition": "A/B 分别注册，先提交两次不同的密码",
+      "observation": "两端都提示密码不一致，改正后分别进入自己的个人工作台。",
+      "role": "A",
+      "status": "pass",
+      "image": "02-personal.png"
+    },
+    {
+      "ids": [
+        "AU-04",
+        "AU-05"
+      ],
+      "condition": "B 退出后用错误密码和正确密码依次登录",
+      "observation": "错误时停在登录页，正确密码回个人区。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WS-03"
+      ],
+      "condition": "打开新建工作区",
+      "observation": "名称默认聚焦，地址空白，创建禁用。",
+      "role": "A",
+      "status": "pass",
+      "image": "03-workspace-empty.png"
+    },
+    {
+      "ids": [
+        "WS-04"
+      ],
+      "condition": "空白名称改为非空，地址含空格",
+      "observation": "名称空白禁用，填写名称后允许提交非法地址。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WS-05"
+      ],
+      "condition": "带输入经Esc关闭后重开",
+      "observation": "名称及地址都保留。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WS-06"
+      ],
+      "condition": "带输入经叉号关闭后重开",
+      "observation": "名称及地址都保留。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WS-07"
+      ],
+      "condition": "带输入经遮罩关闭后重开",
+      "observation": "名称及地址都保留。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WS-08"
+      ],
+      "condition": "提交含空格及标点的地址",
+      "observation": "弹窗报告失败，两个字段保留。",
+      "role": "A",
+      "status": "pass",
+      "image": "04-workspace-invalid.png"
+    },
+    {
+      "ids": [
+        "WS-09"
+      ],
+      "condition": "创建唯一地址团队",
+      "observation": "弹窗关闭，A 的工作区选择器落在新团队。",
+      "role": "A",
+      "status": "pass",
+      "image": "05-team-home.png"
+    },
+    {
+      "ids": [
+        "WS-10"
+      ],
+      "condition": "同地址、不同名称再次提交",
+      "observation": "弹窗报错，数据库仅有一份该地址。",
+      "role": "A",
+      "status": "pass",
+      "image": "06-workspace-duplicate.png"
+    },
+    {
+      "ids": [
+        "AG-01",
+        "AG-03"
+      ],
+      "condition": "B 个人工作区，尚无可用端",
+      "observation": "表单没有团队共享选项，空表不能保存。",
+      "role": "B",
+      "status": "pass",
+      "image": "08-agent-personal.png"
+    },
+    {
+      "ids": [
+        "AG-02"
+      ],
+      "condition": "A 团队区打开新建智能体",
+      "observation": "默认不共享，需选端和填写名称。",
+      "role": "A",
+      "status": "pass",
+      "image": "07-agent-team.png"
+    },
+    {
+      "ids": [
+        "IN-01",
+        "IN-02"
+      ],
+      "condition": "A 邀请 B，B 留在个人区",
+      "observation": "B 在其个人区收到团队邀请和接受/稍后处理操作。",
+      "role": "B",
+      "status": "pass",
+      "image": "09-invite.png"
+    },
+    {
+      "ids": [
+        "IN-03"
+      ],
+      "condition": "先稍后处理再刷新",
+      "observation": "未接受的邀请重新出现。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WS-01",
+        "IN-04",
+        "IN-05"
+      ],
+      "condition": "B 接受后从个人区手动进入团队",
+      "observation": "B 见 A 而无邀请按钮，成员表回读 owner 与 member。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "EP-04"
+      ],
+      "condition": "仅打开 SSH 主机表单",
+      "observation": "可填写连接条件，未连接外部主机。",
+      "role": "A",
+      "status": "pass",
+      "image": "30-remote.png"
+    },
+    {
+      "ids": [
+        "EP-01",
+        "AG-04",
+        "AG-05",
+        "AG-06",
+        "AG-07"
+      ],
+      "condition": "开启本机受控执行端，Codex 手输模型后切 Pi，私有保存",
+      "observation": "名称+端才可保存，换端清除自选模型，B 的团队列表无此助手。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "AG-08"
+      ],
+      "condition": "A 将助手改为团队共享，B 重载",
+      "observation": "B 见共享助手但无编辑入口，类型为暂不可获取。",
+      "role": "B",
+      "status": "pass",
+      "image": "10-shared-agent-member.png"
+    },
+    {
+      "ids": [
+        "EP-02"
+      ],
+      "condition": "停止 A 的受控执行端",
+      "observation": "启用动作恢复；后续离线任务仍可分派给共享助手。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TK-01"
+      ],
+      "condition": "团队任务列表新建普通任务",
+      "observation": "标题为空，创建按钮禁用。",
+      "role": "A",
+      "status": "pass",
+      "image": "11-task-new.png"
+    },
+    {
+      "ids": [
+        "TK-07"
+      ],
+      "condition": "切换智能体起草模式",
+      "observation": "起草表单可达，未提交模型请求。",
+      "role": "A",
+      "status": "pass",
+      "image": "12-task-draft.png"
+    },
+    {
+      "ids": [
+        "TK-03",
+        "STATE-04"
+      ],
+      "condition": "新任务写标题后按 Esc 再开",
+      "observation": "表单重置。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "D-07",
+        "FL-01"
+      ],
+      "condition": "新建任务仅上传失败，恢复连接后移除",
+      "observation": "失败附件允许移除，普通任务仍可编辑。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "D-07",
+        "FL-01"
+      ],
+      "condition": "新建任务仅上传失败，恢复连接后取消",
+      "observation": "失败附件允许取消，普通任务仍可编辑。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "D-07",
+        "FL-01"
+      ],
+      "condition": "新建任务仅上传失败，恢复连接后重试",
+      "observation": "失败附件允许重试，普通任务仍可编辑。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TK-04"
+      ],
+      "condition": "上传输入文件，尚未提交任务",
+      "observation": "附件显示待发送，创建按钮可用。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TK-02",
+        "TK-05"
+      ],
+      "condition": "A 创建任务、要求、文本附件并指派 B",
+      "observation": "落在新任务详情，持久化业务状态 backlog，执行 0 条。",
+      "role": "A",
+      "status": "pass",
+      "image": "13-task-detail.png"
+    },
+    {
+      "ids": [
+        "IB-01"
+      ],
+      "condition": "B 访问自己的团队收件箱",
+      "observation": "看到 A 新分派的任务。",
+      "role": "B",
+      "status": "pass",
+      "image": "14-member-inbox.png"
+    },
+    {
+      "ids": [
+        "IB-03"
+      ],
+      "condition": "归档通知，再从归档分区恢复",
+      "observation": "恢复后手动切回当前，任务可打开。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "CM-01",
+        "FL-02"
+      ],
+      "condition": "B 评论后 A 查看附件",
+      "observation": "A 不刷新即可见 B 评论，打开输入材料可读完整原文。",
+      "role": "A",
+      "status": "pass",
+      "image": "15-file-preview.png"
+    },
+    {
+      "ids": [
+        "TD-04",
+        "STATE-01",
+        "STATE-02",
+        "STATE-05"
+      ],
+      "condition": "保存已完成后写一条未发评论并刷新",
+      "observation": "回到同一任务，材料与已发评论仍在，未发送输入清空，数据库 done 且无执行。",
+      "role": "B",
+      "status": "pass",
+      "image": "16-task-after-reload.png"
+    },
+    {
+      "ids": [
+        "FL-03",
+        "FL-04",
+        "FL-05"
+      ],
+      "condition": "B 两次交付同名同 MIME 的 review.txt",
+      "observation": "最新版本单列，历史折叠显示 1 份。",
+      "role": "B",
+      "status": "pass",
+      "image": "39-delivery.png"
+    },
+    {
+      "ids": [
+        "FL-06"
+      ],
+      "condition": "从已展开的早期版本定位评论",
+      "observation": "焦点进入旧评论 comment-3f14ff8e-9289-4d63-a220-adc04325f5c3",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "IB-01",
+        "IB-02"
+      ],
+      "condition": "A 展开同任务的此前通知",
+      "observation": "同任务聚合，历史内有各事件的独立操作。",
+      "role": "A",
+      "status": "pass",
+      "image": "31-history.png"
+    },
+    {
+      "ids": [
+        "TL-03",
+        "TL-04",
+        "D-07"
+      ],
+      "condition": "重置搜索再切看板",
+      "observation": "筛选重置后留在任务页，切换为看板。",
+      "role": "B",
+      "status": "pass",
+      "image": "29-board.png"
+    },
+    {
+      "ids": [
+        "STATE-09"
+      ],
+      "condition": "刷新团队任务看板",
+      "observation": "保留看板路由。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "SQ-01",
+        "SQ-02",
+        "SQ-03"
+      ],
+      "condition": "创建清单小队并选择共享助手为队长",
+      "observation": "小队名称和队长可见。",
+      "role": "A",
+      "status": "pass",
+      "image": "24-squad.png"
+    },
+    {
+      "ids": [
+        "SQ-05",
+        "SQ-06"
+      ],
+      "condition": "A 将 B 加入小队后，B 打开详情",
+      "observation": "B 可见本人的角色说明。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "D-01",
+        "WB-03",
+        "WB-09",
+        "WB-19",
+        "STATE-03"
+      ],
+      "condition": "同一窗口同一份资料从 A 退出并登录 B",
+      "observation": "B 能打开团队任务；A 的多行草稿、历史对话及固定视图均不可见。",
+      "role": "B（A 实例）",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "D-01",
+        "STATE-03"
+      ],
+      "condition": "同资料切回 A",
+      "observation": "原草稿和私人对象回来，排除因登出而被删除的误判。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "RUN-01"
+      ],
+      "condition": "B 给离线共享助手建待规划任务再改进行中",
+      "observation": "创建时无执行；推进前显示确认框。",
+      "role": "B",
+      "status": "pass",
+      "image": "33-trigger-preview.png"
+    },
+    {
+      "ids": [
+        "RUN-02",
+        "STATE-07"
+      ],
+      "condition": "B 确认离线分派",
+      "observation": "任务进行中、执行排队中、尚未领取。",
+      "role": "B",
+      "status": "pass",
+      "image": "34-offline-dispatch.png"
+    },
+    {
+      "ids": [
+        "RUN-07"
+      ],
+      "condition": "助手所属人 A 打开 B 发起的执行任务",
+      "observation": "A 可见业务任务，无 B 的私有停止操作。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "CM-03",
+        "IB-04",
+        "STATE-06"
+      ],
+      "condition": "A 提及 B，B 留未读时退出前取样",
+      "observation": "B 看到提及事件，服务端未读事件数 2。",
+      "role": "B",
+      "status": "pass",
+      "image": "36-before-restart.png"
+    },
+    {
+      "ids": [
+        "STATE-01"
+      ],
+      "condition": "正常退出 B，再打开同一 bundle 与资料",
+      "observation": "原进程结束后重开显示空登录框。",
+      "role": "B",
+      "status": "pass",
+      "image": "32-cold-start.png"
+    },
+    {
+      "ids": [
+        "STATE-07"
+      ],
+      "condition": "B 重开或刷新后回到离线任务",
+      "observation": "相同任务继续排队，停止操作仍可用。",
+      "role": "B",
+      "status": "pass",
+      "image": "37-queue-restart.png"
+    },
+    {
+      "ids": [
+        "RUN-04",
+        "RUN-07"
+      ],
+      "condition": "查看执行详情后停止",
+      "observation": "执行取消，业务状态仍进行中，提供重试。",
+      "role": "B",
+      "status": "pass",
+      "image": "35-cancel-run.png"
+    },
+    {
+      "ids": [
+        "RUN-03",
+        "RUN-05"
+      ],
+      "condition": "B 重试并取消原执行，再为另一件选暂不开始",
+      "observation": "首件有两个未领取的取消执行，第二件进行中且执行数 0。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "RUN-06",
+        "D-06"
+      ],
+      "condition": "B 分派给 A 的在线 Codex 协议夹具并确认开始",
+      "observation": "Multica 持久记录开始/结束、责任人 B 与执行终态，B 在任务详情读到 WORKBENCH_FIXTURE_OK。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WS-11"
+      ],
+      "condition": "延迟本次创建请求期间按 Esc",
+      "observation": "创建按钮 pending 禁用，仅收到一条创建请求，最终导航到对应团队且仅写入一行。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WS-12"
+      ],
+      "condition": "延迟本次创建请求期间在相同位置双击",
+      "observation": "创建按钮 pending 禁用，仅收到一条创建请求，最终导航到对应团队且仅写入一行。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TL-05"
+      ],
+      "condition": "新团队 102 行样本翻三页，再搜索",
+      "observation": "每页 50、50、2 件，末页下一页禁用，搜索回到唯一种子。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "COMMON-02"
+      ],
+      "condition": "B 的业务读请求持续失败后恢复",
+      "observation": "出现连接状态提示，联网触发成功查询后提示消退，A 的网络仍正常。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "IN-05"
+      ],
+      "condition": "把本轮 B 从 member 临时改为 admin 后重载",
+      "observation": "管理员获得团队邀请操作。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "AG-10"
+      ],
+      "condition": "B 团队智能体目录按 End、Home",
+      "observation": "焦点与选中 tab 同步切换。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "AG-11"
+      ],
+      "condition": "A 打开共享助手的删除确认并取消",
+      "observation": "确认包含名称，取消后助手仍在。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TD-01",
+        "TD-02"
+      ],
+      "condition": "双方打开同一已分派任务，A 切换关注后恢复",
+      "observation": "本人关注操作可逆，B 重载仍保持其本人原订阅。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TD-03"
+      ],
+      "condition": "A 编辑任务要求，空标题、取消、重新打开再保存",
+      "observation": "保留原值且空标题禁保存，B 同一任务自动更新。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TL-01",
+        "TL-02"
+      ],
+      "condition": "B 在我负责/我创建之间切换并搜索无匹配内容",
+      "observation": "由 A 所创的任务仅出现在 B 的负责范围，重置恢复列表。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "SQ-04",
+        "SQ-06"
+      ],
+      "condition": "打开小队编辑及成员角色表单后取消",
+      "observation": "预填原小队名称和角色说明，取消后仍在原详情。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "SQ-07",
+        "SQ-08"
+      ],
+      "condition": "A 先取消再确认移出非队长 B，随后归档本轮小队",
+      "observation": "成员角色从详情移除，数据库有归档时间，B 新列表不再显示该队。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "IB-02",
+        "COMMON-03"
+      ],
+      "condition": "同任务先后两次提及，B 从两条历史事件分别打开再刷新",
+      "observation": "两条不同 comment_id 分别写入路由，键盘焦点与数据库中对应原文的评论 ID 一致。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TK-06"
+      ],
+      "condition": "仅丢弃实际写入成功的首个创建响应，保留表单后关闭、刷新列表",
+      "observation": "表单显示未完成并保留标题；恢复读取见一条任务，未自动重送。手动再次提交是独立写入。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TK-07",
+        "TK-08"
+      ],
+      "condition": "离线提交失败；在本轮专有 runtime 上短时设置在线心跳，以可控数据库回填模拟处理结果",
+      "observation": "真实起草请求由 B 创建、重试产生另一个请求 ID。界面随排队、运行、取消、成功轮询更新，结果可核对；改负责人撤销确认。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WS-02"
+      ],
+      "condition": "同一账号打开不存在的 slug 后选团队卡片",
+      "observation": "合法团队可从选择页重新进入。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "AG-09",
+        "COMMON-01"
+      ],
+      "condition": "已绑定离线 Pi 的助手打开端选择器，用回车/Esc 后只编辑角色指令",
+      "observation": "原绑定仍显示、Esc 回焦到选择器，离线状态可保存该助手。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "CM-04"
+      ],
+      "condition": "B 提及助手，取消勾选预估中的触发项再发送",
+      "observation": "评论成功入库，该任务没有产生执行。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "CM-02"
+      ],
+      "condition": "取消回复再回复同一评论并点击子回复的引用",
+      "observation": "引用返回父评论 comment-bc46cdfc-5484-4d07-a628-06daf0ef55f9，焦点与旧回复相符。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "CM-05"
+      ],
+      "condition": "为本轮任务安装一条协调活动，再在详情展开/收起原文",
+      "observation": "能够阅读完整协调原因，收起后保留活动摘要。",
+      "role": "B",
+      "status": "pass"
+    }
+  ],
+  "images": {
+    "01-login.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "ffb23dd7bc615afb0196223e20f4517b6a1fe2fc4c7c7948ab469b408f54d5ad",
+      "route": "#/team"
+    },
+    "02-personal.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "cd9fe799b9bcf3614988d858d7319b27cc0b033726c4eee2510ad889ab7863d1",
+      "route": "#/team/personal-936c532a-81f1-4c79-8721-f96b0675c702"
+    },
+    "03-workspace-empty.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "209327143101b43177a0d38bc81e004cf4063e24c03f1ca015c131dd86ff7632",
+      "route": "#/team/personal-936c532a-81f1-4c79-8721-f96b0675c702"
+    },
+    "04-workspace-invalid.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "3c4a011c26bcd06962dec60afbd61bbf24c0c088a9cfaeed0ccbe1a9caf44aa8",
+      "route": "#/team/personal-936c532a-81f1-4c79-8721-f96b0675c702"
+    },
+    "05-team-home.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "abc3242fd4ff39836117a426a556c32fdec28a6f704eb43294bb9502d2a14804",
+      "route": "#/team/verify-4e052725"
+    },
+    "06-workspace-duplicate.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "3db57ca6dba0e2095de95688896499ad5370b15b3dff4853e0bc8e3a5bac63f6",
+      "route": "#/team/verify-4e052725"
+    },
+    "08-agent-personal.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "26caadea374d4bfa1c06358f4149be700f871a898e64ca19a07e9a197d7bcd99",
+      "route": "#/team/personal-03b2d7b0-67eb-461d-b6d5-acad720b0ef1?view=settings"
+    },
+    "07-agent-team.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "d8537bd5acd57720730a049209f90bc08d2d922053aebf65e554d18800acab5e",
+      "route": "#/team/verify-4e052725?view=settings"
+    },
+    "09-invite.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "3d8d5abfd2dba0ba4c2bfa599fe231e54a6e1a021db2cf9ee3473553b0321421",
+      "route": "#/team/personal-03b2d7b0-67eb-461d-b6d5-acad720b0ef1?view=settings"
+    },
+    "30-remote.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "295575c792f69c91914debc11281067cacfae7f39422228daaf22a668ba322a6",
+      "route": "#/team/verify-4e052725?view=settings"
+    },
+    "10-shared-agent-member.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "e614ea906c20f2e944af75a676b265eb567862d19425733e902e89dc36f0d609",
+      "route": "#/team/verify-4e052725?view=settings"
+    },
+    "11-task-new.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "446b63d5ce6b0df7d6a9a5cdcd9f20f8d780393ad118ccf0c005681f2d0734c3",
+      "route": "#/team/verify-4e052725?view=tasks"
+    },
+    "12-task-draft.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "44aa6a168aaa4b819ecb4f8ba5f02c456beadbd1934d44051a65f419aea9618d",
+      "route": "#/team/verify-4e052725?view=tasks"
+    },
+    "13-task-detail.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "e1a0f729f282f9348fd269ce10e8a0b20ec7764b8104f2a4a59e0b6d904a4f01",
+      "route": "#/team/verify-4e052725/issue/01a2165a-ff93-74ed-b4ec-8bd8bddae9bb"
+    },
+    "14-member-inbox.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "621f8b6b5f2b891053641558e3e027ace284723baf2a2a5e45792f5cd5b54298",
+      "route": "#/team/verify-4e052725?view=inbox"
+    },
+    "15-file-preview.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "d5bbf4825d066d3cf1389a8e331b15e26c8d8e1188d29ba0740fb1fe894eeade",
+      "route": "#/team/verify-4e052725/issue/01a2165a-ff93-74ed-b4ec-8bd8bddae9bb"
+    },
+    "16-task-after-reload.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "26042ae59db2f4e158d521e7e42b0dfe34cf1d81033eb70a46f2dec7136e2884",
+      "route": "#/team/verify-4e052725/issue/01a2165a-ff93-74ed-b4ec-8bd8bddae9bb"
+    },
+    "39-delivery.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "5d4a097b64348ec75401f222fb196eb15da841c6b34d9fd5e72e5b80e048d7b9",
+      "route": "#/team/verify-4e052725/issue/01a2165a-ff93-74ed-b4ec-8bd8bddae9bb"
+    },
+    "31-history.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "1150f5ae6873522288a4c67cd17dd5c0a23d0d973ff592071ff0b6a4ad2d25e4",
+      "route": "#/team/verify-4e052725?view=inbox"
+    },
+    "29-board.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "4b2f47a40032366499a433a185dfc1b63468a866b0083ca30f988dc137d86989",
+      "route": "#/team/verify-4e052725?view=tasks&taskView=board"
+    },
+    "24-squad.png": {
+      "role": "A",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "9975ab295975798085ddc02d632e7450d157c838bbb358bbadc3b29139f4f84e",
+      "route": "#/team/verify-4e052725?view=squads&squad=ecaa94fa-e329-40f5-a2f4-0da5453446cf"
+    },
+    "33-trigger-preview.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "ae79f61c64d8860e517a5a3738f8330770ff78d50332a067b16e418503795c47",
+      "route": "#/team/verify-4e052725/issue/01a2165b-243f-7e09-8519-d53ebbaec8ec"
+    },
+    "34-offline-dispatch.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "742af4c0e9cd5b4b6b3da181f0f5d872ce982066bd5c36826fb55f886d670e26",
+      "route": "#/team/verify-4e052725/issue/01a2165b-243f-7e09-8519-d53ebbaec8ec"
+    },
+    "36-before-restart.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "02fec0f9bd84ee2a3bd6b4aed1c186a54342b35ee4cce4ad7a3c812356f74207",
+      "route": "#/team/verify-4e052725?view=inbox"
+    },
+    "32-cold-start.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "ffb23dd7bc615afb0196223e20f4517b6a1fe2fc4c7c7948ab469b408f54d5ad",
+      "route": "#/team"
+    },
+    "37-queue-restart.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "8ef8b3f1b87d88f7f22aca3fc5b968bfb3f177e61ca0139e5e4a42f368301fc0",
+      "route": "#/team/verify-4e052725/issue/01a2165b-243f-7e09-8519-d53ebbaec8ec"
+    },
+    "35-cancel-run.png": {
+      "role": "B",
+      "viewport": {
+        "width": 1180,
+        "height": 810,
+        "dpr": 2,
+        "language": "en-US"
+      },
+      "sha256": "ed1122e822827623c6483041e32d27c04ea09c5613cd9a7a5d7802ddc74c3862",
+      "route": "#/team/verify-4e052725/issue/01a2165b-243f-7e09-8519-d53ebbaec8ec"
+    }
+  },
+  "business": {
+    "nativeAssembly": {
+      "profileTargets": {
+        "a": "Contents/Resources/product/packages/product-bundle",
+        "b": "Contents/Resources/product/packages/product-bundle"
+      },
+      "services": {
+        "api": "Contents/Resources/product/libexec/bin/api",
+        "db": "Contents/Resources/product/libexec/pg-tools/bin/postgres"
+      }
+    },
+    "members": [
+      "checkb_4e052725|member",
+      "checka_4e052725|owner"
+    ],
+    "download": {
+      "bytes": 16,
+      "sha256": "9618d564da4a860e707fafbd6a203490ff9f970a753c4f6b07dd900389a18251"
+    },
+    "attachments": [
+      "baseline.txt|16|f",
+      "review.txt|5|t",
+      "review.txt|6|t"
+    ],
+    "controlledRun": [
+      "running|t|f|checkb_4e052725|direct_human|in_progress",
+      "completed|t|t|checkb_4e052725|direct_human|in_progress"
+    ],
+    "pages": [
+      50,
+      50,
+      2
+    ],
+    "commentFocus": {
+      "锚点复验一1d24": "f9f1e8fc-f129-4484-a4d1-a251cfd7b2cb",
+      "锚点复验二1d24": "e6befed1-5db1-4342-a881-d13abe86efba"
+    },
+    "finalWorkspace": {
+      "issues": [
+        {
+          "number": 1,
+          "title": "核对交接清单",
+          "status": "done",
+          "executions": 0
+        },
+        {
+          "number": 2,
+          "title": "待核对事项",
+          "status": "backlog",
+          "executions": 0
+        },
+        {
+          "number": 3,
+          "title": "离线分派",
+          "status": "in_progress",
+          "executions": 2
+        },
+        {
+          "number": 4,
+          "title": "暂不启动",
+          "status": "in_progress",
+          "executions": 0
+        },
+        {
+          "number": 5,
+          "title": "受控回执",
+          "status": "in_progress",
+          "executions": 1
+        },
+        {
+          "number": 6,
+          "title": "丢回包隔离样本",
+          "status": "backlog",
+          "executions": 0
+        }
+      ],
+      "executions": [
+        {
+          "number": 3,
+          "title": "离线分派",
+          "status": "cancelled",
+          "started": false,
+          "ended": true,
+          "originator_source": "direct_human",
+          "accountable": "checkb_4e052725"
+        },
+        {
+          "number": 3,
+          "title": "离线分派",
+          "status": "cancelled",
+          "started": false,
+          "ended": true,
+          "originator_source": "direct_human",
+          "accountable": "checkb_4e052725"
+        },
+        {
+          "number": 5,
+          "title": "受控回执",
+          "status": "completed",
+          "started": true,
+          "ended": true,
+          "originator_source": "direct_human",
+          "accountable": "checkb_4e052725"
+        }
+      ],
+      "inbox": [
+        {
+          "name": "checka_4e052725",
+          "type": "new_comment",
+          "read": false,
+          "archived": false,
+          "events": 4
+        },
+        {
+          "name": "checka_4e052725",
+          "type": "new_comment",
+          "read": true,
+          "archived": false,
+          "events": 1
+        },
+        {
+          "name": "checka_4e052725",
+          "type": "status_changed",
+          "read": false,
+          "archived": false,
+          "events": 1
+        },
+        {
+          "name": "checkb_4e052725",
+          "type": "issue_assigned",
+          "read": true,
+          "archived": false,
+          "events": 1
+        },
+        {
+          "name": "checkb_4e052725",
+          "type": "mentioned",
+          "read": false,
+          "archived": false,
+          "events": 3
+        },
+        {
+          "name": "checkb_4e052725",
+          "type": "new_comment",
+          "read": false,
+          "archived": false,
+          "events": 2
+        },
+        {
+          "name": "checkb_4e052725",
+          "type": "new_comment",
+          "read": true,
+          "archived": false,
+          "events": 2
+        }
+      ],
+      "drafts": [
+        {
+          "id": "d84d36b1-7812-41ba-98a1-9fc7cfd2efa9",
+          "status": "cancelled",
+          "created_by": "checkb_4e052725"
+        },
+        {
+          "id": "21e41ece-9f61-486d-bb8e-5965563b7b69",
+          "status": "succeeded",
+          "created_by": "checkb_4e052725"
+        }
+      ]
+    }
+  },
+  "requestedSteps": [
+    "accounts",
+    "workspace",
+    "forms",
+    "invite",
+    "agents",
+    "tasks",
+    "squad",
+    "identity",
+    "dispatch",
+    "online",
+    "pending",
+    "recovery",
+    "role_sample",
+    "secondary",
+    "anchors",
+    "lost_response",
+    "drafting",
+    "details",
+    "database"
+  ],
+  "activeStep": "database",
+  "completedSteps": [
+    "accounts",
+    "workspace",
+    "forms",
+    "invite",
+    "agents",
+    "tasks",
+    "squad",
+    "identity",
+    "dispatch",
+    "online",
+    "pending",
+    "recovery",
+    "role_sample",
+    "secondary",
+    "anchors",
+    "lost_response",
+    "drafting",
+    "details",
+    "database"
+  ],
+  "finished": "2026-11-26T13:37:27+08:00"
+}

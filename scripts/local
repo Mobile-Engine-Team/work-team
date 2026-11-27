@@ -1,0 +1,448 @@
+#!/usr/bin/env python3
+"""Start and stop only the local workbench processes recorded in this checkout."""
+import argparse
+import fcntl
+import getpass
+import json
+import os
+from pathlib import Path
+import re
+import secrets
+import shutil
+import signal
+import socket
+import subprocess as sp
+import sys
+import tempfile
+import time
+import urllib.error
+import urllib.parse
+import urllib.request
+
+ROOT = Path(__file__).resolve().parents[1]
+BUNDLED = (ROOT / 'libexec').is_dir()
+STANDALONE = os.environ.get('WORKBENCH_STANDALONE') == '1' and not BUNDLED
+legacy = os.environ.get('WORKBENCH_LEGACY_RUNTIME') == '1'
+STATE = Path(os.environ.get('WORKBENCH_RUNTIME', ROOT / ('.local/runtime' if legacy else '.local/v2-runtime')))
+PORTS = ({'api': 18995, 'a': 18996, 'b': 18997, 'db': 54339} if legacy
+         else {'api': 19015, 'a': 19016, 'b': 19017, 'db': 54359})
+if os.environ.get('WORKBENCH_TEST_LAB') == '1':
+    PORTS = {'api': 19115, 'a': 19116, 'b': 19117, 'db': 54459}
+TOOLS = ROOT / 'libexec' if BUNDLED else STATE
+BUNDLE = STATE / 'desktop/Team Workbench.app'
+MULTICA_SRC = Path(os.environ.get('WORKBENCH_MULTICA_SRC', ROOT.parents[1] / '.local/demo-v2/src/multica'))
+PI = (TOOLS / 'workbench-pi' if BUNDLED or STANDALONE else MULTICA_SRC / 'server/workbench-pi') / 'main.mjs'
+PG = Path(os.environ.get('WORKBENCH_PG_BIN',
+    (TOOLS / 'pg-tools/bin' if BUNDLED else ROOT.parents[1] / '.local/mvp-single-mac-2026-11-05/state/pg-tools/bin')))
+URL = 'http://127.0.0.1:'
+DSH = Path(os.environ.get('WORKBENCH_DSH_BIN', (TOOLS / 'dsh-cli/bin/dsh' if BUNDLED else Path.home() / '.local/dsh-cli/bin/dsh')))
+NODE = os.environ.get('WORKBENCH_NODE_DIR', str(TOOLS / 'bin') if BUNDLED else '/opt/homebrew/opt/node@24/bin')
+PATH = os.pathsep.join(filter(None, (NODE, str(Path.home() / 'bin'),
+    os.environ.get('PATH') if STANDALONE else '/opt/homebrew/bin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin')))
+LOCAL_ENV = {'PATH': PATH, 'LANG': 'en_US.UTF-8', 'DO_NOT_TRACK': '1'}
+
+def check_port(name):
+    with socket.socket() as sock:
+        sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        try:
+            sock.bind(('127.0.0.1', PORTS[name]))
+        except OSError:
+            raise SystemExit(f'{name}: port {PORTS[name]} is already in use') from None
+
+def ident(pid):
+    result = sp.run(['ps', '-p', str(pid), '-o', 'lstart=', '-o', 'stat=', '-o', 'comm='],
+                    capture_output=True, text=True)
+    info = result.stdout.strip()
+    parts = info.split(maxsplit=6)
+    return ' '.join(parts[:5] + parts[6:]) if result.returncode == 0 and len(parts) == 7 and not parts[5].startswith('Z') else None
+
+def receipt(name):
+    return STATE / f'{name}.pid.json'
+
+def process(name):
+    if receipt(name).is_file():
+        pid, fingerprint = json.loads(receipt(name).read_text())
+        if ident(pid) == fingerprint:
+            return pid
+
+def remember(name, pid):
+    fingerprint = ident(pid)
+    if not fingerprint:
+        raise SystemExit(f'{name} exited during startup')
+    receipt(name).write_text(json.dumps([pid, fingerprint]))
+
+def run(command, name, env, cwd=ROOT):
+    with (STATE / 'logs' / f'{name}.log').open('ab') as log:
+        return sp.run(command, cwd=cwd, env=env, check=True, stdout=log, stderr=log,
+                      stdin=sp.DEVNULL)
+
+def launch(command, name, env, cwd=ROOT):
+    with (STATE / 'logs' / f'{name}.log').open('ab') as log:
+        job = sp.Popen(command, cwd=cwd, env=env, stdout=log, stderr=log,
+                       stdin=sp.DEVNULL, start_new_session=True)
+    time.sleep(.15)
+    if job.poll() is not None:
+        raise SystemExit(f'{name} exited, see {STATE / "logs" / (name + ".log")}')
+    remember(name, job.pid)
+
+def model_settings(fixture=False):
+    local = {'baseUrl': '', 'model': '', 'apiKey': ''}
+    if fixture:
+        local = {'baseUrl':'http://127.0.0.1:19019','model':'deepseek-flash','apiKey':'isolated-fixture'}
+    config = STATE / 'model.private.json'
+    if config.exists():
+        if config.stat().st_mode & 0o077:
+            raise SystemExit('Set mode 0600 on model.private.json before starting the API')
+        values = json.loads(config.read_text())
+        if not isinstance(values, dict) or not all(isinstance(values.get(k),str) and values[k].strip() for k in local):
+            raise SystemExit('model.private.json requires nonempty baseUrl, model and apiKey')
+        url = urllib.parse.urlsplit(values['baseUrl'])
+        if url.scheme not in ('http','https') or not url.hostname or url.username or url.password or url.fragment or url.query:
+            raise SystemExit('Invalid baseUrl in model.private.json')
+        local = values
+    return {'MULTICA_LLM_API_KEY':local['apiKey'], 'MULTICA_LLM_BASE_URL':local['baseUrl'],
+            'MULTICA_LLM_DEFAULT_MODEL':local['model']}
+
+def configure_model():
+    if not sys.stdin.isatty():
+        raise SystemExit('请在终端交互输入 DeepSeek API Key。')
+    key = getpass.getpass('DeepSeek API Key: ').strip()
+    if not key or key.startswith('!') or any(char.isspace() for char in key):
+        raise SystemExit('API Key 无效。')
+    values = {'baseUrl':'https://api.deepseek.com', 'model':'deepseek-flash', 'apiKey':key}
+    with tempfile.NamedTemporaryFile(mode='w', dir=STATE, delete=False) as file:
+        json.dump(values,file)
+    Path(file.name).replace(STATE/'model.private.json')
+    print('模型配置已写入本机。服务已启动时，先 stop 再 open，然后重新启用本机执行端。')
+
+def prepare_standalone():
+    if any(process(name) for name in PORTS):
+        raise SystemExit('请先运行 scripts/deploy stop，再更新本机部署。')
+    tool_dir = STATE/'tools'
+    tool_dir.mkdir(exist_ok=True)
+    deploy = ROOT/'deploy'
+    receipt = tool_dir/'.installed-package-lock.json'
+    lockfile = deploy/'package-lock.json'
+    if not DSH.is_file() or not receipt.is_file() or receipt.read_bytes() != lockfile.read_bytes():
+        receipt.unlink(missing_ok=True)
+        for name in ('package.json','package-lock.json'):
+            shutil.copy2(deploy/name,tool_dir/name)
+        sp.run(['npm','ci','--no-audit','--no-fund'],cwd=tool_dir,check=True)
+        shutil.copy2(lockfile,receipt)
+    env = os.environ | {'PATH':str(tool_dir/'node_modules/.bin') + os.pathsep + PATH}
+    sp.run(['pnpm','install','--frozen-lockfile'],cwd=ROOT,env=env,check=True)
+    sp.run(['tar','-xzf',deploy/'renderer.tar.gz','-C',ROOT],check=True)
+    sp.run([ROOT/'scripts/prepare-multica.sh'],env=env,check=True)
+    print('部署就绪。可运行 scripts/deploy model 配置模型，再运行 scripts/deploy open。')
+
+def settings():
+    file = STATE / 'api-signing-key'
+    if not file.exists():
+        file.write_text(secrets.token_urlsafe(48))
+    password = STATE / 'db-password'
+    if not password.exists():
+        password.write_text(secrets.token_urlsafe(32))
+    db_url = 'postgresql://workbench@127.0.0.1:' + str(PORTS['db']) + '/workbench?sslmode=disable'
+    return LOCAL_ENV | {
+        'HOME': str(STATE / 'home'),
+        'DATABASE_URL': db_url,
+        'PGPASSWORD': password.read_text(),
+        'JWT_SECRET': file.read_text(),
+        'PORT': str(PORTS['api']),
+        'APP_ENV': 'development',
+        'MW_DEMO_PASSWORD_AUTH': '1',
+        'RATE_LIMIT_AUTH': '25',
+        'LOCAL_UPLOAD_DIR': str(STATE / 'uploads'),
+        'FRONTEND_ORIGIN': URL + str(PORTS['a']),
+        'CORS_ALLOWED_ORIGINS': ','.join(URL + str(PORTS[name]) for name in ('a', 'b')),
+        'ATTACHMENT_DOWNLOAD_MODE': 'proxy',
+        'LOCAL_UPLOAD_BASE_URL': URL + str(PORTS['api']),
+        'MULTICA_PUBLIC_URL': URL + str(PORTS['api']),
+        'MULTICA_WORKBENCH_PI_SCRIPT': str(PI),
+        'MULTICA_WORKBENCH_PRO_ENABLED': '0',
+    }
+
+def start_db():
+    if process('db'):
+        return
+    check_port('db')
+    data = STATE / 'pgdata'
+    env = settings()
+    if not (data / 'PG_VERSION').exists():
+        run([PG / 'initdb', '-D', data, '-U', 'workbench', '-A', 'scram-sha-256',
+             '--no-instructions', '--locale=C', '--encoding=UTF8',
+             '--pwfile=' + str(STATE / 'db-password')], 'db-init', env)
+    args = f"-h 127.0.0.1 -p {PORTS['db']} -k ''"
+    run([PG / 'pg_ctl', '-D', data, '-l', STATE / 'logs/db.log', '-o', args, '-w', 'start'], 'db-control', env)
+    pid = int((data / 'postmaster.pid').read_text().splitlines()[0])
+    remember('db', pid)
+    query = "SELECT 'CREATE DATABASE workbench' WHERE NOT EXISTS (SELECT FROM pg_database WHERE datname = 'workbench')\n\\gexec\n"
+    with (STATE / 'logs/db-init.log').open('ab') as log:
+        sp.run([PG / 'psql', '-h', '127.0.0.1', '-p', str(PORTS['db']), '-U', 'workbench',
+                '-d', 'postgres', '-v', 'ON_ERROR_STOP=1'], input=query, text=True,
+               env=env, stdout=log, stderr=log, check=True)
+
+def status_code(url):
+    try:
+        with urllib.request.urlopen(url, timeout=1) as response:
+            return response.status
+    except urllib.error.HTTPError as response:
+        return response.code
+    except (OSError, urllib.error.URLError):
+        return 0
+
+def wait_for(name, ready):
+    for _ in range(140):
+        if ready():
+            return
+        if not process(name):
+            break
+        time.sleep(.25)
+    raise SystemExit(f'{name} not ready, see {STATE / "logs" / (name + ".log")}')
+
+def start_api(fixture=False):
+    if process('api'):
+        return
+    check_port('api')
+    if not (TOOLS / 'bin/api').exists():
+        raise SystemExit('Run scripts/local prepare first')
+    start_db()
+    env = settings() | model_settings(fixture)
+    run([TOOLS / 'bin/migrate', 'up'], 'migrate', env, TOOLS)
+    launch([TOOLS / 'bin/api'], 'api', env, STATE)
+    (STATE / 'api-model-mode.json').write_text(json.dumps({
+        'apiPid': process('api'), 'replay': env['MULTICA_LLM_BASE_URL'] == 'http://127.0.0.1:19019',
+    }))
+    wait_for('api', lambda: status_code(URL + str(PORTS['api']) + '/health') == 200)
+
+def dsh_env(name, variant='default', fixture=False):
+    target = STATE / name
+    target.mkdir(exist_ok=True)
+    return LOCAL_ENV | {
+        'HOME': str(target), 'DSH_HOME': str(target / ('dsh-no-inbox' if variant == 'no-inbox' else 'dsh')), 'TMPDIR': str(STATE / 'tmp') + '/',
+        'WORKBENCH_STATE': str(target), 'WORKBENCH_API': URL + str(PORTS['api']),
+        'WORKBENCH_CLIENT': name, 'WORKBENCH_MULTICA_BIN': str(TOOLS / 'bin/multica'),
+        'WORKBENCH_FIXTURE': str(ROOT / 'scripts/fixture-codex'),
+        'WORKBENCH_ENROLL_FIXTURE': '1' if fixture or legacy else '0',
+        'WORKBENCH_RUNTIME': str(STATE),
+        **({'WORKBENCH_MANAGED_PI': str(PI.parent/'node_modules/@earendil-works/pi-coding-agent/dist/cli.js')}
+           if STANDALONE else {}),
+    }
+
+def packaged_no_inbox(name):
+    # Build an install from distributable files only, without the Inbox package.
+    stage = STATE / name / 'bundle-no-inbox'
+    stage.mkdir(exist_ok=True)
+    bundle_env = LOCAL_ENV | {'HOME': str(Path.home())}
+    (stage / 'package.json').write_text('{"name":"local-workbench-artifact","private":true}')
+    (stage / 'pnpm-workspace.yaml').write_text("packages: ['packages/*']\n")
+    for source in (ROOT / 'packages').iterdir():
+        if source.name == 'ui-inbox':
+            continue
+        destination = stage / 'packages' / source.name
+        destination.mkdir(parents=True, exist_ok=True)
+        for item in source.iterdir():
+            if item.is_file() and item.suffix in ('.js', '.json', '.ts', '.yml'):
+                shutil.copy2(item, destination / item.name)
+        if (source / 'dist').is_dir():
+            shutil.copytree(source / 'dist', destination / 'dist', dirs_exist_ok=True)
+    root_package = stage / 'packages/product-bundle'
+    manifest = root_package / 'package.json'
+    value = json.loads(manifest.read_text())
+    del value['dependencies']['@team-workbench/ui-inbox']
+    manifest.write_text(json.dumps(value, indent=2))
+    patch = root_package / 'cordis.patch.yml'
+    original = patch.read_text()
+    row = "    - id: workbench-inbox\n      name: '@team-workbench/ui-inbox'\n"
+    if original.count(row) != 1:
+        raise SystemExit('Could not locate the inbox assembly row')
+    patch.write_text(original.replace(row, ''))
+    run(['pnpm', 'install', '--offline', '--ignore-scripts'], name + '-install', bundle_env, stage)
+    return root_package
+
+def setup_profile(name, variant):
+    env = dsh_env(name, variant)
+    bundle = packaged_no_inbox(name) if variant == 'no-inbox' else ROOT / 'packages/product-bundle'
+    profile = Path(env['DSH_HOME']) / 'profiles/workbench/package.json'
+    if not profile.exists():
+        run([DSH, '--profile', 'workbench', '--from-default-profile', 'web', '--dump-default-config'],
+            name + '-install', env, STATE / name)
+    manifest = json.loads(profile.read_text())
+    # The profile has one local product bundle. Link the install for this build, including after moving the .app.
+    scope = profile.parent / 'node_modules/@team-workbench'
+    scope.mkdir(parents=True, exist_ok=True)
+    # DSH resolves installation bundles before profile links. Give the reduced
+    # QA assembly its own name so the normal installed bundle cannot shadow it.
+    assembly = 'product-bundle-no-inbox' if variant == 'no-inbox' else 'product-bundle'
+    package = '@team-workbench/' + assembly
+    link = scope / assembly
+    if not link.is_symlink() or link.resolve() != bundle.resolve():
+        new_link = scope / '.product-bundle.tmp'
+        new_link.unlink(missing_ok=True)
+        new_link.symlink_to(bundle, target_is_directory=True)
+        new_link.replace(link)
+    deps = manifest.setdefault('dependencies', {})
+    bundles = manifest['dsh']['profile']['bundles']
+    if variant == 'no-inbox':
+        deps.pop('@team-workbench/product-bundle', None)
+        bundles[:] = [name for name in bundles if name != '@team-workbench/product-bundle']
+    deps[package] = 'link:' + str(bundle)
+    if package not in bundles:
+        bundles.append(package)
+    profile.write_text(json.dumps(manifest, indent=2) + '\n')
+
+def start_dsh(name, variant, fixture=False):
+    pid = process(name)
+    if pid:
+        if fixture:
+            # Read only the owned launcher's environment. Never emit it: other variables may contain bootstrap data.
+            command = sp.check_output(['ps','eww','-p',str(pid),'-o','command='],text=True)
+            if 'WORKBENCH_ENROLL_FIXTURE=1' not in command.split():
+                raise SystemExit(f'{name}: 已运行普通执行端配置，请先停止此 Host 再启动回放')
+        return
+    check_port(name)
+    setup_profile(name, variant)
+    env = dsh_env(name, variant, fixture)
+    entry = STATE / name / 'entry.private'
+    entry.unlink(missing_ok=True)
+    command = [DSH, '--profile', 'workbench', '--host', '127.0.0.1',
+               '--port', str(PORTS[name]), '--no-open']
+    if variant == 'no-bridge':
+        command[1:1] = ['--patch', ROOT / 'profiles' / (variant + '.yml')]
+    launch([sys.executable, __file__, 'run-dsh', name, *command], name, env, STATE / name)
+    wait_for(name, lambda: entry.is_file() and status_code(URL + str(PORTS[name]) + '/') == 401)
+    opener = 'scripts/deploy' if STANDALONE else 'scripts/local'
+    print(f'{name.upper()} {URL}{PORTS[name]}  (bootstrap with {opener} open {name})')
+
+def run_dsh(name, command):
+    child = sp.Popen(command, stdout=sp.PIPE, stderr=sp.STDOUT, text=True, errors='replace')
+    signal.signal(signal.SIGTERM, lambda *_: child.terminate())
+    signal.signal(signal.SIGINT, lambda *_: child.terminate())
+    for line in child.stdout:
+        if 'dsh web: http' in line and '?token=' in line:
+            value = re.sub(r'\x1b\[[0-9;]*m', '', line).split('dsh web: ', 1)[1].strip()
+            tmp = STATE / name / '.entry.tmp'
+            tmp.write_text(value)
+            tmp.replace(STATE / name / 'entry.private')
+        else:
+            print(re.sub(r'([?&]token=)[^\s&]+', r'\1[redacted]', line), end='', flush=True)
+    return child.wait()
+
+def stop_daemons(name):
+    if not (STATE / name / 'daemons').exists():
+        return
+    run([Path(NODE) / 'node', ROOT / 'packages/execution-bridge/stop.js'],
+        name + '-daemon-control', dsh_env(name))
+
+def stop(name):
+    pid = process(name)
+    if not pid:
+        return
+    if name == 'db':
+        data = STATE / 'pgdata'
+        if int((data / 'postmaster.pid').read_text().splitlines()[0]) != pid:
+            raise SystemExit('Unexpected postgres identity')
+        run([PG / 'pg_ctl', '-D', data, '-w', '-m', 'fast', 'stop'], 'db-control', settings())
+    else:
+        os.kill(pid, signal.SIGTERM)
+        for _ in range(100):
+            if process(name) is None:
+                break
+            time.sleep(.15)
+        else:
+            raise SystemExit(f'{name} did not stop')
+    receipt(name).unlink(missing_ok=True)
+
+def main():
+    if sys.argv[1:2] == ['run-dsh']:
+        return run_dsh(sys.argv[2], sys.argv[3:])
+    parser = argparse.ArgumentParser()
+    parser.add_argument('action', choices=['prepare', 'start', 'stop', 'restart', 'status', 'open', 'open-browser', 'model'])
+    parser.add_argument('target', nargs='?', choices=['all', 'api', 'a', 'b', 'db', 'daemon-a', 'daemon-b'], default='all')
+    parser.add_argument('--fixture', action='store_true', help='use isolated protocol executors for replay')
+    parser.add_argument('--inspect-port', type=int, metavar='PORT', help='loopback CDP for an explicit desktop replay')
+    parser.add_argument('--variant', choices=['default', 'no-bridge', 'no-inbox'], default='default')
+    args = parser.parse_args()
+    if args.inspect_port and (args.action != 'open' or args.target not in ('a','b') or not 1024 <= args.inspect_port <= 65535):
+        parser.error('--inspect-port requires open a/b and a user port')
+    for folder in ('logs', 'uploads', 'home', 'tmp'):
+        (STATE / folder).mkdir(parents=True, exist_ok=True)
+    daemon_target = args.target.startswith('daemon-')
+    if daemon_target and args.action != 'stop':
+        parser.error('daemon-a and daemon-b are stop targets')
+    if args.target == 'db' and args.action in ('stop', 'restart') and process('api'):
+        parser.error('stop the product API first or use the all target')
+    targets = list(PORTS) if args.target == 'all' else [args.target]
+    with (STATE / 'control.lock').open('a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        if args.fixture and args.action in ('start','open','restart'):
+            if model_settings(fixture=True)['MULTICA_LLM_BASE_URL'] != 'http://127.0.0.1:19019':
+                parser.error('本地回放需要回环模型 19019，请使用独立复验资料目录')
+            info = STATE / 'api-model-mode.json'
+            if process('api') and info.exists():
+                live = json.loads(info.read_text())
+                if live.get('apiPid') != process('api') or not live.get('replay'):
+                    parser.error('当前 API 不是测用模型配置，请先停止本产品服务并以隔离资料重开')
+            elif process('api') and (STATE / 'model.private.json').exists():
+                parser.error('当前 API 配置无法核对，请用隔离复验资料重启')
+        if args.action == 'model':
+            configure_model()
+        if args.action == 'prepare' and STANDALONE:
+            prepare_standalone()
+        elif args.action == 'prepare':
+            sp.run([ROOT / 'scripts/prepare-multica.sh'], check=True)
+            version = sp.check_output([DSH, '--version'], env=LOCAL_ENV | {'HOME': str(STATE / 'home')}, text=True).strip()
+            if version != '0.2.1-rc.3':
+                raise SystemExit(f'DSH 0.2.1-rc.3 is required, found {version}')
+            sp.run(['pnpm', 'install', '--frozen-lockfile'], cwd=ROOT, check=True)
+            sp.run(['pnpm', 'build'], cwd=ROOT, check=True)
+            sp.run([ROOT / 'scripts/build-desktop'], check=True)
+        if args.action in ('stop', 'restart'):
+            if daemon_target:
+                stop_daemons(args.target[-1])
+                return 0
+            for name in ('b', 'a'):
+                if name in targets:
+                    stop(name)
+            if args.target == 'all':
+                for name in ('a', 'b'):
+                    stop_daemons(name)
+            for name in ('api', 'db'):
+                if name in targets:
+                    stop(name)
+        if args.action in ('start', 'restart'):
+            if STANDALONE and not (PI.is_file() and DSH.is_file()):
+                raise SystemExit('请先运行 scripts/deploy setup。')
+            if 'api' in targets or 'a' in targets or 'b' in targets:
+                start_api(args.fixture)
+            elif 'db' in targets:
+                start_db()
+            for name in ('a', 'b'):
+                if name in targets:
+                    start_dsh(name, args.variant, args.fixture)
+        if args.action == 'status':
+            for name in targets:
+                print(f'{name:3} {PORTS[name]} {process(name) or "stopped"}')
+        if args.action in ('open', 'open-browser') and not {'a', 'b'}.intersection(targets):
+            parser.error('choose client a or b')
+        if args.action == 'open':
+            if not BUNDLE.is_dir():
+                sp.run([ROOT / 'scripts/build-desktop'], check=True)
+            for name in ('a', 'b'):
+                if name in targets:
+                    command = ['/usr/bin/open', '-n', '-a', str(BUNDLE), '--args', '--workbench-profile=' + name]
+                    if args.inspect_port:
+                        command.extend(['--remote-debugging-address=127.0.0.1', '--remote-debugging-port=' + str(args.inspect_port)])
+                    if args.fixture:
+                        command.append('--workbench-fixture')
+                    sp.run(command, check=True, capture_output=True)
+        if args.action == 'open-browser':
+            for name in ('a', 'b'):
+                if name in targets and process(name):
+                    url = (STATE / name / 'entry.private').read_text()
+                    sp.run(['/usr/bin/open', url], check=True, capture_output=True)
+    return 0
+
+if __name__ == '__main__':
+    os.umask(0o077)
+    sys.exit(main())

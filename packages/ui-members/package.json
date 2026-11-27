@@ -1,0 +1,22 @@
+{
+  "name": "@team-workbench/ui-members",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./dist/client.js"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web",
+      "external": [
+        "@team-workbench/ui-workspace-shell/client"
+      ]
+    }
+  },
+  "dependencies": {
+    "@team-workbench/multica-host": "workspace:*",
+    "@team-workbench/ui-workspace-shell": "workspace:*"
+  }
+}

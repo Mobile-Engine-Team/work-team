@@ -1,0 +1,30 @@
+{
+  "build": "684f79d7e25dae822f0abfc060a890a47f510f45f85cd067b641e485c03c7673",
+  "surface": "native isolated-replay",
+  "checks": [
+    {
+      "ids": [
+        "V2-UX-01"
+      ],
+      "observation": "拒绝接受及已加入但团队读取失败时均留在个人区，重试后直接进入所邀团队，成员仅写入一次。",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "V2-UX-03"
+      ],
+      "observation": "未授权提示内置目录，受控登录后自动发现新目录，刷新失败保留结果，重试可按 ID 搜索并保存。",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "V2-UX-02",
+        "V2-UX-04"
+      ],
+      "observation": "更多操作位于删除右侧，Tab 顺序一致，认证弹窗说明账号和客户端范围，本机受控模型探针通过。",
+      "status": "pass"
+    }
+  ],
+  "status": "pass",
+  "finished": "2026-11-26T15:32:40+08:00"
+}

@@ -1,0 +1,269 @@
+{
+  "accounts": {
+    "A": "review_accabbcd5",
+    "B": "review_bccabbcd5"
+  },
+  "checks": [
+    {
+      "ids": [
+        "PJ-01",
+        "PJ-02",
+        "PJ-04",
+        "PJ-06"
+      ],
+      "condition": "空团队，A 新建项目，B 打开总览",
+      "observation": "首焦点、必填、取消重开、成功页和单条落库符合；A 有设置，普通成员 B 只能查看。",
+      "role": "A/B",
+      "status": "pass",
+      "image": "18-project.png"
+    },
+    {
+      "ids": [
+        "PJ-03"
+      ],
+      "condition": "所有者打开项目设置",
+      "observation": "读回项目名和已有目标，Esc 关闭。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TP-01",
+        "TP-02",
+        "TC-01",
+        "TC-02",
+        "TC-03",
+        "STATE-04"
+      ],
+      "condition": "A 创建话题、保存并重开结论草稿、确认",
+      "observation": "话题出现初始正文，空草稿不能确认，重开读到原文，确认后出现正式结论。",
+      "role": "A",
+      "status": "pass",
+      "image": "19-conclusion.png"
+    },
+    {
+      "ids": [
+        "TP-03",
+        "BP-01",
+        "BP-02",
+        "BP-03",
+        "BP-12",
+        "BP-13",
+        "ST-01",
+        "TK-10"
+      ],
+      "condition": "A 带 V1 结论入图，新增未指派节点并发布",
+      "observation": "草案和预览无任务，发布后仅一条任务。推进弹窗阻止未指派节点。",
+      "role": "A",
+      "status": "pass",
+      "image": "23-start-preview.png"
+    },
+    {
+      "ids": [
+        "BP-04",
+        "BP-10",
+        "PL-01",
+        "PL-02"
+      ],
+      "condition": "定位既有节点并将负责人改为 B；打开 AI 输入预览",
+      "observation": "定位与右栏联动，预览明确指出未纳入话题。未申请模型执行。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "ST-02"
+      ],
+      "condition": "A 推进 V2 正式版中的人类负责人任务",
+      "observation": "界面确认已通知，B 的收件箱读到该任务。",
+      "role": "A/B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "BP-14"
+      ],
+      "condition": "普通成员 B 进入已发布项目的编辑草案",
+      "observation": "B 可编辑任务要求，无发布控件。",
+      "role": "B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "BP-11",
+        "BP-15",
+        "BP-16"
+      ],
+      "condition": "同一 revision，先存 A，再放行 B",
+      "observation": "未选择时不能合并，Esc 保留弹窗；选 B 的要求后 A 刷新读回相同草案。",
+      "role": "A/B",
+      "status": "pass",
+      "image": "40-blueprint-conflict.png"
+    },
+    {
+      "ids": [
+        "BP-17"
+      ],
+      "condition": "两个正式版和一个更新草案",
+      "observation": "版本历史中可查看早先发布的版本。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "BP-05",
+        "BP-06",
+        "BP-07",
+        "BP-08",
+        "BP-09"
+      ],
+      "condition": "在 V2 草案纳入已有任务，编辑依赖，移出并同步",
+      "observation": "搜索选入，边可编辑、删除；本例撤销删除未恢复边，冻结版独立复验同样。取消移出保留节点，确认后真实任务仍只有一条。同步没有发布新版本。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TC-12"
+      ],
+      "condition": "已确认的 V1 选择仅记录",
+      "observation": "返回同一话题，V1 历史项内可以展开查看说明。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TC-08",
+        "TC-09",
+        "TC-10",
+        "TC-11",
+        "TP-04",
+        "TP-05",
+        "TK-09"
+      ],
+      "condition": "A 使用结论创建后续任务并关闭话题；B 尝试重开",
+      "observation": "任务附结论且仅写一次，关联弹窗需选目标；普通成员请求得到 403 并留在话题。",
+      "role": "A/B",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TC-04"
+      ],
+      "condition": "话题已确认 V2，查询按 V1 创建的后续任务",
+      "observation": "任务继续引用 V1 与当时的结论原文。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "PJ-05",
+        "RUN-08",
+        "ST-03"
+      ],
+      "condition": "正式 V3 发布一条依赖，项目任务页打开上游并置为完成",
+      "observation": "详情显示返回项目，交接弹窗只列直接后继‘汇总交付’，关闭后可回项目。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WB-02"
+      ],
+      "condition": "有任务的工作区点推荐问题",
+      "observation": "只预填问句，仍可编辑和发送。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WB-04",
+        "WB-05",
+        "WB-06",
+        "STATE-08"
+      ],
+      "condition": "A 用默认模型发送，模型端在本机保持连接；刷新后停止",
+      "observation": "本地端收到请求；刷新可恢复，停止后显示重新回答，私有消息落库 cancelled。",
+      "role": "A",
+      "status": "pass",
+      "image": "26-stopped.png"
+    },
+    {
+      "ids": [
+        "WB-08",
+        "WB-13",
+        "WB-16",
+        "WB-19",
+        "WB-20",
+        "COMMON-03"
+      ],
+      "condition": "A 回答证据指向真实团队任务，B 打开相同私有会话链接",
+      "observation": "A 可查看生成时快照、跳回任务和原回答；B 有输入框，看不到 A 问答与最近项。",
+      "role": "A/B",
+      "status": "pass",
+      "image": "27-evidence.png"
+    },
+    {
+      "ids": [
+        "WB-10"
+      ],
+      "condition": "固定回答的快照指纹已过期",
+      "observation": "自动刷新时仍显示上次表格，刷新按钮锁定。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WB-09",
+        "WB-11",
+        "WB-12"
+      ],
+      "condition": "A 固定旧版表格回答、继续调整、取消固定",
+      "observation": "按归属落库 1 条，B 无此视图；调整预填原意图；取消后历史会话仍在。",
+      "role": "A/B",
+      "status": "pass",
+      "image": "28-pin.png"
+    },
+    {
+      "ids": [
+        "WB-14",
+        "WB-15"
+      ],
+      "condition": "已完成的七项动态记录",
+      "observation": "默认六条；展开、筛选、清空、追问预填和依据展开均可操作。",
+      "role": "A",
+      "status": "pass",
+      "image": "38-dynamic.png"
+    },
+    {
+      "ids": [
+        "WB-17"
+      ],
+      "condition": "已存的分布回答，一组有统计，一组无记录",
+      "observation": "图表和明细双向切换；表格含已完成状态，空分组显示无统计记录。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "WB-07",
+        "WB-18",
+        "OS-08"
+      ],
+      "condition": "已有纯 Markdown 与部分失败的回答，包含失配的历史布局",
+      "observation": "Markdown 正常排版；链接、图片作受限文本。失败回答保留已核对的陈述，可重答且不能固定。",
+      "role": "A",
+      "status": "pass"
+    }
+  ],
+  "build": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+  "surface": "native",
+  "workspace": "baseline-ccabbcd5",
+  "viewport": {
+    "width": 1180,
+    "height": 810,
+    "dpr": 2,
+    "language": "en-US"
+  },
+  "status": "pass"
+}

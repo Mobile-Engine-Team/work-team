@@ -1,0 +1,8 @@
+{
+  "name": "workbench-local-tools",
+  "private": true,
+  "dependencies": {
+    "@deepseek-ai/dsh": "0.2.1-rc.3",
+    "pnpm": "11.28.5"
+  }
+}

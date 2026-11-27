@@ -1,0 +1,47 @@
+{
+  "bundle": "Team Workbench.app",
+  "codeDirectoryHash": "dd88f25ad62db75b06fb0d5b7aada20d2c8576f9",
+  "nodeVersion": "v24.22.3",
+  "dshVersion": "0.2.1-rc.3",
+  "build": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+  "signature": "codesign --verify --strict passed",
+  "payload": {
+    "runtimeRootEntries": [
+      "libexec",
+      "node_modules",
+      "packages",
+      "profiles",
+      "scripts"
+    ],
+    "privateStateMatches": [],
+    "externalDependencyLinks": []
+  },
+  "binaries": [
+    {
+      "path": "MacOS/Electron",
+      "sha256": "dd70565bc5c5bfa7fecd8283c0972bf4d3ab277012f8821c58c305d8835154a0",
+      "arch": "arm64"
+    },
+    {
+      "path": "Resources/product/libexec/bin/api",
+      "sha256": "bb74559cbf4b05e6d000d83b9bf8fdfe92efd960261b5ad8088d43cf7e725432",
+      "arch": "arm64"
+    },
+    {
+      "path": "Resources/product/libexec/bin/multica",
+      "sha256": "2b32400c382a8f817f8746760393c76d2a4121cca55ce03153899ab3d7954aee",
+      "arch": "arm64"
+    },
+    {
+      "path": "Resources/product/libexec/bin/node",
+      "sha256": "95c4b138e491de3e73b9b968bf088492b6aad98e9495de82b60d36410cf69ae0",
+      "arch": "arm64"
+    },
+    {
+      "path": "Resources/product/libexec/pg-tools/bin/postgres",
+      "sha256": "518c84c181cfa89cc2ff4817c8929235e586c03b598155efc0d905022cd97739",
+      "arch": "arm64"
+    }
+  ],
+  "fixtureGuard": "本地回放拒绝非回环模型配置，未启动服务"
+}

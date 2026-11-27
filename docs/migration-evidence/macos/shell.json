@@ -1,0 +1,225 @@
+{
+  "bundle": "Team Workbench.app",
+  "build": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+  "macOS": "26.0.1",
+  "checks": [
+    {
+      "ids": [
+        "OS-01",
+        "OS-02",
+        "D-01"
+      ],
+      "observed": {
+        "url": "http://127.0.0.1:19116/#/team",
+        "viewport": {
+          "width": 1180,
+          "height": 810,
+          "dpr": 2,
+          "language": "en-US"
+        }
+      }
+    },
+    {
+      "ids": [
+        "OS-03",
+        "OS-05",
+        "OS-06",
+        "OS-07"
+      ],
+      "observed": "五个应用菜单逐项与冻结 AX 枚举匹配"
+    },
+    {
+      "ids": [
+        "MAC-101"
+      ],
+      "observed": {
+        "nativeAboutPanelText": "MobileWork_公众版_DEV, Version 0.2.0 (2),"
+      }
+    },
+    {
+      "ids": [
+        "MAC-104"
+      ],
+      "observed": {
+        "hidden": true,
+        "sameAppReactivated": true
+      }
+    },
+    {
+      "ids": [
+        "MAC-102",
+        "MAC-401"
+      ],
+      "observed": {
+        "route": "#/team",
+        "dialogs": 0
+      }
+    },
+    {
+      "ids": [
+        "MAC-301",
+        "MAC-302",
+        "MAC-307"
+      ],
+      "observed": {
+        "delete": "",
+        "undo": "shell_check",
+        "redo": ""
+      }
+    },
+    {
+      "ids": [
+        "MAC-501",
+        "OS-07"
+      ],
+      "observed": {
+        "restored": true,
+        "samePid": true
+      }
+    },
+    {
+      "ids": [
+        "OS-04",
+        "STATE-01"
+      ],
+      "observed": {
+        "redButton": "hidden",
+        "samePid": true,
+        "sameInput": "shell_check"
+      }
+    },
+    {
+      "ids": [
+        "MAC-201"
+      ],
+      "observed": {
+        "menuClose": "hidden",
+        "samePid": true,
+        "sameInput": "shell_check"
+      }
+    },
+    {
+      "ids": [
+        "MAC-403"
+      ],
+      "observed": {
+        "hashAfterForceReload": "#/team"
+      }
+    },
+    {
+      "ids": [
+        "MAC-402",
+        "MAC-405",
+        "MAC-406",
+        "STATE-09"
+      ],
+      "observed": {
+        "before": [
+          1180,
+          810,
+          2
+        ],
+        "larger": [
+          1077,
+          739,
+          2.190890312194824
+        ],
+        "restored": [
+          1180,
+          810,
+          2
+        ]
+      }
+    },
+    {
+      "ids": [
+        "MAC-407"
+      ],
+      "observed": {
+        "smaller": [
+          1292,
+          887,
+          1.8257418870925903
+        ],
+        "restored": [
+          1180,
+          810,
+          2
+        ]
+      }
+    },
+    {
+      "ids": [
+        "MAC-107",
+        "STATE-01"
+      ],
+      "observed": {
+        "newPid": true,
+        "emptyAccountAndPassword": true,
+        "image": "32-cold-start.png",
+        "sha256": "ffb23dd7bc615afb0196223e20f4517b6a1fe2fc4c7c7948ab469b408f54d5ad"
+      }
+    }
+  ],
+  "menus": [
+    {
+      "menu": "团队工作台",
+      "items": [
+        "关于 MobileWork_公众版_DEV",
+        "设置…",
+        "服务",
+        "隐藏 MobileWork_公众版_DEV",
+        "隐藏其他",
+        "全部显示",
+        "退出 MobileWork_公众版_DEV",
+        "Quit and Keep Windows"
+      ]
+    },
+    {
+      "menu": "文件",
+      "items": [
+        "关闭窗口",
+        "Close All"
+      ]
+    },
+    {
+      "menu": "编辑",
+      "items": [
+        "撤销",
+        "重做",
+        "剪切",
+        "拷贝",
+        "粘贴",
+        "粘贴并匹配样式",
+        "删除",
+        "全选",
+        "语音",
+        "AutoFill",
+        "Start Dictation",
+        "Emoji & Symbols"
+      ]
+    },
+    {
+      "menu": "显示",
+      "items": [
+        "切换侧边栏",
+        "重新加载",
+        "强制重新加载",
+        "切换开发者工具",
+        "实际大小",
+        "放大",
+        "缩小",
+        "切换全屏"
+      ]
+    },
+    {
+      "menu": "窗口",
+      "items": [
+        "最小化",
+        "缩放",
+        "全部置于顶层",
+        "窗口"
+      ]
+    }
+  ]
+}

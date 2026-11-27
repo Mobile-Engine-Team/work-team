@@ -1,0 +1,1016 @@
+{
+  "WorkbenchBuild": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+  "command": "pnpm test:browser",
+  "exitCode": 0,
+  "finished": "2026-11-26T13:42:28+08:00",
+  "runtime": "两个 Chrome 资料访问同一发行包的 DSH Host 和 Multica；A7 使用单独的组件装配。",
+  "journeys": {
+    "users": {
+      "A": "checka_e57320ba",
+      "B": "checkb_e57320ba",
+      "team": "verify-e57320ba"
+    },
+    "completedStages": [
+      "accounts",
+      "workspace",
+      "forms",
+      "invite",
+      "agents",
+      "tasks",
+      "squad",
+      "identity",
+      "dispatch",
+      "online",
+      "pending",
+      "recovery",
+      "role_sample",
+      "secondary",
+      "anchors",
+      "lost_response",
+      "drafting",
+      "details",
+      "database"
+    ],
+    "assertions": [
+      {
+        "ids": [
+          "OS-01",
+          "AU-01"
+        ],
+        "condition": "新测试资料打开产品",
+        "observation": "中文登录页，账号聚焦，密码为空。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "AU-02",
+          "AU-03",
+          "WB-01"
+        ],
+        "condition": "A/B 分别注册，先提交两次不同的密码",
+        "observation": "两端都提示密码不一致，改正后分别进入自己的个人工作台。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "AU-04",
+          "AU-05"
+        ],
+        "condition": "B 退出后用错误密码和正确密码依次登录",
+        "observation": "错误时停在登录页，正确密码回个人区。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-03"
+        ],
+        "condition": "打开新建工作区",
+        "observation": "名称默认聚焦，地址空白，创建禁用。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-04"
+        ],
+        "condition": "空白名称改为非空，地址含空格",
+        "observation": "名称空白禁用，填写名称后允许提交非法地址。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-05"
+        ],
+        "condition": "带输入经Esc关闭后重开",
+        "observation": "名称及地址都保留。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-06"
+        ],
+        "condition": "带输入经叉号关闭后重开",
+        "observation": "名称及地址都保留。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-07"
+        ],
+        "condition": "带输入经遮罩关闭后重开",
+        "observation": "名称及地址都保留。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-08"
+        ],
+        "condition": "提交含空格及标点的地址",
+        "observation": "弹窗报告失败，两个字段保留。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-09"
+        ],
+        "condition": "创建唯一地址团队",
+        "observation": "弹窗关闭，A 的工作区选择器落在新团队。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-10"
+        ],
+        "condition": "同地址、不同名称再次提交",
+        "observation": "弹窗报错，数据库仅有一份该地址。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "AG-01",
+          "AG-03"
+        ],
+        "condition": "B 个人工作区，尚无可用端",
+        "observation": "表单没有团队共享选项，空表不能保存。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "AG-02"
+        ],
+        "condition": "A 团队区打开新建智能体",
+        "observation": "默认不共享，需选端和填写名称。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "IN-01",
+          "IN-02"
+        ],
+        "condition": "A 邀请 B，B 留在个人区",
+        "observation": "B 在其个人区收到团队邀请和接受/稍后处理操作。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "IN-03"
+        ],
+        "condition": "先稍后处理再刷新",
+        "observation": "未接受的邀请重新出现。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-01",
+          "IN-04",
+          "IN-05"
+        ],
+        "condition": "B 接受后从个人区手动进入团队",
+        "observation": "B 见 A 而无邀请按钮，成员表回读 owner 与 member。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "EP-04"
+        ],
+        "condition": "仅打开 SSH 主机表单",
+        "observation": "可填写连接条件，未连接外部主机。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "EP-01",
+          "AG-04",
+          "AG-05",
+          "AG-06",
+          "AG-07"
+        ],
+        "condition": "开启本机受控执行端，Codex 手输模型后切 Pi，私有保存",
+        "observation": "名称+端才可保存，换端清除自选模型，B 的团队列表无此助手。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "AG-08"
+        ],
+        "condition": "A 将助手改为团队共享，B 重载",
+        "observation": "B 见共享助手但无编辑入口，类型为暂不可获取。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "EP-02"
+        ],
+        "condition": "停止 A 的受控执行端",
+        "observation": "启用动作恢复；后续离线任务仍可分派给共享助手。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TK-01"
+        ],
+        "condition": "团队任务列表新建普通任务",
+        "observation": "标题为空，创建按钮禁用。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TK-07"
+        ],
+        "condition": "切换智能体起草模式",
+        "observation": "起草表单可达，未提交模型请求。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TK-03",
+          "STATE-04"
+        ],
+        "condition": "新任务写标题后按 Esc 再开",
+        "observation": "表单重置。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "D-07",
+          "FL-01"
+        ],
+        "condition": "新建任务仅上传失败，恢复连接后移除",
+        "observation": "失败附件允许移除，普通任务仍可编辑。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "D-07",
+          "FL-01"
+        ],
+        "condition": "新建任务仅上传失败，恢复连接后取消",
+        "observation": "失败附件允许取消，普通任务仍可编辑。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "D-07",
+          "FL-01"
+        ],
+        "condition": "新建任务仅上传失败，恢复连接后重试",
+        "observation": "失败附件允许重试，普通任务仍可编辑。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TK-04"
+        ],
+        "condition": "上传输入文件，尚未提交任务",
+        "observation": "附件显示待发送，创建按钮可用。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TK-02",
+          "TK-05"
+        ],
+        "condition": "A 创建任务、要求、文本附件并指派 B",
+        "observation": "落在新任务详情，持久化业务状态 backlog，执行 0 条。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "IB-01"
+        ],
+        "condition": "B 访问自己的团队收件箱",
+        "observation": "看到 A 新分派的任务。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "IB-03"
+        ],
+        "condition": "归档通知，再从归档分区恢复",
+        "observation": "恢复后手动切回当前，任务可打开。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "CM-01",
+          "FL-02"
+        ],
+        "condition": "B 评论后 A 查看附件",
+        "observation": "A 不刷新即可见 B 评论，打开输入材料可读完整原文。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TD-04",
+          "STATE-01",
+          "STATE-02",
+          "STATE-05"
+        ],
+        "condition": "保存已完成后写一条未发评论并刷新",
+        "observation": "回到同一任务，材料与已发评论仍在，未发送输入清空，数据库 done 且无执行。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "FL-03",
+          "FL-04",
+          "FL-05"
+        ],
+        "condition": "B 两次交付同名同 MIME 的 review.txt",
+        "observation": "最新版本单列，历史折叠显示 1 份。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "FL-06"
+        ],
+        "condition": "从已展开的早期版本定位评论",
+        "observation": "焦点进入旧评论 comment-635c7ab7-4a5e-45ab-8eec-abb58883ac9c",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "IB-01",
+          "IB-02"
+        ],
+        "condition": "A 展开同任务的此前通知",
+        "observation": "同任务聚合，历史内有各事件的独立操作。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TL-03",
+          "TL-04",
+          "D-07"
+        ],
+        "condition": "重置搜索再切看板",
+        "observation": "筛选重置后留在任务页，切换为看板。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "STATE-09"
+        ],
+        "condition": "刷新团队任务看板",
+        "observation": "保留看板路由。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "SQ-01",
+          "SQ-02",
+          "SQ-03"
+        ],
+        "condition": "创建清单小队并选择共享助手为队长",
+        "observation": "小队名称和队长可见。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "SQ-05",
+          "SQ-06"
+        ],
+        "condition": "A 将 B 加入小队后，B 打开详情",
+        "observation": "B 可见本人的角色说明。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "D-01",
+          "WB-03",
+          "WB-09",
+          "WB-19",
+          "STATE-03"
+        ],
+        "condition": "同一窗口同一份资料从 A 退出并登录 B",
+        "observation": "B 能打开团队任务；A 的多行草稿、历史对话及固定视图均不可见。",
+        "role": "B（A 实例）",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "D-01",
+          "STATE-03"
+        ],
+        "condition": "同资料切回 A",
+        "observation": "原草稿和私人对象回来，排除因登出而被删除的误判。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "RUN-01"
+        ],
+        "condition": "B 给离线共享助手建待规划任务再改进行中",
+        "observation": "创建时无执行；推进前显示确认框。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "RUN-02",
+          "STATE-07"
+        ],
+        "condition": "B 确认离线分派",
+        "observation": "任务进行中、执行排队中、尚未领取。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "RUN-07"
+        ],
+        "condition": "助手所属人 A 打开 B 发起的执行任务",
+        "observation": "A 可见业务任务，无 B 的私有停止操作。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "CM-03",
+          "IB-04",
+          "STATE-06"
+        ],
+        "condition": "A 提及 B，B 留未读时退出前取样",
+        "observation": "B 看到提及事件，服务端未读事件数 2。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "STATE-07"
+        ],
+        "condition": "B 重开或刷新后回到离线任务",
+        "observation": "相同任务继续排队，停止操作仍可用。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "RUN-04",
+          "RUN-07"
+        ],
+        "condition": "查看执行详情后停止",
+        "observation": "执行取消，业务状态仍进行中，提供重试。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "RUN-03",
+          "RUN-05"
+        ],
+        "condition": "B 重试并取消原执行，再为另一件选暂不开始",
+        "observation": "首件有两个未领取的取消执行，第二件进行中且执行数 0。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "RUN-06",
+          "D-06"
+        ],
+        "condition": "B 分派给 A 的在线 Codex 协议夹具并确认开始",
+        "observation": "Multica 持久记录开始/结束、责任人 B 与执行终态，B 在任务详情读到 WORKBENCH_FIXTURE_OK。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-11"
+        ],
+        "condition": "延迟本次创建请求期间按 Esc",
+        "observation": "创建按钮 pending 禁用，仅收到一条创建请求，最终导航到对应团队且仅写入一行。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-12"
+        ],
+        "condition": "延迟本次创建请求期间在相同位置双击",
+        "observation": "创建按钮 pending 禁用，仅收到一条创建请求，最终导航到对应团队且仅写入一行。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TL-05"
+        ],
+        "condition": "新团队 102 行样本翻三页，再搜索",
+        "observation": "每页 50、50、2 件，末页下一页禁用，搜索回到唯一种子。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "COMMON-02"
+        ],
+        "condition": "B 的业务读请求持续失败后恢复",
+        "observation": "出现连接状态提示，联网触发成功查询后提示消退，A 的网络仍正常。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "IN-05"
+        ],
+        "condition": "把本轮 B 从 member 临时改为 admin 后重载",
+        "observation": "管理员获得团队邀请操作。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "AG-10"
+        ],
+        "condition": "B 团队智能体目录按 End、Home",
+        "observation": "焦点与选中 tab 同步切换。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "AG-11"
+        ],
+        "condition": "A 打开共享助手的删除确认并取消",
+        "observation": "确认包含名称，取消后助手仍在。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TD-01",
+          "TD-02"
+        ],
+        "condition": "双方打开同一已分派任务，A 切换关注后恢复",
+        "observation": "本人关注操作可逆，B 重载仍保持其本人原订阅。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TD-03"
+        ],
+        "condition": "A 编辑任务要求，空标题、取消、重新打开再保存",
+        "observation": "保留原值且空标题禁保存，B 同一任务自动更新。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TL-01",
+          "TL-02"
+        ],
+        "condition": "B 在我负责/我创建之间切换并搜索无匹配内容",
+        "observation": "由 A 所创的任务仅出现在 B 的负责范围，重置恢复列表。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "SQ-04",
+          "SQ-06"
+        ],
+        "condition": "打开小队编辑及成员角色表单后取消",
+        "observation": "预填原小队名称和角色说明，取消后仍在原详情。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "SQ-07",
+          "SQ-08"
+        ],
+        "condition": "A 先取消再确认移出非队长 B，随后归档本轮小队",
+        "observation": "成员角色从详情移除，数据库有归档时间，B 新列表不再显示该队。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "IB-02",
+          "COMMON-03"
+        ],
+        "condition": "同任务先后两次提及，B 从两条历史事件分别打开再刷新",
+        "observation": "两条不同 comment_id 分别写入路由，键盘焦点与数据库中对应原文的评论 ID 一致。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TK-06"
+        ],
+        "condition": "仅丢弃实际写入成功的首个创建响应，保留表单后关闭、刷新列表",
+        "observation": "表单显示未完成并保留标题；恢复读取见一条任务，未自动重送。手动再次提交是独立写入。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TK-07",
+          "TK-08"
+        ],
+        "condition": "离线提交失败；在本轮专有 runtime 上短时设置在线心跳，以可控数据库回填模拟处理结果",
+        "observation": "真实起草请求由 B 创建、重试产生另一个请求 ID。界面随排队、运行、取消、成功轮询更新，结果可核对；改负责人撤销确认。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WS-02"
+        ],
+        "condition": "同一账号打开不存在的 slug 后选团队卡片",
+        "observation": "合法团队可从选择页重新进入。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "AG-09",
+          "COMMON-01"
+        ],
+        "condition": "已绑定离线 Pi 的助手打开端选择器，用回车/Esc 后只编辑角色指令",
+        "observation": "原绑定仍显示、Esc 回焦到选择器，离线状态可保存该助手。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "CM-04"
+        ],
+        "condition": "B 提及助手，取消勾选预估中的触发项再发送",
+        "observation": "评论成功入库，该任务没有产生执行。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "CM-02"
+        ],
+        "condition": "取消回复再回复同一评论并点击子回复的引用",
+        "observation": "引用返回父评论 comment-97e8f3d7-e6f9-45b4-b468-e35665337ead，焦点与旧回复相符。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "CM-05"
+        ],
+        "condition": "为本轮任务安装一条协调活动，再在详情展开/收起原文",
+        "observation": "能够阅读完整协调原因，收起后保留活动摘要。",
+        "role": "B",
+        "status": "pass"
+      }
+    ]
+  },
+  "projectsAndWorkbench": {
+    "users": {
+      "A": "review_a6a0311f1",
+      "B": "review_b6a0311f1"
+    },
+    "workspace": "baseline-6a0311f1",
+    "assertions": [
+      {
+        "ids": [
+          "PJ-01",
+          "PJ-02",
+          "PJ-04",
+          "PJ-06"
+        ],
+        "condition": "空团队，A 新建项目，B 打开总览",
+        "observation": "首焦点、必填、取消重开、成功页和单条落库符合；A 有设置，普通成员 B 只能查看。",
+        "role": "A/B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "PJ-03"
+        ],
+        "condition": "所有者打开项目设置",
+        "observation": "读回项目名和已有目标，Esc 关闭。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TP-01",
+          "TP-02",
+          "TC-01",
+          "TC-02",
+          "TC-03",
+          "STATE-04"
+        ],
+        "condition": "A 创建话题、保存并重开结论草稿、确认",
+        "observation": "话题出现初始正文，空草稿不能确认，重开读到原文，确认后出现正式结论。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TP-03",
+          "BP-01",
+          "BP-02",
+          "BP-03",
+          "BP-12",
+          "BP-13",
+          "ST-01",
+          "TK-10"
+        ],
+        "condition": "A 带 V1 结论入图，新增未指派节点并发布",
+        "observation": "草案和预览无任务，发布后仅一条任务。推进弹窗阻止未指派节点。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "BP-04",
+          "BP-10",
+          "PL-01",
+          "PL-02"
+        ],
+        "condition": "定位既有节点并将负责人改为 B；打开 AI 输入预览",
+        "observation": "定位与右栏联动，预览明确指出未纳入话题。未申请模型执行。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "ST-02"
+        ],
+        "condition": "A 推进 V2 正式版中的人类负责人任务",
+        "observation": "界面确认已通知，B 的收件箱读到该任务。",
+        "role": "A/B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "BP-14"
+        ],
+        "condition": "普通成员 B 进入已发布项目的编辑草案",
+        "observation": "B 可编辑任务要求，无发布控件。",
+        "role": "B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "BP-11",
+          "BP-15",
+          "BP-16"
+        ],
+        "condition": "同一 revision，先存 A，再放行 B",
+        "observation": "未选择时不能合并，Esc 保留弹窗；选 B 的要求后 A 刷新读回相同草案。",
+        "role": "A/B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "BP-17"
+        ],
+        "condition": "两个正式版和一个更新草案",
+        "observation": "版本历史中可查看早先发布的版本。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "BP-05",
+          "BP-06",
+          "BP-07",
+          "BP-08",
+          "BP-09"
+        ],
+        "condition": "在 V2 草案纳入已有任务，编辑依赖，移出并同步",
+        "observation": "搜索选入，边可编辑、删除；本例撤销删除未恢复边，冻结版独立复验同样。取消移出保留节点，确认后真实任务仍只有一条。同步没有发布新版本。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TC-12"
+        ],
+        "condition": "已确认的 V1 选择仅记录",
+        "observation": "返回同一话题，V1 历史项内可以展开查看说明。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TC-08",
+          "TC-09",
+          "TC-10",
+          "TC-11",
+          "TP-04",
+          "TP-05",
+          "TK-09"
+        ],
+        "condition": "A 使用结论创建后续任务并关闭话题；B 尝试重开",
+        "observation": "任务附结论且仅写一次，关联弹窗需选目标；普通成员请求得到 403 并留在话题。",
+        "role": "A/B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "TC-04"
+        ],
+        "condition": "话题已确认 V2，查询按 V1 创建的后续任务",
+        "observation": "任务继续引用 V1 与当时的结论原文。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "PJ-05",
+          "RUN-08",
+          "ST-03"
+        ],
+        "condition": "正式 V3 发布一条依赖，项目任务页打开上游并置为完成",
+        "observation": "详情显示返回项目，交接弹窗只列直接后继‘汇总交付’，关闭后可回项目。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WB-02"
+        ],
+        "condition": "有任务的工作区点推荐问题",
+        "observation": "只预填问句，仍可编辑和发送。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WB-04",
+          "WB-05",
+          "WB-06",
+          "STATE-08"
+        ],
+        "condition": "A 用默认模型发送，模型端在本机保持连接；刷新后停止",
+        "observation": "本地端收到请求；刷新可恢复，停止后显示重新回答，私有消息落库 cancelled。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WB-08",
+          "WB-13",
+          "WB-16",
+          "WB-19",
+          "WB-20",
+          "COMMON-03"
+        ],
+        "condition": "A 回答证据指向真实团队任务，B 打开相同私有会话链接",
+        "observation": "A 可查看生成时快照、跳回任务和原回答；B 有输入框，看不到 A 问答与最近项。",
+        "role": "A/B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WB-10"
+        ],
+        "condition": "固定回答的快照指纹已过期",
+        "observation": "自动刷新时仍显示上次表格，刷新按钮锁定。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WB-09",
+          "WB-11",
+          "WB-12"
+        ],
+        "condition": "A 固定旧版表格回答、继续调整、取消固定",
+        "observation": "按归属落库 1 条，B 无此视图；调整预填原意图；取消后历史会话仍在。",
+        "role": "A/B",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WB-14",
+          "WB-15"
+        ],
+        "condition": "已完成的七项动态记录",
+        "observation": "默认六条；展开、筛选、清空、追问预填和依据展开均可操作。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WB-17"
+        ],
+        "condition": "已存的分布回答，一组有统计，一组无记录",
+        "observation": "图表和明细双向切换；表格含已完成状态，空分组显示无统计记录。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "WB-07",
+          "WB-18",
+          "OS-08"
+        ],
+        "condition": "已有纯 Markdown 与部分失败的回答，包含失配的历史布局",
+        "observation": "Markdown 正常排版；链接、图片作受限文本。失败回答保留已核对的陈述，可重答且不能固定。",
+        "role": "A",
+        "status": "pass"
+      }
+    ]
+  },
+  "assembly": {
+    "users": {
+      "A": "review_a5125d153"
+    },
+    "workspace": "baseline-5125d153",
+    "assertions": [
+      {
+        "ids": [
+          "A1",
+          "A7"
+        ],
+        "condition": "无 DSH 凭据、无产品会话及关闭执行插件",
+        "observation": "两级身份分别拒绝未登录读取；登录后执行路由 404，团队成员页与邀请入口仍可用。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "A7"
+        ],
+        "condition": "用省去收件箱包的发行装配启动",
+        "observation": "收件箱消失；旧深链回到团队任务页，小队页仍可用。",
+        "role": "A",
+        "status": "pass"
+      },
+      {
+        "ids": [
+          "A8",
+          "AU-04",
+          "WS-02"
+        ],
+        "condition": "停产品 API 并恢复，再令测试身份过期",
+        "observation": "断线时显示正在恢复连接，恢复后读到原任务；会话过期回登录，后续受保护读取返回 401。",
+        "role": "A",
+        "status": "pass"
+      }
+    ]
+  },
+  "testSources": {
+    "tests/browser.mjs": "6441fbb556d3297a4d981f422c0d9614a6fc5a8f874b0beaa1a9f7b5e539b5cc",
+    "tests/migration/compare.py": "d9897105e31bfe46501564842fc5918e737ffad70de6aea45dae8f77d13634f7",
+    "tests/migration/details.py": "086bb56f020130bad75d1c60aa2320b9c6df61b73e5178d375b039d295f044cd",
+    "tests/migration/edges.py": "a35a4687df05d552f6277ad61bf5c22bae63acb4506e5f1d8b2bd830a25c7f04",
+    "tests/migration/replay.py": "82ade740b974f8ca55b660628fd1bdc46289ee7cefc68879f1722bed0292ec7d",
+    "tests/migration/support.py": "3230619539cc39c6b9c5314e677102e2abdbe9565150cb02bba3dd42e1f7628c",
+    "tests/migration/task_edges.py": "92141e8701ff50d8805065773f1454edb5edaaa86d516d4d49dffb3303f1856b",
+    "tests/migration/tasks.py": "9b8d4adf833d247614032ce641f827a80dfdc404fd09edc4ca99b5ff7387a052",
+    "tests/migration/workspaces.py": "9ffdee195819e626b45e7055d550c6372ad814a39c3079dd3c229a9dea0f22fd",
+    "tests/review/assembly.py": "b9d9ddae9362d8e5e7e9bf240b1b332eafe6cdb7a1bfc534419409491f3e1af3",
+    "tests/review/common.py": "5ba44bf67f4e822b34148fc75af1a006394d86cfacb8f0b1aa605fd17c6f3298",
+    "tests/review/control_map.py": "3b9c045bd31970de6e81a32872734e1c9f8fef66836ffa8f18fb52af6361ad2d",
+    "tests/review/matrix.py": "ee0f776a623bde0047f779495e924c6752cc171a58ed642df5beacad9cd5f6ed",
+    "tests/review/planning.py": "382f2586fe4d28d803cf0ddf6304cc475816ec18a03bd74eb5cee22322349eaa",
+    "tests/review/projects.py": "c3a2ccb21b4df0987e35b6ef5ff4208271fea0236ae5778633bb174949a4c4d5",
+    "tests/review/run.py": "d6173969cbbb24da8d624dc57f41eaf3905bf96fcde37bf1c1826432c657f8b1",
+    "tests/review/surfaces.py": "baa4e49f29c62f78fa0de08f9e65a6dab9fc9c626263472d0a5ab16947ff9f7f",
+    "tests/review/undo_reference.py": "ca21681166598788a750e8b4655431fe5c8392818f73530b46edd78ad0db60a4",
+    "tests/review/workbench.py": "772669756144b096af0fa1fd5a713d246da2740e7b76fc7b814a13a7f3648cee"
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "bundle": "Team Workbench.app",
+  "build": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+  "profile": "isolated-replay/a",
+  "syntheticUser": "native_1795671410",
+  "checks": [
+    {
+      "ids": [
+        "EP-04",
+        "EP-06"
+      ],
+      "observed": {
+        "keyDialog": "取消",
+        "host": "127.0.0.1",
+        "port": 22,
+        "residualTokens": 0
+      }
+    },
+    {
+      "ids": [
+        "EP-01",
+        "EP-02"
+      ],
+      "observed": {
+        "providers": [
+          "claude",
+          "codex",
+          "opencode",
+          "pi"
+        ],
+        "runtimeBindings": [
+          "claude|4643bf38-9ffe-4e18-82f9-c55d82d8f48e|e77cd5bd-1106-4002-b0a7-bfbddea4eebf",
+          "codex|2354c1d0-0936-4e31-a6f6-bc12df9deb98|e77cd5bd-1106-4002-b0a7-bfbddea4eebf",
+          "opencode|7c934cfc-650b-4e6a-aec2-e7c5ef3f8504|e77cd5bd-1106-4002-b0a7-bfbddea4eebf",
+          "pi|4b0bb44c-f52e-4188-8c38-31808cb391e5|e77cd5bd-1106-4002-b0a7-bfbddea4eebf"
+        ]
+      }
+    },
+    {
+      "ids": [
+        "AG-01",
+        "AG-12"
+      ],
+      "observed": {
+        "sameNameRejected": true,
+        "matchingAgents": 1
+      }
+    },
+    {
+      "ids": [
+        "PRB-01",
+        "PRB-02"
+      ],
+      "observed": {
+        "provider": "codex",
+        "executor": "fixture-codex",
+        "result": "模型调用通过",
+        "repeat": "模型调用通过"
+      }
+    },
+    {
+      "ids": [
+        "PRB-03"
+      ],
+      "observed": {
+        "model": "Codex",
+        "nativeDialog": "取消导入"
+      }
+    },
+    {
+      "ids": [
+        "PRB-01",
+        "PRB-02"
+      ],
+      "observed": {
+        "otherClient": "b",
+        "queueResult": "cancelled",
+        "owner": "native_1795671410"
+      }
+    },
+    {
+      "ids": [
+        "AG-09"
+      ],
+      "observed": {
+        "originalOfflineBinding": "codex|2354c1d0-0936-4e31-a6f6-bc12df9deb98",
+        "savedName": "个人复验员离线改名",
+        "editedInstructions": true
+      }
+    },
+    {
+      "ids": [
+        "EP-03",
+        "STATE-10"
+      ],
+      "observed": {
+        "offlineOptions": 4,
+        "sameRuntimeIdsAfterRestart": true
+      }
+    },
+    {
+      "ids": [
+        "AG-11"
+      ],
+      "observed": {
+        "cancelPreserved": true,
+        "confirmArchived": true,
+        "archivedDatabaseRows": 1
+      }
+    }
+  ]
+}

@@ -1,0 +1,282 @@
+{
+  "01-login.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "ffb23dd7bc615afb0196223e20f4517b6a1fe2fc4c7c7948ab469b408f54d5ad"
+  },
+  "02-personal.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "eb0b35f64db06ceb728ed452e4425848cb162732b10e335b1577b0fe395cdb88"
+  },
+  "03-workspace-empty.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "e79500c205e402b1154508d2f5d56224e7c788595657c9148d680fb28b815c1f"
+  },
+  "04-workspace-invalid.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "7145cb3e857df210e4abb82b54ca1e24c2d2ecb18ecbbefe4a70432d2ac29749"
+  },
+  "05-team-home.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "ecc1060be70491e9b37090350e2e70ea8c4a96ebb0f6a67a1bc61afb2660adac"
+  },
+  "06-workspace-duplicate.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "dcab5ea62dda4bbcc97a926a8c65f4d9c9948f085c7b1d9af7b2d39697001008"
+  },
+  "07-agent-team.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "98e8bef2ebf0daf977749b22a0d2125bc2def5f2fd1a231525c00d4d95cdaf6f"
+  },
+  "08-agent-personal.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "5e2737275c4994df66d674d8fc1e9f7a496eb1bbd1027805a01fa3db3194417c"
+  },
+  "09-invite.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "8cb87756bfee87aed8147b26a7bce41fa44a136e09ef1a04af581d4012e5e43e"
+  },
+  "10-shared-agent-member.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "7daade533feb545d35d91ad592673bdb3e97c36ea7064693dab676e4b82e4bc9"
+  },
+  "11-task-new.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "288ec31df2c54afb21b1edc70cf29ccfb6b20edefa29bdf0f9f1e497af664bba"
+  },
+  "12-task-draft.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "042a002806190be739f0ec41b6f98c9d962fc6234277fb435779503bab12f69d"
+  },
+  "13-task-detail.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "0f9c14e065ad275a975ee3a533b091aec9177dd3c9d8d93ab26e368e3614baf8"
+  },
+  "14-member-inbox.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "c3e768bf19ae3170cb2e31e0c40148206c91d534c8f8c3cd7931cb43b9d214bd"
+  },
+  "15-file-preview.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "f277fd08cfce3dd7fc5fa66783f4fc74972c642607355c4e95b5e2140d701596"
+  },
+  "16-task-after-reload.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "3e331b0ccd0e28aaf894cf0b601aa90ac7b114a792de71dc2cf4104b57a630cb"
+  },
+  "17-project-new.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "9b8bd324e4d163cba7b7e2e244e039cb2d0721ba8576e719549cfd101c5e233a"
+  },
+  "18-project.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "208b2d8e3ec013e59efbbff1b46c385b27f2fbd7024d2e11e91aa2a09e8aae34"
+  },
+  "19-conclusion.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "3bf8b464b71be844f29f46e233bdf3b7cbf57a8d78e9ad2ba4d48e0261e61551"
+  },
+  "20-blueprint.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "b1809e5ac07ffc13219684f20c587c8f59e3084bf53855c2cccca4921ea281db"
+  },
+  "21-blueprint-node.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "f11eec25cff12f7a7b5e9602760db6b958b72b663f23ddf8b66c99e7e4c7d7c8"
+  },
+  "22-publish-preview.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "42c3c0fb8d40757d74cd51f4d06e3736d4dfe2e468a3ad916aacdde857426e61"
+  },
+  "23-start-preview.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "b3992ccfe9a123920dffe9693545343307db88fc1fce0f9bdc68cfde19728562"
+  },
+  "24-squad.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "d7cf177da44ee4a71a05a3da774a816ec2b6bdd0de5b1edb53bc30b42ac60250"
+  },
+  "25-generating.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "e4e1bcad21f9fdbe9f07cab3b9520128247848967f152d141563687907696080"
+  },
+  "26-stopped.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "dfac45602a0d62103019f76089f22754dd9069572c26630254353e8a9e4ad1d9"
+  },
+  "27-evidence.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "b25986e6c07772695ca21c7a1cd525870d90f5d759b9691b7a16fc6096bd3a71"
+  },
+  "28-pin.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "12455ea03a8949abf5ea98a1175fde21b0129bbbec9499674031e6ab4f934763"
+  },
+  "29-board.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "4b86154102a4ed6a4677ce2a2048f7b1ccfa95fcf9eea7d82a9f41b7f73a72a1"
+  },
+  "30-remote.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "693d4070041f448b3999744b5d94084a6f44d102f94ddd42dc926e2f55db6455"
+  },
+  "31-history.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "425d0e1a9c7039993a54d7256db52ef7253204b3e8d0dff5133970a00f9260fb"
+  },
+  "32-cold-start.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "ffb23dd7bc615afb0196223e20f4517b6a1fe2fc4c7c7948ab469b408f54d5ad"
+  },
+  "33-trigger-preview.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "0036c2b0f9fffe9648175c8bc365db3d91fc096ed31d3691edc40a6c2eddd4a5"
+  },
+  "34-offline-dispatch.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "3586bdae0c9d7f01d1a7e3dae15a70dedd31540fa4277c6f57aa6f7d4a1cdfa1"
+  },
+  "35-cancel-run.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "1df9ac84fd4f28e4eb16b2db3bda5a4a1b1a465a8efbdc8c279b41c41f23528f"
+  },
+  "36-before-restart.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "6360c203a43286f79ddde4d9a186fbb2e55a1f0f375d49ef6f420cfc2509510d"
+  },
+  "37-queue-restart.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "6609df5ec3d778111910687265c6ec4ffb4ff25b29568b260586efc61583f310"
+  },
+  "38-dynamic.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "0f55953ae9bd1ffe1e5ef3317df0adae6413ed3a909039694dafdd6d860a3ac5"
+  },
+  "39-delivery.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "2e10d09ca44db20aee4853abb1ca4eb9b4ddae61972d0336c241f25d3a1bd93c"
+  },
+  "40-blueprint-conflict.png": {
+    "像素": [
+      2360,
+      1620
+    ],
+    "sha256": "3b94ca7a2b1bde1717ea9346ae55537c2dbced19366354947a4d01ba98c6cf35"
+  }
+}

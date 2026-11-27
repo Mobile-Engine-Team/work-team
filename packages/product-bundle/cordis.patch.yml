@@ -1,0 +1,15 @@
+- insert:
+    - id: workbench-multica
+      name: '@team-workbench/multica-host'
+    - id: workbench-shell
+      name: '@team-workbench/ui-workspace-shell'
+    - id: workbench-tasks
+      name: '@team-workbench/ui-tasks'
+    - id: workbench-inbox
+      name: '@team-workbench/ui-inbox'
+    - id: workbench-squads
+      name: '@team-workbench/ui-squads'
+    - id: workbench-members
+      name: '@team-workbench/ui-members'
+    - id: workbench-execution
+      name: '@team-workbench/execution-bridge'

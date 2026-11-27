@@ -1,0 +1,164 @@
+{
+  "采样": "2026-11-26；按合成团队和账号读取隔离恢复库，任务表与执行表分别取值。通知为结束时快照。",
+  "成员": [
+    {
+      "name": "baseline_a",
+      "role": "owner"
+    },
+    {
+      "name": "baseline_b",
+      "role": "member"
+    }
+  ],
+  "任务": [
+    {
+      "number": 1,
+      "title": "核对交接清单",
+      "status": "done",
+      "executions": 0
+    },
+    {
+      "number": 2,
+      "title": "交付口径",
+      "status": "todo",
+      "executions": 0
+    },
+    {
+      "number": 3,
+      "title": "核对交付",
+      "status": "todo",
+      "executions": 0
+    },
+    {
+      "number": 4,
+      "title": "离线分派",
+      "status": "in_progress",
+      "executions": 3
+    },
+    {
+      "number": 5,
+      "title": "处理已确认结论",
+      "status": "backlog",
+      "executions": 0
+    },
+    {
+      "number": 6,
+      "title": "暂不启动",
+      "status": "in_progress",
+      "executions": 0
+    }
+  ],
+  "执行": [
+    {
+      "number": 4,
+      "title": "离线分派",
+      "accountable_member": "baseline_b",
+      "originator_source": "direct_human",
+      "status": "cancelled",
+      "has_started": false,
+      "is_rerun": false
+    },
+    {
+      "number": 4,
+      "title": "离线分派",
+      "accountable_member": "baseline_b",
+      "originator_source": "direct_human",
+      "status": "cancelled",
+      "has_started": false,
+      "is_rerun": true
+    },
+    {
+      "number": 4,
+      "title": "离线分派",
+      "accountable_member": "baseline_b",
+      "originator_source": "direct_human",
+      "status": "cancelled",
+      "has_started": false,
+      "is_rerun": true
+    }
+  ],
+  "附件": [
+    {
+      "number": 1,
+      "filename": "baseline.txt",
+      "content_type": "text/plain; charset=utf-8",
+      "size_bytes": 16,
+      "from_comment": false
+    },
+    {
+      "number": 1,
+      "filename": "review.txt",
+      "content_type": "text/plain; charset=utf-8",
+      "size_bytes": 5,
+      "from_comment": true
+    },
+    {
+      "number": 1,
+      "filename": "review.txt",
+      "content_type": "text/plain; charset=utf-8",
+      "size_bytes": 6,
+      "from_comment": true
+    }
+  ],
+  "工作区连按": [
+    {
+      "slug": "queued-ws-double",
+      "rows": 1
+    },
+    {
+      "slug": "queued-ws-return",
+      "rows": 1
+    }
+  ],
+  "收件箱": [
+    {
+      "name": "baseline_a",
+      "type": "new_comment",
+      "read": false,
+      "archived": false,
+      "events": 2
+    },
+    {
+      "name": "baseline_a",
+      "type": "new_comment",
+      "read": true,
+      "archived": false,
+      "events": 1
+    },
+    {
+      "name": "baseline_a",
+      "type": "status_changed",
+      "read": false,
+      "archived": false,
+      "events": 1
+    },
+    {
+      "name": "baseline_b",
+      "type": "issue_assigned",
+      "read": false,
+      "archived": false,
+      "events": 1
+    },
+    {
+      "name": "baseline_b",
+      "type": "issue_assigned",
+      "read": true,
+      "archived": false,
+      "events": 1
+    },
+    {
+      "name": "baseline_b",
+      "type": "mentioned",
+      "read": false,
+      "archived": false,
+      "events": 1
+    },
+    {
+      "name": "baseline_b",
+      "type": "new_comment",
+      "read": false,
+      "archived": false,
+      "events": 1
+    }
+  ]
+}

@@ -1,0 +1,41 @@
+{
+  "accounts": {
+    "A": "review_a5125d153"
+  },
+  "checks": [
+    {
+      "ids": [
+        "A1",
+        "A7"
+      ],
+      "condition": "无 DSH 凭据、无产品会话及关闭执行插件",
+      "observation": "两级身份分别拒绝未登录读取；登录后执行路由 404，团队成员页与邀请入口仍可用。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "A7"
+      ],
+      "condition": "用省去收件箱包的发行装配启动",
+      "observation": "收件箱消失；旧深链回到团队任务页，小队页仍可用。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "A8",
+        "AU-04",
+        "WS-02"
+      ],
+      "condition": "停产品 API 并恢复，再令测试身份过期",
+      "observation": "断线时显示正在恢复连接，恢复后读到原任务；会话过期回登录，后续受保护读取返回 401。",
+      "role": "A",
+      "status": "pass"
+    }
+  ],
+  "build": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+  "workspace": "baseline-5125d153",
+  "surface": "browser",
+  "status": "pass"
+}

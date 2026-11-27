@@ -1,0 +1,246 @@
+[
+  {
+    "title": "复验已存回答",
+    "prompt": "检查已保存的交接快照",
+    "result": {
+      "view": {
+        "title": "交接快照",
+        "blocks": [
+          {
+            "type": "table",
+            "items": [
+              {
+                "text": "有一份附件",
+                "title": "清单",
+                "evidenceIds": [
+                  "issue:{issueId}"
+                ]
+              }
+            ],
+            "title": "待复核记录",
+            "evidenceIds": []
+          }
+        ],
+        "intent": "核对交接清单",
+        "queries": [
+          {
+            "source": "issue"
+          }
+        ],
+        "semantic": false,
+        "limitations": [],
+        "schemaVersion": 1
+      },
+      "calls": 0,
+      "model": "fixture",
+      "evidence": [
+        {
+          "id": "issue:{issueId}",
+          "kind": "issue",
+          "text": "{\"description\": \"请核对附件中的两项约定\"}",
+          "title": "核对交接清单",
+          "status": "done",
+          "issueId": "{issueId}",
+          "version": "1",
+          "objectId": "{issueId}",
+          "projectId": "",
+          "updatedAt": "2026-11-26T03:30:00Z",
+          "relatedIds": []
+        }
+      ],
+      "fingerprint": "fixture",
+      "generatedAt": "2026-11-26T03:30:00Z",
+      "inputTokens": 0,
+      "outputTokens": 0
+    }
+  },
+  {
+    "title": "七项记录夹具",
+    "prompt": "查看清单明细",
+    "result": {
+      "view": {
+        "title": "交接记录复核",
+        "blocks": [],
+        "intent": "核对清单",
+        "queries": [],
+        "semantic": true,
+        "limitations": [],
+        "schemaVersion": 2
+      },
+      "calls": 0,
+      "model": "fixture",
+      "dynamic": {
+        "seq": 1,
+        "plan": {
+          "title": "交接记录复核",
+          "intent": "核对清单",
+          "layout": "stack",
+          "sections": [
+            {
+              "id": "main",
+              "role": "primary",
+              "title": "清单明细"
+            }
+          ],
+          "timeSensitive": false
+        },
+        "facts": {},
+        "claims": {
+          "c7d07b2acd66ad7a4d2705922": {
+            "id": "c7d07b2acd66ad7a4d2705922",
+            "kind": "inference",
+            "text": "应复核交接附件。",
+            "factIds": [],
+            "evidenceIds": [
+              "issue:{issueId}"
+            ]
+          }
+        },
+        "complete": true,
+        "contents": {
+          "main": {
+            "facts": [],
+            "claims": [],
+            "dataRefs": [
+              "d1"
+            ],
+            "sectionId": "main"
+          }
+        },
+        "datasets": {
+          "d1": {
+            "id": "d1",
+            "rows": [
+              {
+                "id": "issue:{issueId}",
+                "kind": "issue",
+                "title": "清单条目 1",
+                "status": "done"
+              },
+              {
+                "id": "fixture:1",
+                "kind": "issue",
+                "title": "清单条目 2",
+                "status": "done"
+              },
+              {
+                "id": "fixture:2",
+                "kind": "issue",
+                "title": "清单条目 3",
+                "status": "done"
+              },
+              {
+                "id": "fixture:3",
+                "kind": "issue",
+                "title": "清单条目 4",
+                "status": "done"
+              },
+              {
+                "id": "fixture:4",
+                "kind": "issue",
+                "title": "清单条目 5",
+                "status": "done"
+              },
+              {
+                "id": "fixture:5",
+                "kind": "issue",
+                "title": "清单条目 6",
+                "status": "done"
+              },
+              {
+                "id": "fixture:6",
+                "kind": "issue",
+                "title": "清单条目 7",
+                "status": "done"
+              }
+            ],
+            "query": {
+              "source": "issue"
+            },
+            "total": 7,
+            "complete": true,
+            "nextOffset": null
+          }
+        },
+        "sections": {
+          "main": {
+            "id": "main",
+            "js": "",
+            "sdk": "workbench-a2ui@1",
+            "code": "",
+            "hash": "fixture",
+            "state": {},
+            "runtime": "a2ui@1.0/react@0.15.0",
+            "surface": {
+              "catalogId": "https://mobilework.local/catalog/answer/v1",
+              "components": [
+                {
+                  "id": "root",
+                  "children": [
+                    "summary",
+                    "records"
+                  ],
+                  "component": "Stack"
+                },
+                {
+                  "id": "summary",
+                  "kind": "inference",
+                  "text": {
+                    "@path": "/claims/c7d07b2acd66ad7a4d2705922/text"
+                  },
+                  "factIds": {
+                    "@path": "/claims/c7d07b2acd66ad7a4d2705922/factIds"
+                  },
+                  "component": "AnswerSummary",
+                  "evidenceIds": {
+                    "@path": "/claims/c7d07b2acd66ad7a4d2705922/evidenceIds"
+                  }
+                },
+                {
+                  "id": "records",
+                  "rows": {
+                    "@path": "/collections/d1"
+                  },
+                  "component": "RecordList"
+                }
+              ]
+            },
+            "dataRefs": [
+              "d1"
+            ],
+            "revision": 1,
+            "compileMs": 0,
+            "contentRefs": [
+              "c7d07b2acd66ad7a4d2705922"
+            ]
+          }
+        },
+        "attemptId": 1,
+        "followUps": [
+          "核对负责人"
+        ],
+        "limitations": [],
+        "schemaVersion": 2
+      },
+      "evidence": [
+        {
+          "id": "issue:{issueId}",
+          "kind": "issue",
+          "text": "{\"description\": \"请核对附件中的两项约定\"}",
+          "title": "核对交接清单",
+          "status": "done",
+          "issueId": "{issueId}",
+          "version": "1",
+          "objectId": "{issueId}",
+          "projectId": "",
+          "updatedAt": "2026-11-26T03:30:00Z",
+          "relatedIds": []
+        }
+      ],
+      "fingerprint": "fixture",
+      "generatedAt": "2026-11-26T03:30:00Z",
+      "inputTokens": 0,
+      "outputTokens": 0
+    }
+  }
+]

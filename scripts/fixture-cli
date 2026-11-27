@@ -1,0 +1,10 @@
+#!/usr/bin/python3
+"""Offline inventory fixture for the three additional providers in the frozen snapshot."""
+import sys
+if '--version' in sys.argv or '-v' in sys.argv:
+    print('2.1.0')
+elif 'models' in sys.argv or '--list-models' in sys.argv:
+    print('[]')
+else:
+    print('This replay provider supports inventory only.', file=sys.stderr)
+    sys.exit(2)

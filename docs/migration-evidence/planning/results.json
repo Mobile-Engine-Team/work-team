@@ -1,0 +1,159 @@
+{
+  "accounts": {
+    "A": "review_ae8953d9c",
+    "B": "review_be8953d9c"
+  },
+  "checks": [
+    {
+      "ids": [
+        "PL-02",
+        "PL-03"
+      ],
+      "condition": "改动已预览的输入；请求排队、测试端领取后 A 取消",
+      "observation": "改输入使生成按钮失效。重新预览后产生带 revision、hash 及用户请求键的记录；UI 经等待、生成中至已取消，已取消请求的迟到回执被拒绝。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "PL-03"
+      ],
+      "condition": "执行端返回无效的结构化建议",
+      "observation": "显示生成失败及服务端原因“建议格式不支持或超过 100 项变更”，草案未变。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "PL-04"
+      ],
+      "condition": "受控返回两项新增及一项依赖，仅选择依赖、改选任务、再预览并采纳一项",
+      "observation": "缺少端点的依赖被拒，草案未变。改选使预览失效。只采纳“交接校验”，B 读到同一草案；正式版、对应业务任务均为 0。",
+      "role": "A",
+      "status": "pass",
+      "image": "adoption-preview.png"
+    },
+    {
+      "ids": [
+        "PL-03",
+        "PL-04"
+      ],
+      "condition": "历史请求切换与旧草案 revision 重放",
+      "observation": "切换历史失败/成功项时返回各自结果。采用一项后界面提示建议已过时；用原 revision 采用另项被服务端拒绝 409，草案保持不变。",
+      "role": "A",
+      "status": "pass"
+    },
+    {
+      "ids": [
+        "TC-05"
+      ],
+      "condition": "本地排队后取消，重新生成；本机受控结果插入可编辑正文后保留草稿",
+      "observation": "重开后可编辑正文完整；确认版本仍为 0，话题仍开放。",
+      "role": "A",
+      "status": "pass",
+      "image": "conclusion-inserted.png"
+    }
+  ],
+  "workspace": "baseline-e8953d9c",
+  "project": "6ec7f754-0b89-4990-9ba0-5c3e052517a2",
+  "runtime": "7c8ab7bf-bcf7-41e3-9d5f-1375cb4e8ba3",
+  "agent": "ff2951f6-75c3-4517-800e-448d16979f2d",
+  "surface": "Chrome 1180×810, DPR 2",
+  "build": "7063024a49570ea0a9cfe74f58baf6714ab47608fee80cfb3c8b09c77b6fbd68",
+  "started": "2026-11-26T13:36:20+08:00",
+  "executor": "受控本机响应。运行时登记用独立合成行；领取、取消与结果回写走冻结 Multica API。",
+  "rendererSha256": {
+    "packages/ui-inbox/dist/client.js": "96d5b212da229739d0d310329bb0a1601d6724100dab3016ed3d4b754c573057",
+    "packages/ui-members/dist/client.js": "c0b3105cdccc6544f107f09c377c2d7131cc6f3fc763208e0b09003a7ab4349b",
+    "packages/ui-squads/dist/client.js": "38531e92f8b0963a62f62c7503610596368438d974d2a95e60dea008ed17d69c",
+    "packages/ui-tasks/dist/client.js": "a393f824ca5805b9d1cfa2b37bb6d15d17700e266e0a3b68da763fc93ecf81f1",
+    "packages/ui-workspace-shell/dist/client.js": "a3e80c9f949dc2ed503ca35c5c842c8a6ca1af366753a6fa7eb73443773e4a22"
+  },
+  "requests": [
+    {
+      "request": "01a2165a-e856-73ef-acbe-719560e36320",
+      "status": "running",
+      "purpose": "blueprint",
+      "requestKey": "0e354f72-bcfa-4616-99b2-a8b25df8e58a",
+      "baseRevision": 1,
+      "inputHash": "467acf325f3705287600d0bc7707f92e1e4254be484a20ea280bd592ae26a4f9",
+      "owner": "6b009e6f-3ebb-49a0-8b62-02bbda2dd89c",
+      "runtime": "7c8ab7bf-bcf7-41e3-9d5f-1375cb4e8ba3"
+    },
+    {
+      "request": "01a2165a-ea70-7ee8-8229-4e6bc0efa5a8",
+      "status": "running",
+      "purpose": "blueprint",
+      "requestKey": "49df837e-485e-4b77-95ae-d97848a888ff",
+      "baseRevision": 1,
+      "inputHash": "467acf325f3705287600d0bc7707f92e1e4254be484a20ea280bd592ae26a4f9",
+      "owner": "6b009e6f-3ebb-49a0-8b62-02bbda2dd89c",
+      "runtime": "7c8ab7bf-bcf7-41e3-9d5f-1375cb4e8ba3"
+    },
+    {
+      "request": "01a2165a-ec38-7966-b7e4-49aec99c9ffe",
+      "status": "running",
+      "purpose": "blueprint",
+      "requestKey": "de413b24-6775-4764-b499-cf0241f5966f",
+      "baseRevision": 1,
+      "inputHash": "467acf325f3705287600d0bc7707f92e1e4254be484a20ea280bd592ae26a4f9",
+      "owner": "6b009e6f-3ebb-49a0-8b62-02bbda2dd89c",
+      "runtime": "7c8ab7bf-bcf7-41e3-9d5f-1375cb4e8ba3"
+    },
+    {
+      "request": "01a2165a-f58b-71e4-ae73-5f1b30454b92",
+      "status": "running",
+      "purpose": "conclusion",
+      "requestKey": "f73dc357-42bf-4097-85d2-e7998812b736",
+      "baseRevision": 0,
+      "inputHash": "7254421ff8c497ce17889b82ea9f4b3eada9f3df8a78a0cd76941b86addce5e4",
+      "owner": "6b009e6f-3ebb-49a0-8b62-02bbda2dd89c",
+      "runtime": "7c8ab7bf-bcf7-41e3-9d5f-1375cb4e8ba3"
+    }
+  ],
+  "servedPluginsMatchBundle": true,
+  "blueprint": {
+    "before": {
+      "revision": 1,
+      "status": "active",
+      "nodes": [],
+      "edges": []
+    },
+    "after": {
+      "revision": 2,
+      "status": "active",
+      "nodes": [
+        {
+          "id": "01a2165a-ec38-7966-b7e4-49aec99c9ffe:new1",
+          "title": "交接校验",
+          "due_date": "",
+          "issue_id": "",
+          "position": {
+            "x": 160,
+            "y": 50
+          },
+          "assignee_id": "",
+          "requirements": "登记签收",
+          "assignee_type": ""
+        }
+      ],
+      "edges": []
+    },
+    "publishedVersions": 0,
+    "createdTasks": 0
+  },
+  "topic": {
+    "id": "cb94d41b-5a38-451d-b75c-ba96a940766f",
+    "status": "open",
+    "conclusion": "",
+    "conclusion_revision": 0,
+    "conclusion_draft": "已确认：先校验。待讨论：复查负责人。建议：留存签收记录。",
+    "draft_revision": 1
+  },
+  "status": "pass",
+  "finished": "2026-11-26T13:36:30+08:00",
+  "images": {
+    "adoption-preview.png": "2d725c2757455d53600e92d2fbbba46f03308a0c7cac19ace5f168ac2bf45829",
+    "conclusion-inserted.png": "0b3fff6c4357cf5a0574234c6c8296c195a4e6be91e1a28fb94807522c1b355d"
+  }
+}

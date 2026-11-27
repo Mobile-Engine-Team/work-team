@@ -1,0 +1,21 @@
+{
+  "name": "@team-workbench/ui-workspace-shell",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js",
+    "./client": "./dist/client.js",
+    "./contract": "./contract.js",
+    "./visual": "./visual.js"
+  },
+  "dsh": {
+    "client": {
+      "platform": "web"
+    }
+  },
+  "dependencies": {
+    "@team-workbench/multica-host": "workspace:*",
+    "lucide-react": "0.577.0"
+  }
+}

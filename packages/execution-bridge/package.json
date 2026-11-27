@@ -1,0 +1,13 @@
+{
+  "name": "@team-workbench/execution-bridge",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./index.js"
+  },
+  "dependencies": {
+    "@team-workbench/multica-host": "workspace:*",
+    "ssh2": "1.17.0"
+  }
+}
