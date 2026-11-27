@@ -1,0 +1,152 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/session/voice/asr/use-asr.ts
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：1644393a7a2e4ca4e32bb0dc4d73ba02fefe09bd81f0882c03fca4563b4c1cf4
+以下是带原行号的节选，不是完整文件。
+
+00001  /**
+00002   * use-asr — orchestration hook tying ASR config + mic capture + WebSocket client
+00003   * + fallback VAD into a small state machine the composer drives.
+00004   *
+00005   * Modes:
+00006   *   - "push"       : single utterance. Partial text streams to the caller; the
+00007   *                    final segment commits. Caller decides what to do with text.
+00008   *   - "continuous" : hands-free. Local+server VAD segments speech; each finalized
+00009   *                    segment is delivered via onUtterance so the caller can send.
+00010   *
+00011   * The caller wires onPartial → fill the draft live, and onUtterance → commit
+00012   * (push: leave in draft; continuous: send).
+00013   */
+00014  import { useCallback, useEffect, useRef, useState } from "react";
+00015  
+00016  import { useAccountId } from "@/react-app/domains/auth/auth-provider";
+00017  import { isAsrConfigured, readAsrConfig } from "./asr-config";
+00018  import { startAsrAudioCapture, type AsrAudioCapture } from "./asr-audio";
+00019  import { openAsrClient, type AsrClient } from "./asr-client";
+00020  import { createVad } from "./asr-vad";
+00021  import { createAsrWavRecorder, isAsrWavDebugEnabled, type AsrWavRecorder } from "./asr-wav-debug";
+00022  
+00023  export type AsrMode = "push" | "continuous";
+00024  export type AsrStatus = "idle" | "connecting" | "listening" | "error" | "unconfigured";
+00025  
+00026  export type UseAsrOptions = {
+00027    /** Live partial text for the current utterance (realtime display). */
+00028    onPartial?: (text: string) => void;
+00029    /** A finalized utterance segment (non-empty, trimmed). */
+00030    onUtterance?: (text: string, mode: AsrMode) => void;
+00031    onError?: (message: string) => void;
+00032  };
+00033  
+00034  export type UseAsr = {
+00035    status: AsrStatus;
+00036    mode: AsrMode | null;
+00037    configured: boolean;
+00038    /** Begin a session in the given mode (idempotent for the same mode). */
+00039    start: (mode: AsrMode) => Promise<void>;
+00040    /** Stop the session and release the mic. */
+00041    stop: () => void;
+00042    /** Whether a session is active. */
+00043    active: boolean;
+00044  };
+00045  
+00046  // monotonic-ish clock without Date.now in hot paths is unnecessary here; use
+00047  // performance.now for VAD timing.
+00048  function now(): number {
+00049    return typeof performance !== "undefined" ? performance.now() : 0;
+00050  }
+00051  
+00052  export function useAsr(opts: UseAsrOptions): UseAsr {
+00053    const accountId = useAccountId();
+00054    const [status, setStatus] = useState<AsrStatus>("idle");
+00055    const [mode, setMode] = useState<AsrMode | null>(null);
+00056    const [configured, setConfigured] = useState(true);
+00057  
+00058    // Live refs (avoid stale closures inside long-lived audio/ws callbacks).
+00059    const audioRef = useRef<AsrAudioCapture | null>(null);
+00060    const clientRef = useRef<AsrClient | null>(null);
+00061    const vadRef = useRef<ReturnType<typeof createVad> | null>(null);
+00062    const modeRef = useRef<AsrMode | null>(null);
+00063    const partialRef = useRef("");
+00064    const finalRef = useRef("");
+00065    const wavRef = useRef<AsrWavRecorder | null>(null);
+00066    const optsRef = useRef(opts);
+00067    optsRef.current = opts;
+00068  
+00069    // Reflect configuration state for the button's enabled/disabled look.
+00070    useEffect(() => {
+00071      let alive = true;
+00072      void readAsrConfig(accountId).then((cfg) => {
+00073        if (alive) setConfigured(isAsrConfigured(cfg.wsUrl));
+00074      });
+00075      return () => {
+00076        alive = false;
+00077      };
+00078    }, [accountId]);
+00079  
+00080    const teardown = useCallback(() => {
+00081      try {
+00082        clientRef.current?.close();
+00083      } catch {
+00084        /* ignore */
+00085      }
+00086      clientRef.current = null;
+00087      void audioRef.current?.stop();
+00088      audioRef.current = null;
+00089      vadRef.current = null;
+00090      modeRef.current = null;
+00091      partialRef.current = "";
+00092      finalRef.current = "";
+00093      wavRef.current = null;
+00094    }, []);
+00095  
+00096    const stop = useCallback(() => {
+00097      // Flush any trailing segment, then close everything.
+00098      try {
+00099        vadRef.current?.flush(now());
+00100      } catch {
+00101        /* ignore */
+00102      }
+00103      // Diagnostic: export exactly what we sent to the ASR server, for listening.
+00104      try {
+00105        if (wavRef.current && wavRef.current.sampleCount() > 0) wavRef.current.download();
+00106      } catch {
+00107        /* ignore */
+00108      }
+00109      teardown();
+00110      setMode(null);
+00111      setStatus("idle");
+00112    }, [teardown]);
+00113  
+00114    /** Commit the current segment's text (offline-final preferred, else partial). */
+00115    const commitSegment = useCallback(() => {
+00116      const text = (finalRef.current || partialRef.current).trim();
+00117      partialRef.current = "";
+00118      finalRef.current = "";
+00119      if (text) optsRef.current.onUtterance?.(text, modeRef.current ?? "push");
+00120    }, []);
+00121  
+00122    const start = useCallback(
+00123      async (nextMode: AsrMode) => {
+00124        if (modeRef.current === nextMode && status === "listening") return;
+00125        // Restart cleanly if switching modes.
+00126        teardown();
+00127        setStatus("connecting");
+00128  
+00129        const cfg = await readAsrConfig(accountId);
+00130        if (!isAsrConfigured(cfg.wsUrl)) {
+00131          setConfigured(false);
+00132          setStatus("unconfigured");
+00133          optsRef.current.onError?.("请在设置 → 系统设置配置语音识别地址");
+00134          return;
+00135        }
+00136        setConfigured(true);
+00137        modeRef.current = nextMode;
+00138        setMode(nextMode);
+00139  
+00140        // VAD: in continuous mode it segments utterances; in push mode it only
+00141        // helps detect the trailing silence to auto-finalize one utterance.
+00142        vadRef.current = createVad({
+00143          onEvent: (event) => {
+00144            if (event === "speech-end") {
+00145              clientRef.current?.endUtterance();
+00146              // Give the server a moment to emit the offline-final; commit on the
+00147              // next final, but also fall back to committing the partial here for

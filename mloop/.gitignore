@@ -1,0 +1,16 @@
+.DS_Store
+**/.DS_Store
+*.dmg
+*.log
+.idea/
+.vscode/
+
+/mobilework-client/
+/multica/
+
+# design-v3 local demos / reference apps
+design-v3/**/node_modules/
+design-v3/**/.next/
+design-v3/**/.env
+design-v3/**/.env.*
+!design-v3/**/.env.example

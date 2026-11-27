@@ -1,0 +1,51 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/experts/skill-tryout-handoff.ts
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：269d8c2d3204c085220c8b6f33e4d4bb7ed14567e37c926dc4b863464b4c6c19
+以下是带原行号的节选，不是完整文件。
+
+00001  import { canonicalizeSkillTokens, canonicalSkillId } from "../shared/skill-id-aliases";
+00002  
+00003  /**
+00004   * 技能「试一试」→ 新建任务 hand-off。与任务内点选技能一致：只预填
+00005   * `[skill <id>]` 胶囊，不附带基础提示语/描述正文。
+00006   * 暂存到 localStorage 后跳 /session；SessionRoute 消费并停在草稿页。
+00007   */
+00008  
+00009  const KEY = "mobilework.pendingSkillTryoutDraft";
+00010  
+00011  export function setPendingSkillTryoutDraft(draft: string): void {
+00012    try {
+00013      localStorage.setItem(KEY, draft);
+00014    } catch {
+00015      /* ignore */
+00016    }
+00017  }
+00018  
+00019  export function peekPendingSkillTryoutDraft(): string | null {
+00020    try {
+00021      const draft = localStorage.getItem(KEY);
+00022      return draft === null ? null : canonicalizeSkillTokens(draft);
+00023    } catch {
+00024      return null;
+00025    }
+00026  }
+00027  
+00028  export function consumePendingSkillTryoutDraft(): string | null {
+00029    const draft = peekPendingSkillTryoutDraft();
+00030    if (draft === null) return null;
+00031    try {
+00032      localStorage.removeItem(KEY);
+00033    } catch {
+00034      /* ignore */
+00035    }
+00036    return draft;
+00037  }
+00038  
+00039  /** 组装「试一试」预填：仅 `[skill <id>]`，与任务内技能面板勾选一致。 */
+00040  export function buildSkillTryoutDraft(skill: {
+00041    id: string;
+00042    name?: string;
+00043  }): string {
+00044    const tokenName = canonicalSkillId(skill.id) || canonicalSkillId(skill.name ?? "");
+00045    return tokenName ? `[skill ${tokenName}] ` : "";
+00046  }

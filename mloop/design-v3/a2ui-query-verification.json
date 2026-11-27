@@ -1,0 +1,118 @@
+{
+  "date": "2026-11-16",
+  "scope": "v3 会话内 A2UI 渐进查询卡片",
+  "preview": "http://localhost:8123/index.html",
+  "implementation": "本地任务查询 + 受限组件目录与 A2UI 风格 surface 操作分片；未接 CopilotKit runtime 或真实模型流",
+  "checks": {
+    "query_logic": [
+      "成员识别与 xym 别名",
+      "归档排除",
+      "项目隔离",
+      "7/30 天与全部记录",
+      "无日期任务提示",
+      "未知成员空状态",
+      "示例数据隔离",
+      "阻塞与逾期筛选",
+      "查询不改写任务",
+      "受限组件目录逐步应用"
+    ],
+    "browser": [
+      "骨架出现时尚无标题",
+      "标题出现时尚无摘要和指标",
+      "摘要出现时尚无明细",
+      "完成后显示来源操作",
+      "状态筛选",
+      "展开更多",
+      "详情及 Escape 关闭",
+      "时间筛选",
+      "停止生成并刷新恢复",
+      "重新查询",
+      "真实本地任务读取",
+      "原始任务链接",
+      "风险后续提问",
+      "项目查询与负责人隔离",
+      "Enter 发送",
+      "刷新保留已完成卡片",
+      "窄窗口卡片布局",
+      "prefers-reduced-motion 禁用动画"
+    ],
+    "fixture": "独立 localhost:8123 测试任务已恢复；未改动原有 localhost:8086 浏览器数据",
+    "runtime": "无应用脚本错误；观察到的 StorageArea 错误堆栈来自 chrome-extension 的 contentScript.bundle.js"
+  },
+  "previews": [
+    "previews/a2ui-progress-desktop.png",
+    "previews/a2ui-progress-mobile.png"
+  ],
+  "entry_and_recommendations": {
+    "entry_intents": [
+      "请告诉我在哪邀请成员？",
+      "团队信息在哪里修改？",
+      "新建任务的入口在哪里？",
+      "我在哪里设置定时任务？",
+      "在哪里配置模型？",
+      "已安装的技能在哪里管理？",
+      "在哪里查看我的文件？"
+    ],
+    "verified": [
+      "七类自然语言入口识别",
+      "七类入口点击打开原功能",
+      "邀请邮箱表单直接打开",
+      "普通成员只读",
+      "入口消息刷新恢复",
+      "推荐使用频率与时间衰减",
+      "过期记录排除",
+      "无历史提示",
+      "已有本人会话查询推荐",
+      "功能页面访问推荐",
+      "使用后推荐变化",
+      "团队隔离",
+      "身份隔离",
+      "390px 窄屏无横向溢出",
+      "构建通过"
+    ],
+    "recommendation_example": [
+      "邀请成员",
+      "我的文件",
+      "技能管理"
+    ],
+    "previews": [
+      "previews/a2ui-entry-card.png",
+      "previews/a2ui-habit-recommendations.png"
+    ],
+    "scope": "本地历史与使用记录，未调用个性化服务；仅打开表单，未创建或发送成员邀请"
+  },
+  "global_proactive_and_collaboration": {
+    "date": "2026-11-16",
+    "checks": [
+      "@ 列表合并任务与智能体工作区目录",
+      "成员 / 智能体 / 小队同时可见",
+      "@ 产品交付小队带入成员并生成四条智能体响应",
+      "其他人私人 Work 助手限制保留",
+      "带空格邀请入口意图识别",
+      "侧栏协作空间 / 定时任务 / 专家工作区",
+      "协作空间基础信息 / 智能体 / 小队",
+      "设置移出协作空间与去重",
+      "团队概览与身份信息",
+      "基础信息 Escape 关闭",
+      "风险 / 接近收尾 / 无负责人规则校验",
+      "排除归档任务",
+      "空数据示例明确标记",
+      "任务页 22–34 秒自动提示风险",
+      "优先本人负责任务",
+      "为什么推荐给我展示事实依据",
+      "点击后新会话自动查询并渐进生成图表",
+      "特定项目风险隔离",
+      "原会话草稿保留",
+      "稍后提醒暂停 1 小时",
+      "构建通过",
+      "修改源码 diff 空白检查通过"
+    ],
+    "test_fixture": "测试任务底层存储已恢复，未创建成员邀请",
+    "previews": [
+      "previews/proactive-risk-reminder.png",
+      "previews/proactive-risk-chart.png",
+      "previews/collaboration-mention-directory.png"
+    ],
+    "limitations": "本地规则分析、页面内定时检测与演示执行，未接入服务端异步推送或模型画像。"
+  }
+}

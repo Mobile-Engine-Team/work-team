@@ -1,0 +1,74 @@
+/* All recipient profiles share the same editing area and send-button anchor. */
+.adaptive-composer .composer-tools-left{overflow-x:auto;overflow-y:hidden;scrollbar-width:thin;gap:9px;min-width:0;padding:2px 0}
+.adaptive-composer .composer-tools-right{gap:7px}
+.adaptive-composer .composer-tools{height:59px;gap:10px}
+.adaptive-composer .composer-tools .composer-context-action{display:inline-flex;align-items:center;justify-content:center;gap:5px;height:30px;padding:4px 5px;border:1px solid transparent;border-radius:6px;flex-shrink:0;color:var(--mw-gray-2);font-size:13px;white-space:nowrap}
+.adaptive-composer .composer-context-action:hover{color:var(--mw-brand);background:var(--mw-brand-bg)}
+.adaptive-composer .composer-feature{font-size:13px;max-width:180px}
+.adaptive-composer .composer-feature>span{max-width:126px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.adaptive-composer .composer-tools .composer-upload{width:25px}
+.adaptive-composer .composer-recipient{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px 17px 0 20px}
+.composer-recipient>div{display:flex;align-items:center;gap:8px;min-width:0}
+.composer-recipient strong{font-size:12px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.composer-recipient .co-avatar{height:23px;width:23px}
+.composer-recipient>div>span:last-child{display:flex;align-items:center;gap:4px;font-size:10px;color:var(--mw-gray-4);white-space:nowrap}
+.composer-recipient .mc-icon-button{height:25px;width:27px;color:var(--mw-gray-3)}
+.adaptive-composer .composer-agent-meta{display:flex;align-items:center;gap:16px;min-height:39px;padding:8px 21px 7px;font-size:11px;line-height:19px;color:var(--mw-gray-3)}
+.composer-agent-meta>span{display:flex;align-items:center;gap:6px;min-width:0;max-width:45%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.composer-agent-meta>span>svg{flex-shrink:0;height:13px;width:13px}
+.composer-agent-meta .composer-meta-note{margin-left:auto;font-size:10px}
+.adaptive-composer .composer-invoked{display:flex;align-items:center;gap:8px;padding:13px 20px 0;color:var(--mw-gray-3);font-size:11px}
+.composer-invoked>span{flex-shrink:0}
+.composer-invoked>div{display:flex;gap:6px;overflow-x:auto;scrollbar-width:thin}
+.composer-invoked button{display:flex;align-items:center;gap:5px;border:1px solid var(--mw-gray-7);border-radius:6px;padding:4px 7px;font-size:11px;white-space:nowrap;color:var(--mw-gray-2)}
+.composer-invoked button[aria-pressed=true]{background:var(--mw-brand-bg);border-color:color-mix(in srgb,var(--mw-brand) 35%,transparent);color:var(--mw-brand)}
+.composer-invoked>small{font-size:10px;white-space:nowrap;margin-left:auto}
+.adaptive-composer .adaptive-work-footer{gap:16px;flex-wrap:wrap;height:auto;min-height:40px;padding-top:7px;padding-bottom:7px}
+.adaptive-work-footer .composer-feature{max-width:230px}
+.adaptive-work-footer .composer-feature>span{max-width:170px}
+.composer-adaptive-picker .composer-picker-tabs{display:flex;gap:6px;padding:9px 12px 3px}
+.mw-member-picker.composer-adaptive-picker{position:static;inset:auto;z-index:auto;width:100%;max-width:100%;border:0;border-radius:8px;box-shadow:none}
+.composer-adaptive-picker .mw-member-options{max-height:min(220px,calc(100dvh - 200px))}
+.composer-picker-tabs>button{padding:3px 10px;border-radius:6px;color:var(--mw-gray-3);font-size:12px}
+.composer-picker-tabs>button[aria-pressed=true]{background:var(--mw-brand-bg);color:var(--mw-brand)}
+.composer-upload-status{padding:5px 8px;font-size:11px;color:var(--mw-gray-3)}
+.aw-chat-models{display:flex;flex-direction:column}
+.aw-chat-models>label{display:flex;align-items:center;gap:9px;padding:13px 18px;font-size:13px;border-bottom:1px solid var(--mw-gray-7)}
+.aw-chat-models>label:last-child{border:0}
+.aw-chat-models input{accent-color:var(--mw-brand);width:14px!important;min-width:14px!important;height:14px!important}
+.aw-chat-models small{margin-left:auto;color:var(--mw-gray-4);font-size:11px}
+.aw-settings-content[aria-label=会话能力] .aw-settings-row{grid-template-columns:minmax(0,1fr) auto}
+.aw-settings-card [data-action=settings-chat-override]{display:inline-flex;align-items:center;position:relative;width:34px;height:20px;padding:2px;border-radius:12px;background:var(--mw-gray-6);flex-shrink:0;transition:background .15s}
+.aw-settings-card [data-action=settings-chat-override]>i{width:16px;height:16px;border-radius:50%;background:white;box-shadow:0 1px 3px #0002;transition:transform .15s}
+.aw-settings-card [data-action=settings-chat-override][aria-checked=true]{background:var(--mw-brand)}
+.aw-settings-card [data-action=settings-chat-override][aria-checked=true]>i{transform:translateX(14px)}
+/* Portal menus remain visible when the toolbar needs horizontal scrolling. */
+.mw-collab-composer.adaptive-composer .composer-feature-wrap{display:block}
+.co-settings-open .adaptive-composer .composer-feature-wrap{display:block}
+@media(max-width:760px){
+ .mw-collab-composer.adaptive-composer .composer-tools{padding:8px 13px;height:53px;gap:7px}
+ .mw-collab-composer.adaptive-composer .composer-tools-left{gap:5px}
+ .adaptive-composer .composer-tools-right{gap:3px}
+ .adaptive-composer .composer-feature{font-size:12px;max-width:130px}
+ .adaptive-composer .composer-feature>span{max-width:82px}
+ .adaptive-composer .composer-tools .composer-context-action{font-size:12px;padding:3px}
+ .adaptive-composer:has(.composer-invoked) .composer-tools-left>.composer-context-action>span{display:none}
+ .adaptive-composer:has(.composer-invoked) .composer-feature-model .composer-feature>span{max-width:60px}
+ .adaptive-composer .composer-recipient{padding:11px 13px 0}
+ .composer-recipient>div{gap:6px}.composer-recipient>div>span:last-child{font-size:9px}
+ .adaptive-composer .composer-invoked{padding:12px 14px 0;gap:6px}
+ .composer-invoked>small{display:none}
+ .adaptive-composer .composer-agent-meta{padding:7px 15px;gap:10px;font-size:10px;flex-wrap:wrap}
+ .composer-agent-meta>span{max-width:100%}.composer-agent-meta .composer-meta-note{display:none}
+ .adaptive-composer .adaptive-work-footer{padding:7px 14px;gap:8px}
+ .composer-adaptive-picker{max-width:calc(100vw - 36px)}
+ .adaptive-work-footer .composer-feature>span{max-width:140px}
+}
+
+
+.composer-root.adaptive-composer .composer textarea::placeholder{color:var(--mw-gray-4);opacity:1}
+.adaptive-composer .composer-fill-suggestion{flex:none;border-radius:5px;padding:4px 6px;color:var(--mw-gray-3);font-size:11px;white-space:nowrap}
+.adaptive-composer .composer-fill-suggestion:hover{color:var(--mw-gray-1);background:var(--mw-gray-8)}
+
+/* Applies to message prose, not metadata or attached view controls. */
+:root .co-message-text,:root .gc-bubble{font-size:var(--mw-local-chat-font,14px)}

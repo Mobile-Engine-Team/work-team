@@ -1,0 +1,152 @@
+源文件：/Users/xymtop/Desktop/multica/server/internal/handler/feedback.go
+版本：3c5c8b245359b9b8e913a47f97211f2a3426f149
+SHA-256：cf11172c1595dc41d886eff861898d0287f4cbf3e2550c1ce2f60568e5fb2c40
+以下是带原行号的节选，不是完整文件。
+
+00001  package handler
+00002  
+00003  import (
+00004  	"encoding/json"
+00005  	"log/slog"
+00006  	"net/http"
+00007  	"regexp"
+00008  	"strings"
+00009  
+00010  	"github.com/jackc/pgx/v5/pgtype"
+00011  	"github.com/multica-ai/multica/server/internal/analytics"
+00012  	"github.com/multica-ai/multica/server/internal/logger"
+00013  	obsmetrics "github.com/multica-ai/multica/server/internal/metrics"
+00014  	"github.com/multica-ai/multica/server/internal/middleware"
+00015  	db "github.com/multica-ai/multica/server/pkg/db/generated"
+00016  )
+00017  
+00018  // feedbackImageRegex is a coarse check for markdown image syntax ![alt](url).
+00019  // It exists only to set the `has_images` analytics flag — we don't need a
+00020  // full markdown parser; a false positive on a literal "![" in prose is
+00051  	// label `multica_feedback_submitted_total{kind=...}` reads it via the
+00052  	// fixed allow-list in metrics.NormalizeFeedbackKind ("bug", "feature",
+00053  	// "general", "praise"); anything outside collapses to "other". Empty /
+00054  	// missing falls back to "general" so legacy clients that don't send the
+00055  	// field don't blackhole the metric.
+00056  	Kind        string           `json:"kind"`
+00057  	WorkspaceID *string          `json:"workspace_id,omitempty"`
+00058  	Context     *FeedbackContext `json:"context,omitempty"`
+00059  }
+00060  
+00061  type FeedbackResponse struct {
+00062  	ID        string `json:"id"`
+00063  	CreatedAt string `json:"created_at"`
+00064  }
+00065  
+00066  func (h *Handler) CreateFeedback(w http.ResponseWriter, r *http.Request) {
+00067  	userID, ok := requireUserID(w, r)
+00068  	if !ok {
+00069  		return
+00070  	}
+00071  
+00072  	r.Body = http.MaxBytesReader(w, r.Body, feedbackBodyLimit)
+00073  	var req CreateFeedbackRequest
+00074  	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+00075  		writeError(w, http.StatusBadRequest, "invalid request body")
+00076  		return
+00077  	}
+00078  
+00079  	message := strings.TrimSpace(req.Message)
+00080  	if message == "" {
+00081  		writeError(w, http.StatusBadRequest, "message is required")
+00082  		return
+00083  	}
+00084  	if len(message) > feedbackMaxMessageLen {
+00085  		writeError(w, http.StatusBadRequest, "message too long")
+00086  		return
+00087  	}
+00088  	if !validFeedbackContext(req.Context) {
+00089  		writeError(w, http.StatusBadRequest, "invalid feedback context")
+00090  		return
+00091  	}
+00092  
+00093  	// Per-user rate limit: hourly cap on feedback submissions. DB-backed so it
+00094  	// survives process restarts and works across multiple instances without a
+00095  	// shared cache — cost is one cheap indexed count per submit.
+00096  	count, err := h.Queries.CountRecentFeedbackByUser(r.Context(), parseUUID(userID))
+00097  	if err != nil {
+00098  		slog.Warn("count recent feedback failed", append(logger.RequestAttrs(r), "error", err)...)
+00099  		writeError(w, http.StatusInternalServerError, "failed to check rate limit")
+00100  		return
+00101  	}
+00102  	if count >= feedbackHourlyRateLimit {
+00103  		writeError(w, http.StatusTooManyRequests, "too many feedback submissions, please try again later")
+00104  		return
+00105  	}
+00106  
+00107  	platform, version, clientOS := middleware.ClientMetadataFromContext(r.Context())
+00108  	metadata := map[string]any{
+00109  		"url":        req.URL,
+00110  		"platform":   platform,
+00111  		"version":    version,
+00112  		"os":         clientOS,
+00113  		"user_agent": r.UserAgent(),
+00114  	}
+00115  	if req.Context != nil {
+00116  		metadata["context"] = req.Context
+00117  	}
+00118  	metaBytes, err := json.Marshal(metadata)
+00119  	if err != nil {
+00120  		// The map contains only known JSON-compatible values, but fall through
+00121  		// with an empty object rather than 500ing on non-critical metadata.
+00122  		metaBytes = []byte("{}")
+00123  	}
+00124  
+00125  	var workspaceID pgtype.UUID
+00126  	if req.WorkspaceID != nil && *req.WorkspaceID != "" {
+00127  		ws, ok := parseUUIDOrBadRequest(w, *req.WorkspaceID, "workspace_id")
+00128  		if !ok {
+00129  			return
+00130  		}
+00131  		workspaceID = ws
+00132  	}
+00133  
+00134  	fb, err := h.Queries.CreateFeedback(r.Context(), db.CreateFeedbackParams{
+00135  		UserID:      parseUUID(userID),
+00136  		Message:     message,
+00137  		Metadata:    metaBytes,
+00138  		WorkspaceID: workspaceID,
+00139  	})
+00140  	if err != nil {
+00141  		slog.Warn("create feedback failed", append(logger.RequestAttrs(r), "error", err)...)
+00142  		writeError(w, http.StatusInternalServerError, "failed to submit feedback")
+00143  		return
+00144  	}
+00145  
+00146  	slog.Info("feedback submitted", append(logger.RequestAttrs(r), "feedback_id", uuidToString(fb.ID))...)
+00147  
+00148  	kind := strings.TrimSpace(req.Kind)
+00149  	if kind == "" {
+00150  		kind = "general"
+00151  	}
+00152  
+00153  	obsmetrics.RecordEvent(h.Analytics, h.Metrics, analytics.FeedbackSubmitted(
+00154  		userID,
+00155  		uuidToString(fb.WorkspaceID),
+00156  		kind,
+00157  		len(message),
+00158  		feedbackImageRegex.MatchString(message),
+00159  		platform,
+00160  		version,
+00161  	))
+00162  
+00163  	writeJSON(w, http.StatusCreated, FeedbackResponse{
+00164  		ID:        uuidToString(fb.ID),
+00165  		CreatedAt: timestampToString(fb.CreatedAt),
+00166  	})
+00167  }
+00168  
+00169  func validFeedbackContext(context *FeedbackContext) bool {
+00170  	if context == nil {
+00171  		return true
+00172  	}
+00173  	return context.Kind == desktopRouteErrorFeedbackContextKind &&
+00174  		strings.TrimSpace(context.Trigger) != "" &&
+00175  		strings.TrimSpace(context.Error.Name) != "" &&
+00176  		strings.TrimSpace(context.Error.Message) != ""
+00177  }

@@ -1,0 +1,40 @@
+sequenceDiagram
+    autonumber
+    participant p0 as 王蕾 / 周启明
+    participant p1 as 团队工作台
+    participant p2 as WorkItem / Decision
+    participant p3 as 调度与权限
+    participant p4 as 修复 / 测试 Agent
+    participant p5 as 陈晓 / QA
+    p0->>p1: 建团队项目 P17，邀请并授权成员
+    Note over p0,p1: 团队空间与个人目录分离；项目私有默认最小可见
+    p0->>p2: 创建 W17，写复现与验收条件
+    Note over p0,p2: humanOwner=周启明，reviewer=王蕾，QA=陈晓
+    p0->>p1: 留言澄清；显式选择“请求执行”
+    Note over p0,p1: 评论默认不启动；预览接收者、调用权限、运行模式与预算
+    p1->>p3: 提交带幂等键与预期版本的派工命令
+    Note over p1,p3: 重复点击同命令只返回同一记录；并发状态冲突要求确认
+    p3->>p2: 创建 R1 并保存输入上下文快照
+    Note over p2,p3: 记录来源评论、权限版本、资产版本和目录锁
+    p3->>p4: 指定 runtime 执行 R1
+    Note over p3,p4: 本机高风险操作仍走工具授权；离线不自动迁移机器
+    p4->>p2: 登记不可变 ArtifactVersion v1
+    Note over p2,p4: 文件摘要/仓库提交、来源 R1、可访问位置明确
+    p3->>p4: 按 QA 授权和指定目录发起测试
+    Note over p3,p4: 修复 Agent 不能自己替人类批准；共享目录不可无锁并跑
+    p4->>p2: 登记 TestEvidence QA1：预期 1，实际 2
+    Note over p2,p4: 示例失败；测试日志与 v1 绑定
+    p5->>p2: 陈晓提交返工决定，说明失败点
+    Note over p2,p5: 生成新决策记录；不删除 R1/QA1
+    p0->>p3: 周启明确认下一轮请求 R2
+    Note over p0,p3: 预算与循环上限重新检查；超额先暂停
+    p4->>p2: R2 → v2；测试生成 QA2 通过
+    Note over p2,p4: 同一 W17 新执行与新证据，旧证据不可被覆盖
+    p0->>p2: 提交 ReviewRequest：指定 v2 + QA2
+    Note over p0,p2: 只有有权评审者可批准，检查最新版本和证据完整性
+    p0->>p2: 王蕾明确验收通过
+    Note over p0,p2: Decision 引用 W17版本、v2摘要和 QA2；过期证据拒绝批准
+    p2->>p1: 将 W17 标 done 并发布主线摘要
+    Note over p1,p2: 决策、状态、通知采用可靠事件处理；P0 无自动发布外部系统
+    p1->>p5: 通知项目成员并支持定位到证据
+    Note over p1,p5: 不向无权者泄露产物或私有执行日志

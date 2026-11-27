@@ -1,0 +1,722 @@
+/* Project view rules adapted from dsh-team-workbench. */
+:where(.wb-project-reference,.project-reference-dialog) .project-overview-top {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr;
+  gap: 24px;
+  margin-bottom: 24px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-goal {
+  display: flex;
+  gap: 16px;
+  border: 1px solid var(--mw-divider);
+  border-radius: 14px;
+  padding: 24px;
+  background: var(--mw-surface);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-goal > svg {
+  flex-shrink: 0;
+  color: var(--mw-brand);
+  margin-top: 3px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-goal h3 {
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-goal > div {
+  min-width: 0;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-counts {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-counts > div {
+  border: 1px solid var(--mw-divider);
+  border-radius: 12px;
+  padding: 16px 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  background: var(--mw-surface);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-counts strong {
+  font-size: 28px;
+  font-weight: 600;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-counts span {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-get-started {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  border-radius: 14px;
+  padding: 24px;
+  background: var(--mw-row-active-bg);
+  margin-bottom: 24px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-get-started > div {
+  flex: 1;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-get-started svg {
+  color: var(--mw-brand);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-get-started h3 {
+  font-weight: 600;
+  margin: 8px 0;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-get-started p {
+  font-size: 13px;
+  color: var(--muted-foreground);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-overview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-overview-grid > article {
+  border: 1px solid var(--mw-divider);
+  border-radius: 14px;
+  padding: 20px;
+  background: var(--mw-surface);
+  min-width: 0;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-section-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-section-heading h2,
+:where(.wb-project-reference,.project-reference-dialog) .project-section-heading h3 {
+  font-size: 15px;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-section-heading > span {
+  font-size: 12px;
+  color: var(--muted-foreground);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-task-list > button {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  text-align: left;
+  align-items: center;
+  padding: 13px 5px;
+  border-bottom: 1px solid var(--mw-divider);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-task-list > button:last-child {
+  border-bottom: 0;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-task-list > button > div {
+  flex: 1;
+  min-width: 0;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-task-list strong {
+  font-size: 13px;
+  display: block;
+  overflow-wrap: anywhere;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-task-list small {
+  display: block;
+  color: var(--muted-foreground);
+  font-size: 11px;
+  margin-top: 5px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-task-list > button:hover {
+  background: var(--mw-row-active-bg);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-waiting {
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+
+:where(.wb-project-reference,.project-reference-dialog) .project-empty p {
+  font-size: 13px;
+  max-width: 450px;
+  line-height: 1.8;
+}
+:where(.wb-project-reference,.project-reference-dialog) .mw-blueprint {
+  border: 1px solid var(--mw-divider);
+  border-radius: 14px;
+  overflow: hidden;
+  background: var(--mw-surface);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-plan-heading {
+  padding: 20px 22px;
+  margin: 0;
+  border-bottom: 1px solid var(--mw-divider);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-plan-heading h2 {
+  font-weight: 650;
+  font-size: 18px;
+  margin: 5px 0;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-save-state {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-actions {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-canvas-tools {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--mw-divider);
+  flex-wrap: wrap;
+  font-size: 12px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-canvas-tools button {
+  font-size: 12px;
+  height: 32px;
+  padding: 5px 9px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-editor-body {
+  display: flex;
+  height: min(650px, 65vh);
+  min-height: 440px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-canvas {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+  touch-action: none;
+  background-color: var(--mw-gray-10);
+  background-image: radial-gradient(var(--mw-divider) 1px, transparent 1px);
+  background-size: 20px 20px;
+  outline: none;
+  min-width: 0;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-canvas-world {
+  position: absolute;
+  left: 0;
+  top: 0;
+  transform-origin: 0 0;
+  pointer-events: none;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-edges {
+  position: absolute;
+  left: 0;
+  top: 0;
+  overflow: visible;
+  pointer-events: none;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-edges .edge-hit {
+  stroke: transparent;
+  stroke-width: 18;
+  fill: none;
+  pointer-events: stroke;
+  cursor: pointer;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-edges .edge-line {
+  stroke: var(--muted-foreground);
+  stroke-width: 1.6;
+  fill: none;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-edges g.selected .edge-line {
+  stroke: var(--mw-brand);
+  stroke-width: 2.5;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-edges marker path {
+  fill: var(--muted-foreground);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-node {
+  position: absolute;
+  width: 250px;
+  min-height: 130px;
+  padding: 14px 16px;
+  background: var(--mw-surface);
+  border: 1px solid var(--mw-divider);
+  border-radius: 12px;
+  box-shadow: 0 3px 9px color-mix(in srgb, var(--mw-gray-1) 5%, transparent);
+  cursor: grab;
+  pointer-events: auto;
+  user-select: none;
+  touch-action: none;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-node.selected {
+  border-color: var(--mw-brand);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--mw-brand) 12%, transparent);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-node.new {
+  border-style: dashed;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-node-meta {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  font-size: 10px;
+  color: var(--muted-foreground);
+  margin-bottom: 9px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-node strong {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  font-size: 14px;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-node p {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  margin-top: 10px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-link-handle {
+  position: absolute;
+  right: -12px;
+  top: 52px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  border: 1px solid var(--mw-divider);
+  display: grid;
+  place-items: center;
+  background: var(--mw-surface);
+  color: var(--mw-brand);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-link-handle:hover {
+  border-color: var(--mw-brand);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-inspector {
+  width: 290px;
+  flex-shrink: 0;
+  padding: 20px;
+  border-left: 1px solid var(--mw-divider);
+  overflow-y: auto;
+  font-size: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-inspector h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-inspector h4 {
+  font-size: 12px;
+  font-weight: 600;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-inspector-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-inspector input,
+:where(.wb-project-reference,.project-reference-dialog) .project-inspector textarea {
+  font-size: 12px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-inspector .team-field {
+  margin: 0;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-helper {
+  font-size: 11px;
+  color: var(--muted-foreground);
+  line-height: 1.7;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-predecessor {
+  text-align: left;
+  padding: 8px;
+  border: 1px solid var(--mw-divider);
+  border-radius: 6px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-original {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 180px;
+  overflow: auto;
+  color: var(--muted-foreground);
+  line-height: 1.7;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-inspector-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 14px;
+  padding: 70px 12px;
+  color: var(--muted-foreground);
+  line-height: 1.8;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-canvas-empty {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  pointer-events: none;
+  color: var(--muted-foreground);
+  padding: 30px;
+  text-align: center;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-canvas-empty svg {
+  color: var(--mw-brand);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-canvas-empty h3 {
+  font-size: 17px;
+  font-weight: 600;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-canvas-empty p {
+  font-size: 12px;
+  line-height: 1.8;
+  max-width: 280px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-notice {
+  padding: 10px 16px;
+  background: var(--mw-row-active-bg);
+  color: var(--mw-brand);
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-candidate-list {
+  max-height: 420px;
+  overflow: auto;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-candidate-list > button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  padding: 12px;
+  text-align: left;
+  border-bottom: 1px solid var(--mw-divider);
+  gap: 16px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-candidate-list > button:hover {
+  background: var(--mw-row-active-bg);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-candidate-list small {
+  display: block;
+  margin-top: 4px;
+  color: var(--muted-foreground);
+  font-size: 11px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-change-list {
+  max-height: 350px;
+  overflow: auto;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-change-list > div {
+  display: flex;
+  gap: 16px;
+  padding: 12px 4px;
+  border-bottom: 1px solid var(--mw-divider);
+  font-size: 13px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-change-list span {
+  color: var(--mw-brand);
+  min-width: 90px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-version {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
+  border-bottom: 1px solid var(--mw-divider);
+  padding: 16px 0;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-version h3 {
+  font-size: 14px;
+  font-weight: 600;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-version small {
+  font-size: 11px;
+  color: var(--muted-foreground);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-version ul {
+  width: 100%;
+  padding-left: 18px;
+  font-size: 12px;
+  line-height: 1.9;
+  color: var(--muted-foreground);
+}
+
+:where(.wb-project-reference,.project-reference-dialog) .project-ai-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.85fr) minmax(300px, 1.15fr);
+  gap: 24px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-ai-layout > section {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-ai-results {
+  border-left: 1px solid var(--mw-divider);
+  padding-left: 24px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-input-preview {
+  font-size: 12px;
+  line-height: 1.8;
+  max-height: 250px;
+  overflow: auto;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-input-preview summary {
+  color: var(--mw-brand);
+  cursor: pointer;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-input-preview h4 {
+  font-weight: 600;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-suggestion-list {
+  max-height: 380px;
+  overflow: auto;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-suggestion {
+  display: flex;
+  gap: 10px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--mw-divider);
+  align-items: flex-start;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-suggestion input {
+  margin-top: 5px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-suggestion > div {
+  min-width: 0;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-suggestion small {
+  display: block;
+  font-size: 10px;
+  color: var(--mw-brand);
+  margin-bottom: 5px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-suggestion strong {
+  font-size: 13px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-suggestion p {
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-request-row {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 0;
+  font-size: 11px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-planning-error {
+  padding: 12px;
+  border: 1px solid var(--mw-divider);
+  border-radius: 8px;
+  font-size: 12px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-list {
+  max-height: 380px;
+  overflow: auto;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-list label {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  padding: 14px 0;
+  border-bottom: 1px solid var(--mw-divider);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-list input {
+  margin-top: 5px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-list strong {
+  font-size: 13px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-list small {
+  display: block;
+  font-size: 11px;
+  margin-top: 5px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-result {
+  padding: 12px;
+  border: 1px solid var(--mw-divider);
+  border-radius: 8px;
+  font-size: 12px;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-result > span {
+  margin-left: 16px;
+  color: var(--mw-brand);
+}
+
+:where(.wb-project-reference,.project-reference-dialog) .project-field-diff {
+  width: 100%;
+  font-size: 13px;
+  line-height: 1.6;
+  display: grid;
+  gap: 6px;
+  word-break: break-word;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-field-diff small {
+  display: block;
+  color: var(--muted-foreground);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-field-diff del,
+:where(.wb-project-reference,.project-reference-dialog) .project-field-diff ins {
+  display: block;
+  white-space: pre-wrap;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-decoration: none;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-field-diff del {
+  background: color-mix(in srgb, var(--destructive) 8%, transparent);
+  color: var(--muted-foreground);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-field-diff ins {
+  background: color-mix(in srgb, var(--primary) 8%, transparent);
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-change-list > div {
+  flex-wrap: wrap;
+}
+:where(.wb-project-reference,.project-reference-dialog) .project-field-diff > div {
+  display: block;
+}
+
+:where(.wb-project-reference,.project-reference-dialog) .project-selection-box {
+  position: absolute;
+  pointer-events: none;
+  z-index: 5;
+  border: 1px solid var(--mw-brand);
+  background: color-mix(in srgb, var(--mw-brand) 12%, transparent);
+}
+
+
+:where(.wb-project-reference,.project-reference-dialog) .project-handoff-confirm {
+  padding: 12px;
+  background: var(--muted);
+  border-radius: 8px;
+}
+
+:where(.wb-project-reference,.project-reference-dialog) .project-save-confirm {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 12px;
+  color: var(--muted-foreground);
+}
+
+
+
+:where(.wb-project-reference,.project-reference-dialog) .project-start-reason {display:flex;align-items:flex-start;gap:8px;padding:10px 12px;border-radius:8px;background:var(--mw-row-active-bg);color:var(--mw-text-body);margin:10px 0 0;}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-reason svg {flex-shrink:0;}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-blocked .project-start-reason {border-left:3px solid var(--mw-brand);}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-ready .project-start-reason {color:var(--mw-brand);}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-list label {opacity:1;}
+:where(.wb-project-reference,.project-reference-dialog) .project-start-list label > div {flex:1;min-width:0;}
+:where(.wb-project-reference,.project-reference-dialog) .project-plan-version {padding:12px;border:1px solid var(--mw-divider);border-radius:8px;}
+
+/* Bridge the reference's theme tokens and controls to the Mloop shell. */
+.wb-project-reference,.project-reference-dialog {
+  --muted-foreground:var(--mw-gray-3);
+  --muted:var(--mw-hover);
+  --destructive:var(--mw-danger,#c74545);
+  --primary:var(--mw-brand);
+  --mw-text-body:var(--mw-gray-2);
+  --project-backdrop:#fcfcfd;
+  color:var(--mw-gray-1);
+}
+[data-theme="dark"] .wb-project-reference {--project-backdrop:var(--mw-home-pane)}
+body[data-page="work"] .wb-main.wb-project-reference {background:var(--project-backdrop);overflow:auto;scrollbar-width:thin}
+.wb-project-reference .pd-project-header,.wb-project-reference .pd-project-body {width:100%;max-width:1600px;margin-inline:auto;box-sizing:border-box}
+.wb-project-reference .pd-project-header {padding-top:40px;border-bottom:0}
+.wb-project-reference .pd-page-heading h1 {font-size:28px;margin:4px 0 6px}
+.wb-project-reference .pd-status {padding:4px 9px}
+.wb-project-reference .pd-status i {display:none}
+.wb-project-reference .pd-project-tabs {gap:28px;margin-top:24px;border-bottom:1px solid var(--mw-divider)}
+.wb-project-reference .pd-project-tabs a {padding:13px 2px;font-size:14px;align-items:center}
+.wb-project-reference .pd-project-tabs [aria-current] {color:var(--mw-brand)}
+.wb-project-reference .pd-project-tabs small {background:var(--mw-row-active-bg);color:var(--mw-brand);padding:1px 6px}
+.wb-project-reference .pd-project-body {padding-top:24px;min-height:auto;flex:none;overflow:visible}
+.project-plan-heading {display:flex;align-items:center;justify-content:space-between;gap:24px}
+.project-eyebrow {font-size:11px;font-weight:650;letter-spacing:.08em;color:var(--mw-brand)}
+.project-plan-heading .project-actions {flex-wrap:wrap;justify-content:flex-end}
+.mw-blueprint > .project-helper {margin:0;padding:8px 0 14px}
+.project-canvas {overflow:clip}
+.project-edges [role="button"]:focus-visible .edge-line {stroke:var(--mw-brand);stroke-width:2.5}
+.wb-project-reference .team-spacer {flex:1}
+.project-action {display:inline-flex;align-items:center;justify-content:center;gap:6px;font-size:13px;line-height:1;min-height:34px;padding:0 12px;border-radius:8px;border:1px solid var(--mw-gray-6);box-shadow:0 1px 2px #0000000d;color:var(--mw-gray-1);background:transparent;font-weight:550;white-space:nowrap;cursor:pointer}
+.project-action:hover:not(:disabled) {background:var(--mw-hover)}
+.project-action-primary {border-color:var(--mw-brand);background:var(--mw-brand);box-shadow:none;color:white}
+.project-action-primary:hover:not(:disabled) {background:color-mix(in srgb,var(--mw-brand) 89%,black)}
+.project-action:disabled {opacity:.45;cursor:default}
+.project-canvas-tools .project-action,.project-canvas-tools .project-picker {min-height:32px}
+.project-picker.mc-select-trigger {height:36px;border-radius:24px;background:var(--project-backdrop);border:1px solid var(--mw-divider);padding:0 12px;justify-content:space-between;gap:9px}
+.project-picker > span {min-width:0;max-width:172px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+:where(.wb-project-reference,.project-reference-dialog) .team-field {display:flex;flex-direction:column;gap:8px;font-size:13px}
+:where(.wb-project-reference,.project-reference-dialog) .team-field .project-picker {width:100%}
+.project-input {min-width:0;width:100%;padding:8px 12px;border:1px solid var(--mw-divider);border-radius:8px;background:var(--mw-surface);color:var(--mw-gray-1);font:inherit}
+textarea.project-input {resize:vertical}
+.project-input:disabled {opacity:.72}
+.project-input:focus-visible,.project-action:focus-visible,.project-node:focus-visible,.project-picker:focus-visible {outline:2px solid var(--mw-brand);outline-offset:2px}
+:where(.wb-project-reference,.project-reference-dialog) .team-empty {text-align:center;padding:35px 18px;color:var(--muted-foreground);font-size:13px}
+:where(.wb-project-reference,.project-reference-dialog) .team-status {display:inline-flex;align-items:center;gap:5px;color:var(--muted-foreground);font-size:12px;white-space:nowrap}
+:where(.wb-project-reference,.project-reference-dialog) .team-status::before {content:"";width:6px;height:6px;display:inline-block;border-radius:50%;background:currentColor}
+:where(.wb-project-reference,.project-reference-dialog) .team-status-in_progress {color:var(--mw-brand)}
+:where(.wb-project-reference,.project-reference-dialog) .team-status-done {color:var(--mw-success,#2e8969)}
+:where(.wb-project-reference,.project-reference-dialog) .team-status-blocked {color:var(--destructive)}
+.project-error {padding:10px 14px;border:1px solid var(--destructive);border-radius:6px;color:var(--destructive);font-size:13px;margin:8px 12px}
+.project-task-list>button,.project-candidate-list>button {cursor:pointer;color:inherit}
+.project-task-list>button:focus-visible {outline:2px solid var(--mw-brand);outline-offset:-2px}
+.project-task-list strong,.project-node strong {font-weight:600}
+.project-task-list strong,.project-task-list small {line-height:1.5}
+.project-goal h3,.project-overview-grid h3 {font-size:15px}
+.project-goal p {font-size:13px;color:var(--muted-foreground);line-height:1.65}
+.project-reference-dialog.mc-form-dialog {width:min(560px,calc(100vw - 32px));max-height:88vh;background:var(--mw-surface);border-radius:12px}
+.project-reference-dialog.project-dialog-wide {width:min(760px,calc(100vw - 32px))}
+.project-reference-dialog .mc-form-dialog-body {display:flex;flex-direction:column;gap:16px;padding:18px 24px 24px;overflow-wrap:anywhere}
+.project-reference-dialog .mc-form-dialog-body > p {margin:0}
+.project-reference-dialog .project-actions {justify-content:flex-end;flex-wrap:wrap}
+.project-reference-dialog input[type="checkbox"] {accent-color:var(--mw-brand)}
+.project-reference-dialog .project-input-preview {padding:12px;border:1px solid var(--mw-divider);border-radius:8px}
+.project-inspector-empty h3 {color:var(--muted-foreground)}
+.project-version ul {list-style:disc}
+@media (max-width:940px) {.project-inspector {width:240px}}
+@media (max-width:760px) {
+  .project-editor-body {flex-direction:column;height:auto}
+  .project-canvas {min-height:390px}
+  .project-inspector {width:100%;max-height:390px;border-left:0;border-top:1px solid var(--mw-divider)}
+  .project-inspector-empty {padding:18px 12px}
+  .project-plan-heading {align-items:flex-start;flex-wrap:wrap}
+  .project-overview-top,.project-overview-grid,.project-ai-layout {grid-template-columns:1fr}
+  .project-ai-results {border-left:0;padding:18px 0;border-top:1px solid var(--mw-divider)}
+}
+@media (max-width:520px) {
+  .project-known-tasks .project-section-heading,.project-overview > .project-section-heading {align-items:flex-start;flex-wrap:wrap}
+  .wb-project-reference .pd-project-header {padding-top:20px}
+  .wb-project-reference .pd-project-tabs {gap:18px}
+}
+
+/* Project-only context: keep the shared task detail unchanged outside a project. */
+.project-known-tasks .project-internal {margin-top:24px;color:var(--mw-gray-2)}
+.project-internal summary {cursor:pointer;width:fit-content;padding:8px 0;font-weight:600;font-size:13px}
+.wb-project-plan-link {flex:none;padding:5px 8px;border-radius:6px;color:var(--mw-brand);background:none;border:0;font:inherit;font-size:12px;cursor:pointer}
+.wb-project-plan-link:hover {background:var(--mw-hover)}
+.project-task-context {display:grid;gap:10px;margin:14px 0 24px}
+.project-task-context:empty {display:none}
+.project-task-context .project-task-handoff {display:grid;gap:10px;padding:14px 16px;background:var(--mw-surface);border:1px solid var(--mw-divider);border-radius:10px}
+.project-task-handoff h2 {margin:0;font-size:14px;font-weight:600}
+.project-task-handoff p,.project-task-handoff small {margin:0;color:var(--mw-gray-3);font-size:12px;overflow-wrap:anywhere}
+.project-task-handoff ul {display:grid;gap:8px;margin:0;padding:0;list-style:none}
+.project-task-handoff li {display:flex;align-items:baseline;flex-wrap:wrap;gap:2px 12px}
+.project-task-handoff li + li {border-top:1px solid var(--mw-divider);padding-top:8px}
+.project-task-handoff li button,.project-task-handoff li strong {padding:0;background:none;border:0;font:inherit;font-size:13px;font-weight:500;text-align:left}
+.project-task-handoff li button {color:var(--mw-brand);cursor:pointer;text-underline-offset:3px}
+.project-task-handoff li button:hover {text-decoration:underline}
+.project-task-handoff > button {justify-self:start}
+
+.wb-task-links{display:flex;flex-wrap:wrap;gap:8px;margin:6px 0 12px;padding:0;list-style:none}
+.wb-task-links li{display:flex;align-items:center;min-width:0;max-width:100%;padding-left:8px;border:1px solid var(--mc-border,#e3e6ec);border-radius:7px}
+.wb-task-links a{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:13px;text-decoration:underline;text-underline-offset:3px}

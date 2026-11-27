@@ -1,0 +1,23 @@
+sequenceDiagram
+    autonumber
+    participant p0 as 空间管理员
+    participant p1 as 工作项服务
+    participant p2 as 调度器
+    participant p3 as 运行机器
+    participant p4 as 审批人
+    p0->>p1: 移除成员或撤销 Agent/runtime 调用权
+    Note over p0,p1: 撤销后立刻禁止新派单；历史保留与资产交接按策略
+    p1->>p2: 标记受影响运行 cancel_requested
+    Note over p1,p2: 记录撤权原因和权限版本，不伪装机器已停止
+    p2->>p3: 发送取消请求；若离线则显示未确认
+    Note over p2,p3: 机器可能已在执行，控制面不能保证立刻杀掉
+    p3->>p2: 机器重连，回报真实退出与已做操作
+    Note over p2,p3: 可确认 cancelled；已写文件仍需人工评估补偿
+    p3->>p1: 迟到结果附原 Run 与产物版本回交
+    Note over p1,p3: 保存为历史证据，不自动覆盖更新的工作状态
+    p4->>p1: 尝试批准旧版 v1
+    Note over p1,p4: 若当前待审是 v2 或权限已撤销，拒绝并显示原因
+    p1->>p4: 展示差异、版本与受影响证据
+    Note over p1,p4: 用户显式提交新请求；旧批准不继承
+    p0->>p1: 决定是否迁移机器或恢复执行
+    Note over p0,p1: P0 由人选新机器、重新授权并创建新 Run，不隐式续跑

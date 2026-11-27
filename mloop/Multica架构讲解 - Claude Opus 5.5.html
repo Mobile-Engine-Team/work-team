@@ -1,0 +1,1163 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Multica 架构拆解：一张工单如何让人和多个 Agent 协作</title>
+<style>
+:root{
+  --bg:#f6f5f1; --paper:#ffffff; --ink:#1c2330; --ink2:#4a5363; --ink3:#7b8494; --line:#e3e1da; --soft:#efede7;
+  --human:#6b55c9; --human-bg:#f1edfc;
+  --server:#2563c9; --server-bg:#eaf1fd;
+  --data:#0d8a76; --data-bg:#e6f5f1;
+  --edge:#d06a1c; --edge-bg:#fdf1e6;
+  --agent:#c03a68; --agent-bg:#fbeaf0;
+  --fact:#16794a; --doc:#2563c9; --infer:#b7791f; --demo:#6b7280; --advice:#7c3aed;
+  --hdr:58px; --radius:12px;
+  --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--hdr) + 16px)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--server)}
+code,.mono{font-family:var(--mono);font-size:.86em;background:var(--soft);padding:.08em .35em;border-radius:5px}
+pre{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:#1d2330;color:#e6e8ee;padding:14px 16px;border-radius:10px;overflow:auto;margin:10px 0}
+pre .c{color:#8c96a8}
+pre .k{color:#f2b56b}
+h1,h2,h3,h4{line-height:1.35;margin:0}
+h2{font-size:1.65rem;letter-spacing:.01em}
+h3{font-size:1.15rem;margin-top:28px}
+p{margin:.6em 0}
+section,h2,h3,[id]{scroll-margin-top:calc(var(--hdr) + 16px)}
+
+/* header */
+header.top{position:fixed;top:0;left:0;right:0;height:var(--hdr);z-index:50;background:rgba(246,245,241,.92);backdrop-filter:saturate(1.4) blur(10px);-webkit-backdrop-filter:saturate(1.4) blur(10px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 20px}
+header.top .brand{font-weight:700;font-size:15px;white-space:nowrap}
+header.top .brand small{font-weight:400;color:var(--ink3);margin-left:8px}
+header.top .cur{color:var(--ink2);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+header.top button.menu{display:none;white-space:nowrap;flex:none;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:6px 12px;font:inherit;font-size:14px;cursor:pointer}
+.progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--server);width:0}
+
+/* layout */
+.wrap{display:grid;grid-template-columns:250px minmax(0,1fr);gap:0;max-width:1320px;margin:0 auto;padding-top:var(--hdr)}
+nav.toc{position:sticky;top:var(--hdr);align-self:start;height:calc(100vh - var(--hdr));overflow:auto;padding:26px 14px 30px 20px;border-right:1px solid var(--line)}
+nav.toc .lbl{font-size:12px;color:var(--ink3);letter-spacing:.08em;margin:0 0 8px 8px}
+nav.toc a{display:flex;gap:8px;align-items:baseline;color:var(--ink2);text-decoration:none;padding:6px 8px;border-radius:8px;font-size:14px;line-height:1.45}
+nav.toc a .n{font-family:var(--mono);font-size:12px;color:var(--ink3);min-width:20px}
+nav.toc a:hover{background:var(--soft)}
+nav.toc a.on{background:var(--paper);color:var(--ink);box-shadow:0 1px 0 var(--line),0 0 0 1px var(--line);font-weight:600}
+nav.toc .legend{margin:22px 8px 0;font-size:12.5px;color:var(--ink2);line-height:1.9}
+main{padding:28px 44px 120px;min-width:0}
+.chapter{max-width:1000px;margin:0 auto 72px}
+.kicker{font-family:var(--mono);font-size:12px;color:var(--ink3);letter-spacing:.1em;margin-bottom:6px}
+.lead{font-size:1.06rem;color:var(--ink2);max-width:780px}
+
+/* tags */
+.tag{display:inline-block;font-size:11.5px;line-height:1;padding:4px 7px;border-radius:999px;border:1px solid;vertical-align:2px;margin-right:4px;white-space:nowrap;font-weight:600}
+.t-fact{color:var(--fact);border-color:#9fd3b8;background:#eef8f2}
+.t-doc{color:var(--doc);border-color:#a9c4f0;background:#eef4fd}
+.t-infer{color:var(--infer);border-color:#ecd09a;background:#fdf6e7}
+.t-demo{color:var(--demo);border-color:#d3d6dc;background:#f4f5f7}
+.t-advice{color:var(--advice);border-color:#cdb6f6;background:#f5f0fe}
+a.cite{display:inline-block;font-family:var(--mono);font-size:11.5px;line-height:1.3;padding:1px 6px;margin:0 2px;border-radius:5px;background:#eef1f6;color:#3d4a60;text-decoration:none;border:1px solid #dde2ea;vertical-align:1px;white-space:nowrap}
+a.cite:hover{background:#dfe7f5;color:var(--server)}
+
+/* cards & grids */
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--radius);padding:18px 20px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.why{border-left:3px solid var(--server);padding:2px 0 2px 14px;margin:14px 0;color:var(--ink2)}
+.why b{color:var(--ink)}
+.limit{border-left:3px solid var(--infer);padding:2px 0 2px 14px;margin:14px 0;color:var(--ink2)}
+.limit b{color:#8a5a12}
+.callout{background:#fffaf0;border:1px solid #f0dfb5;border-radius:10px;padding:12px 16px;margin:14px 0;font-size:15px}
+.trio{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:14px 0}
+.trio .card{padding:14px 16px}
+.trio h4{font-size:14px;margin-bottom:4px}
+.trio h4.w{color:var(--server)} .trio h4.h{color:var(--fact)} .trio h4.b{color:#8a5a12}
+.trio p{font-size:14.5px;color:var(--ink2);margin:0}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--paper);border-radius:10px;overflow:hidden;border:1px solid var(--line)}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--soft);font-weight:600;font-size:13.5px;color:var(--ink2)}
+tr:last-child td{border-bottom:0}
+.tblwrap{overflow-x:auto;margin:12px 0}
+details{background:var(--paper);border:1px solid var(--line);border-radius:10px;margin:12px 0}
+details>summary{cursor:pointer;padding:10px 14px;font-size:14.5px;color:var(--ink2);list-style:none}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"▸";display:inline-block;width:16px;color:var(--ink3);transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details>.body{padding:0 16px 14px}
+details>.body p{font-size:14.5px}
+
+/* hero */
+.hero h1{font-size:2.1rem;letter-spacing:.01em;margin:6px 0 10px}
+.hero .thesis{font-size:1.12rem;color:var(--ink2);max-width:820px}
+.hero .thesis b{color:var(--ink)}
+.mapbox{display:grid;grid-template-columns:minmax(0,1fr);gap:12px;margin:18px 0 10px}
+.mapbox .panel{position:static}
+.pcols{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:4px 18px}
+.pcols .dt{font-size:12px;color:var(--ink3);letter-spacing:.05em;margin-top:6px}
+.pcols p{margin:2px 0 0}
+.maphint{display:none;font-size:12.5px;color:var(--ink3);margin:4px 4px 0}
+.mapbox .svgwrap{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:8px;overflow-x:auto}
+.mapbox svg{display:block;width:100%;min-width:640px;height:auto}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px;font-size:14.5px;align-self:start;position:sticky;top:calc(var(--hdr) + 14px)}
+.panel h4{font-size:16px;margin-bottom:4px}
+.panel .sub{color:var(--ink3);font-size:13px;margin-bottom:8px}
+.panel dl{margin:0}
+.panel dt{font-size:12px;color:var(--ink3);margin-top:10px;letter-spacing:.05em}
+.panel dd{margin:2px 0 0}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:10px 0}
+.btn{border:1px solid var(--line);background:var(--paper);color:var(--ink);border-radius:8px;padding:6px 12px;font:inherit;font-size:14px;cursor:pointer;line-height:1.4}
+.btn:hover{border-color:#c9c6bc}
+.btn.pri{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.btn:disabled{opacity:.4;cursor:default}
+.caption{font-size:14.5px;color:var(--ink2);min-height:1.6em}
+.caption b{color:var(--ink)}
+
+/* svg common */
+svg text{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+.node{cursor:pointer}
+.node rect{transition:stroke-width .15s,filter .15s,opacity .2s}
+.node:hover rect.box{stroke-width:2.4}
+.node.sel rect.box{stroke-width:3}
+.node:focus{outline:none}
+.node:focus-visible rect.box{stroke-width:3;stroke-dasharray:4 3}
+.dim .node,.dim .edge{opacity:.22;transition:opacity .25s}
+.dim .node.hot,.dim .edge.hot{opacity:1}
+.edge path{fill:none;stroke-width:1.8}
+.edge.hot path{stroke-width:3}
+.edge text{font-size:11.5px}
+@keyframes dash{to{stroke-dashoffset:-20}}
+.edge.hot path.flow{stroke-dasharray:6 4;animation:dash .6s linear infinite}
+
+/* story */
+.story{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,.9fr);gap:16px;margin-top:16px}
+.scenes{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0 4px}
+.scenes button{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 11px;font:inherit;font-size:13px;cursor:pointer;color:var(--ink2)}
+.scenes button.on{background:var(--human);border-color:var(--human);color:#fff}
+.scenes button.done{border-color:#c9bff0;color:var(--human)}
+.scene h4{font-size:17px;margin-bottom:2px}
+.scene .who{font-size:13px;color:var(--ink3)}
+.scene .row{margin-top:12px}
+.scene .row .h{font-size:12px;letter-spacing:.06em;color:var(--ink3)}
+.scene .row p{margin:2px 0 0;font-size:15px}
+.ledger{font-family:var(--mono);font-size:12.2px;line-height:1.55}
+.ledger .hd{font-family:inherit;font-size:13px;color:var(--ink2);margin-bottom:8px;font-family:-apple-system,"PingFang SC",sans-serif}
+.lrow{display:grid;grid-template-columns:44px minmax(0,1fr);gap:8px;padding:5px 8px;border-radius:7px;margin-bottom:3px;border:1px solid transparent}
+.lrow .k{font-weight:700}
+.lrow.issue .k{color:var(--human)} .lrow.task .k{color:var(--server)} .lrow.cmt .k{color:var(--agent)} .lrow.note .k{color:var(--data)}
+.lrow.new{background:#fff8e1;border-color:#f1dc9b;animation:pop .5s ease}
+.lrow.old{opacity:.7}
+.lgrp{font-family:-apple-system,"PingFang SC",sans-serif;font-size:12px;color:var(--ink3);margin:10px 0 4px;letter-spacing:.05em}
+.lrow .id{font-weight:700}
+@keyframes pop{from{transform:translateY(-4px);opacity:0}to{transform:none;opacity:1}}
+
+/* objects */
+.objwrap{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:16px;margin-top:14px}
+/* split */
+.split{display:grid;grid-template-columns:minmax(0,1fr) 74px minmax(0,1fr);gap:0;margin:16px 0}
+.split .side{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px 18px}
+.split .side h4{font-size:15px;margin-bottom:8px}
+.split .side.s h4{color:var(--server)} .split .side.e h4{color:var(--edge)}
+.split ul{margin:0;padding-left:18px;font-size:14.5px}
+.split li{margin:4px 0}
+.split .mid{display:flex;flex-direction:column;justify-content:center;align-items:center;gap:6px;font-size:12px;color:var(--ink3);text-align:center}
+.split .mid .arr{font-size:20px;color:var(--ink3)}
+
+/* sequence */
+.seqbox{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,.75fr);gap:16px;margin-top:14px}
+.seqsvg{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:6px;overflow-x:auto}
+.seqsvg svg{display:block;width:100%;min-width:520px;height:auto}
+.seqstep{cursor:pointer}
+.seqstep text{font-size:12px}
+.seqstep.on line,.seqstep.on path{stroke-width:3}
+.seqstep:focus{outline:none}
+.seqstep rect.bg{fill:transparent}
+.seqstep.on rect.bg{fill:#f1f5fd}
+.seqstep:focus-visible rect.bg{stroke:#9fb8e8}
+.seqdetail h4{font-size:16px;margin-bottom:6px}
+.seqdetail .n{font-family:var(--mono);color:var(--ink3);font-size:13px}
+.seqdetail ul{padding-left:18px;margin:6px 0;font-size:14.5px}
+.seqdetail li{margin:3px 0}
+
+/* layers */
+.layers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:16px;margin-top:14px}
+.layer{border:1px solid var(--line);background:var(--paper);border-radius:12px;padding:12px 14px;margin-bottom:10px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.layer:hover{border-color:#c9c6bc}
+.layer.on{border-color:var(--server);box-shadow:0 0 0 2px #d6e3fa}
+.layer h4{font-size:15px;display:flex;justify-content:space-between;gap:10px}
+.layer h4 span{font-weight:400;font-size:12px;color:var(--ink3)}
+.layer p{margin:4px 0 0;font-size:14px;color:var(--ink2)}
+.promptview{background:#1d2330;color:#e6e8ee;border-radius:12px;padding:14px 16px;font-family:var(--mono);font-size:12.2px;line-height:1.65;white-space:pre-wrap;word-break:break-word}
+.promptview .hl{background:#3a4a2a;color:#d7f5b0;border-radius:3px}
+.promptview .tagx{color:#f2b56b}
+.promptview .cm{color:#8c96a8}
+
+/* tabs */
+.tabs{display:flex;gap:6px;flex-wrap:wrap;margin:14px 0}
+.tabs button{border:1px solid var(--line);background:var(--paper);border-radius:10px;padding:8px 14px;font:inherit;font-size:14.5px;cursor:pointer}
+.tabs button.on{background:var(--ink);color:#fff;border-color:var(--ink)}
+.tabpane{display:none}
+.tabpane.on{display:block}
+.flowsvg{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:6px;overflow-x:auto}
+.flowsvg svg{display:block;width:100%;min-width:560px;height:auto}
+.quiz{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:14px;margin-top:10px}
+.quiz .opts button{display:block;width:100%;text-align:left;margin-bottom:6px}
+.ans{font-size:15px}
+.ans .yes{color:var(--fact);font-weight:700}
+.ans .no{color:var(--agent);font-weight:700}
+
+/* recovery */
+.rec{display:grid;grid-template-columns:240px minmax(0,1fr);gap:16px;margin-top:14px}
+.rec .opts button{display:block;width:100%;text-align:left;margin-bottom:6px;font-size:14px}
+.tl{position:relative;margin:8px 0 0 6px;padding-left:20px;border-left:2px solid var(--line)}
+.tl .ev{position:relative;margin:0 0 12px}
+.tl .ev::before{content:"";position:absolute;left:-27px;top:7px;width:10px;height:10px;border-radius:50%;background:var(--paper);border:2px solid var(--server)}
+.tl .ev.bad::before{border-color:var(--agent)}
+.tl .ev.ok::before{border-color:var(--fact);background:var(--fact)}
+.tl .ev .w{font-size:12px;color:var(--ink3)}
+.tl .ev p{margin:0;font-size:14.5px}
+
+/* perms */
+.stack{display:grid;gap:10px;margin-top:14px}
+.stack .lv{border-radius:12px;padding:14px 18px;border:1px solid}
+.stack .lv h4{font-size:15px;margin-bottom:6px}
+.stack .lv ul{margin:0;padding-left:18px;font-size:14.5px}
+.lv.a{background:var(--server-bg);border-color:#bcd0f3}
+.lv.b{background:var(--edge-bg);border-color:#f2cfae}
+.lv.c{background:var(--human-bg);border-color:#d4c9f3}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin:8px 0}
+.chip{font-family:var(--mono);font-size:12px;padding:3px 8px;border-radius:6px;background:var(--paper);border:1px solid var(--line)}
+
+.foot{color:var(--ink3);font-size:13px;margin-top:40px;border-top:1px solid var(--line);padding-top:16px}
+.srcTable td:first-child{font-family:var(--mono);font-size:12px;color:var(--ink3);white-space:nowrap}
+.srcTable td a{font-family:var(--mono);font-size:12px;word-break:break-all}
+
+/* mobile */
+@media (max-width:1080px){
+  .mapbox,.objwrap{grid-template-columns:minmax(0,1fr)}
+  .panel{position:static}
+}
+@media (max-width:900px){
+  .wrap{grid-template-columns:minmax(0,1fr)}
+  nav.toc{position:fixed;top:var(--hdr);left:0;bottom:0;width:min(86vw,320px);height:auto;background:var(--bg);z-index:60;transform:translateX(-105%);transition:transform .2s;box-shadow:8px 0 30px rgba(0,0,0,.08)}
+  nav.toc.open{transform:none}
+  header.top button.menu{display:inline-block}
+  header.top .cur{display:none}
+  header.top .brand small{display:none}
+  .pcols{grid-template-columns:minmax(0,1fr)}
+  .maphint{display:block}
+  main{padding:20px 16px 90px}
+  .story,.seqbox,.layers,.quiz,.rec{grid-template-columns:minmax(0,1fr)}
+  .g2,.g3,.g4,.trio{grid-template-columns:minmax(0,1fr)}
+  .split{grid-template-columns:minmax(0,1fr)}
+  .split .mid{flex-direction:row;padding:8px 0}
+  .split .mid .arr{transform:rotate(90deg)}
+  .hero h1{font-size:1.6rem}
+  h2{font-size:1.4rem}
+}
+@media print{
+  header.top,nav.toc,.ctrl,.scenes{display:none}
+  .wrap{display:block;padding:0}
+  details{break-inside:avoid}
+  details:not([open])>.body{display:block}
+  .tabpane{display:block;margin-bottom:20px}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="menu" id="menuBtn" aria-label="打开目录">目录</button>
+  <div class="brand">Multica 架构拆解<small>源码 7a12304f · 2026-11-04</small></div>
+  <div class="cur" id="curTitle"></div>
+  <div class="progress" id="prog"></div>
+</header>
+
+<div class="wrap">
+<nav class="toc" id="toc" aria-label="章节导航">
+  <div class="lbl">章节</div>
+  <a href="#top"><span class="n">00</span>一页看懂整体</a>
+  <a href="#s1"><span class="n">01</span>一张工单的一生</a>
+  <a href="#s2"><span class="n">02</span>核心对象：为什么拆开</a>
+  <a href="#s3"><span class="n">03</span>服务端记账，机器干活</a>
+  <a href="#s4"><span class="n">04</span>一次 Run 的完整数据流</a>
+  <a href="#s5"><span class="n">05</span>上下文：当前指令直接给，历史背景按需读</a>
+  <a href="#s6"><span class="n">06</span>多 Agent 怎样组织</a>
+  <a href="#s7"><span class="n">07</span>出故障时谁来兜底</a>
+  <a href="#s8"><span class="n">08</span>权限：平台管身份，机器隔离另设边界</a>
+  <a href="#s9"><span class="n">09</span>扩展：适配层与插件</a>
+  <a href="#s10"><span class="n">10</span>对类 Loop 产品的启示</a>
+  <a href="#s11"><span class="n">11</span>证据、边界与验证</a>
+  <div class="legend">
+    <div style="color:var(--ink3);font-size:12px;letter-spacing:.06em;margin-bottom:4px">标注含义</div>
+    <span class="tag t-fact">源码</span>本提交代码直接可见<br>
+    <span class="tag t-doc">文档</span>仓库内官方文档声明<br>
+    <span class="tag t-infer">推断</span>由代码推导的判断<br>
+    <span class="tag t-demo">示例</span>讲解用虚构情节<br>
+    <span class="tag t-advice">建议</span>对我们产品的看法
+  </div>
+</nav>
+
+<main>
+<!-- ============ 00 HERO ============ -->
+<section class="chapter hero" id="top" data-title="一页看懂整体">
+  <div class="kicker">00 · OVERVIEW</div>
+  <h1>Multica 把“派活”和“干活”拆在两边</h1>
+  <p class="thesis">先抓住服务端的两项核心职责：<b>记账</b>（工单、评论、每次执行的记录都在 PostgreSQL）和<b>派单</b>（把一次执行放进队列）。真正干活的是每台机器上的 <b>daemon</b>：它主动来领单，在本地调用 Claude Code、Codex 这类 AI 编程工具。Agent 干活时，又像一个普通成员一样<b>用 <code>multica</code> 命令行回到工单上</b>读评论、发评论、改状态。人和多个 Agent 的协作，就发生在同一张工单的时间线上。</p>
+
+  <div class="mapbox">
+    <div>
+      <div class="ctrl">
+        <button class="btn pri" id="mapPlay">▶ 播放一次运行</button>
+        <button class="btn" id="mapStep">下一步</button>
+        <button class="btn" id="mapReset">重置</button>
+        <span class="caption" id="mapCap">点击任一模块看它负责什么；或播放一次运行的路径。</span>
+      </div>
+      <div class="maphint">← 图可左右滑动 →</div><div class="svgwrap"><svg id="archMap" viewBox="0 0 1000 560" role="img" aria-label="Multica 整体架构图"></svg></div>
+    </div>
+    <aside class="panel" id="mapPanel" aria-live="polite">
+      <h4>怎么读这张图：四种颜色＝四个“地盘”</h4>
+      <div class="pcols">
+        <div><div class="dt"><span style="color:var(--human)">■</span> 人与客户端</div><p>只看、只改工单；实时事件刷新页面。</p></div>
+        <div><div class="dt"><span style="color:var(--server)">■</span> Go 服务端</div><p>校验、记账、排队、推送；不替本地执行命令。</p></div>
+        <div><div class="dt"><span style="color:var(--data)">■</span> PostgreSQL</div><p>唯一事实源，任务队列也只是其中一张表。</p></div>
+        <div><div class="dt"><span style="color:var(--edge)">■</span> 执行机</div><p>daemon 领单、备目录、跑工具、交回执。</p></div>
+      </div>
+      <p style="color:var(--ink2);margin-top:10px">粉色虚线是理解 Multica 的关键：<b>Agent 本身就是平台 API 的一个调用者</b>，回写走的路和人一样。点任一模块看细节。</p>
+    </aside>
+  </div>
+
+  <div class="grid g3" style="margin-top:18px">
+    <div class="card"><div class="kicker" style="margin:0">洞察 1</div><b>工单（Issue）≠ 运行（Run）</b><p style="font-size:14.5px;color:var(--ink2);margin:6px 0 0">工单是持续的工作；Run 是某个 Agent 的一次执行，代码里叫 <code>task</code>。一张工单可以有很多次 Run，Run 结束不代表工单完成。<a class="cite" data-s="tasksdoc"></a></p></div>
+    <div class="card"><div class="kicker" style="margin:0">洞察 2</div><b>队列就是数据库里的一张表</b><p style="font-size:14.5px;color:var(--ink2);margin:6px 0 0">没有独立的消息队列。入队是 INSERT，领取是带条件的 UPDATE，WebSocket 只负责“叫醒”，掉线了还有轮询兜底。<a class="cite" data-s="claimsql"></a><a class="cite" data-s="arch"></a></p></div>
+    <div class="card"><div class="kicker" style="margin:0">洞察 3</div><b>多 Agent 协作＝评论 @ + 状态交接</b><p style="font-size:14.5px;color:var(--ink2);margin:6px 0 0">本次读到的 Mention / 小队 / 工作流三条路径，都是由评论或状态变化触发 Run，交给中央 TaskService 入队，而不是由一个编排引擎预先排好流程：@ 谁就给谁排一次 Run；小队队长也只是“发一条 @ 评论”的 Agent；工作流靠“状态进入某列→换负责人→排 Run”。<a class="cite" data-s="squadbrief"></a><a class="cite" data-s="workflow"></a></p></div>
+  </div>
+  <p class="callout"><b>阅读提示：</b>下文用一个<span class="tag t-demo">示例</span>团队贯穿全篇：「官网」项目里，PM 林悦把工单 <code>WEB-128 定价页增加年付切换并补 E2E 测试</code> 交给「前端交付小队」。示例只用于串讲，不是运行记录；本文为静态源码分析：未启动 Multica，未通过 Multica 启动 Agent 或调用模型（本材料本身由 Claude 编写）。</p>
+</section>
+
+<!-- ============ 01 STORY ============ -->
+<section class="chapter" id="s1" data-title="一张工单的一生">
+  <div class="kicker">01 · PRODUCT BEHAVIOR</div>
+  <h2>一张工单的一生：8 幕看清人和 Agent 怎么接力</h2>
+  <p class="lead">先不看代码，看用户能看到什么、数据库里多了什么。右侧“账本”是每一幕后数据库里新增或变化的行——Multica 的协作状态，全部能从这几类行里还原。</p>
+
+  <div class="tblwrap"><table>
+    <tr><th>示例角色</th><th>是什么</th><th>跑在哪</th></tr>
+    <tr><td>林悦</td><td>PM，人类成员</td><td>Web 客户端</td></tr>
+    <tr><td>协调员</td><td>小队队长 Agent</td><td>小周的 MacBook · Claude Code 运行时</td></tr>
+    <tr><td>前端 Agent</td><td>小队成员 Agent</td><td>小周的 MacBook · Claude Code 运行时</td></tr>
+    <tr><td>审查 Agent</td><td>工作流「审查」列的处理人</td><td>团队构建机 · Codex 运行时</td></tr>
+    <tr><td>阿杰</td><td>测试同学，工作流「QA」列的处理人</td><td>桌面客户端</td></tr>
+  </table></div>
+
+  <div class="scenes" id="sceneBtns"></div>
+  <div class="ctrl"><button class="btn" id="scPrev">← 上一幕</button><button class="btn pri" id="scNext">下一幕 →</button></div>
+  <div class="story">
+    <div class="card scene" id="sceneCard"></div>
+    <div class="card ledger" id="ledger"></div>
+  </div>
+  <div class="why"><b>看完 8 幕可以注意到：</b>在这条故事线里，没有一个预先定义好的流程去安排谁下一步做什么。推动工作前进的是三种动作——<b>指派</b>、<b>评论里 @</b>、<b>改状态</b>（对话、自动化、定时唤醒等其他入口本文未展开）。每种动作都可能生成一行新的 Run，由对应机器的 daemon 领走。协作的“记忆”就是工单本身：描述、评论线程、状态和每次 Run 的记录。</div>
+</section>
+
+<!-- ============ 02 OBJECTS ============ -->
+<section class="chapter" id="s2" data-title="核心对象：为什么拆开">
+  <div class="kicker">02 · CORE OBJECTS</div>
+  <h2>核心对象：为什么要拆成这么多个</h2>
+  <p class="lead">刚用 Multica 时容易混淆的几组概念，在代码里是严格分开的。拆开的理由都很实际：同一份配置要跑在不同机器上，同一件工作要被执行很多次。点击对象看字段和设计理由。</p>
+  <div class="objwrap">
+    <div class="svgwrap card" style="padding:6px;overflow-x:auto"><svg id="objMap" viewBox="0 0 760 470" style="display:block;width:100%;min-width:560px;height:auto" role="img" aria-label="核心对象关系图"></svg></div>
+    <aside class="panel" id="objPanel"><h4>点一个对象</h4><div class="sub">四组最容易混的概念</div>
+      <p><b>Issue vs Run</b>：一件工作 vs 一次执行。<br><b>Agent vs Runtime</b>：身份配置 vs 执行它的机器+工具。<br><b>Runtime vs Daemon</b>：一台机器上的一个 daemon，会为每个工作区、每种工具各注册一个 Runtime。<br><b>Squad vs Agent</b>：小队是“由队长分派”的负责人，不是新的 Agent。</p></aside>
+  </div>
+  <div class="trio">
+    <div class="card"><h4 class="w">为什么这样设计</h4><p>Agent 只是配置（指令、模型、Skill、绑定哪个 Runtime、最大并发），不常驻进程；被触发时才生成一行 Run。这样同一个 Agent 可以同时处理多张工单，而每次执行都有独立的状态、会话、目录和费用记录。</p></div>
+    <div class="card"><h4 class="h">真实怎么工作</h4><p>入队时，Run 的 <code>runtime_id</code> 直接取自 Agent <b>当前</b>绑定的 Runtime；没有绑定就拒绝入队。<a class="cite" data-s="enqueue"></a> 负责人是多态的：<code>assignee_type</code> 可以是 member / agent / squad。<a class="cite" data-s="arch"></a></p></div>
+    <div class="card"><h4 class="b">边界</h4><p>一个 Agent 同一时刻只绑定一个 Runtime，Run 生成时就定了在哪台机器上跑。它不是“全团队机器池里自动挑一台空闲的”。换绑后，旧 Runtime 上排队的 Run 不会被新机器领取。<a class="cite" data-s="claimsql"></a></p></div>
+  </div>
+</section>
+
+<!-- ============ 03 SPLIT ============ -->
+<section class="chapter" id="s3" data-title="服务端记账，机器干活">
+  <div class="kicker">03 · SERVER vs EDGE</div>
+  <h2>服务端记账，机器干活</h2>
+  <p class="lead">Multica 的分工可以用一句话记住：<b>服务端知道“该做什么、做到哪了”，执行机知道“怎么做、在哪做”。</b>两边用一组很窄的接口交接：领单、开始、上报进度/消息、终态回执。</p>
+  <div class="split">
+    <div class="side s"><h4>Go 服务端（+ PostgreSQL）</h4><ul>
+      <li>工作区、成员、权限、Agent 配置、Skill、项目资源</li>
+      <li>工单、评论、状态、收件箱、活动时间线</li>
+      <li>任务队列：入队、领取事务、并发上限、去重与合并</li>
+      <li>为每次领取签发<b>任务令牌</b>（<code>mat_</code> 前缀）</li>
+      <li>完成/失败落库、自动重试、超时与失联清扫</li>
+      <li>两条 WebSocket：推给客户端的事件、连 daemon 的唤醒与 RPC</li>
+    </ul></div>
+    <div class="mid"><span class="arr">⇄</span>领单 · 开始<br>进度 · 消息<br>终态回执</div>
+    <div class="side e"><h4>执行机上的 daemon</h4><ul>
+      <li>发现本机 AI 编程工具，为每个工作区×工具注册 Runtime、发心跳</li>
+      <li>本地并发槽位：先占槽再领单</li>
+      <li>准备工作目录（新建 / 复用上次 / git worktree / 本地目录锁）</li>
+      <li>写入 Agent 简报文件、拼 prompt、注入任务令牌</li>
+      <li>通过适配层启动 CLI，收流式事件，监控卡死</li>
+      <li>终态回执先写本地文件，再上报，失败可重放</li>
+    </ul></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><b>部署形态</b> <span class="tag t-fact">源码</span><p style="font-size:14.5px;color:var(--ink2);margin:6px 0 0">自托管 compose 只有三个服务：<code>postgres</code>（pgvector/pg17 镜像）、<code>backend</code>（Go）、<code>frontend</code>（Next.js）。<a class="cite" data-s="compose"></a> 没有独立的消息队列或调度服务；Redis 是可选的，多实例时才用于跨实例事件和缓存。<a class="cite" data-s="arch"></a> daemon 不在服务端部署，它装在每台执行机上（桌面端也会托管一个）。</p></div>
+    <div class="card"><b>数据边界</b> <span class="tag t-doc">文档</span><p style="font-size:14.5px;color:var(--ink2);margin:6px 0 0">代码目录、工具自己的登录凭据留在执行机，服务端不替本地执行命令，也不上传整个目录。但服务端保存评论、执行记录和 Agent 主动写回的内容；Agent 的 <code>custom_env</code> 和 MCP 配置<b>存在服务端</b>，执行时下发。<a class="cite" data-s="howworks"></a><a class="cite" data-s="daemondoc"></a></p></div>
+  </div>
+  <div class="why"><b>为什么这样设计：</b>AI 编程工具需要真实的仓库、依赖、云 CLI 和登录态，这些在用户机器上最完整。让机器“主动来领”而不是服务端“推过去执行”，执行机就不需要暴露入口，内网机器也能接入；服务端则可以保持无状态、只靠数据库协调。</div>
+  <div class="limit"><b>边界：</b>这套分工默认把执行机当作可信环境，隔离边界交给部署方（专用系统用户、容器或虚拟机，见第 08 节）。如果把它搬到办公场景，执行机上的“工具”就不再是编程 CLI，数据边界也要重新划。</div>
+</section>
+
+<!-- ============ 04 DATAFLOW ============ -->
+<section class="chapter" id="s4" data-title="一次 Run 的完整数据流">
+  <div class="kicker">04 · EXECUTION DATAFLOW</div>
+  <h2>一次 Run 的完整数据流：10 步</h2>
+  <p class="lead">以第 4 幕“前端 Agent 被 @ 后开始干活”为例。点击箭头或用按钮步进，右侧给出每一步的关键规则和源码位置。</p>
+  <div class="ctrl"><button class="btn" id="sqPrev">← 上一步</button><button class="btn pri" id="sqNext">下一步 →</button><button class="btn" id="sqPlay">▶ 自动播放</button></div>
+  <div class="seqbox">
+    <div><div class="maphint">← 时序图可左右滑动 →</div><div class="seqsvg"><svg id="seqSvg" role="img" aria-label="执行时序图"></svg></div></div>
+    <div class="card seqdetail" id="seqDetail"></div>
+  </div>
+
+  <h3>Run 的状态机</h3>
+  <p>点击状态看它什么时候进入、怎么超时。注意：<b>自动重试不是把 failed 改回 queued，而是插入一行新的 Run</b>（<code>attempt+1</code>，<code>parent_task_id</code> 指向原行），所以每次尝试都留痕。<a class="cite" data-s="retrysql"></a></p>
+  <div class="objwrap">
+    <div class="card" style="padding:6px;overflow-x:auto"><svg id="fsm" viewBox="0 0 820 300" style="display:block;width:100%;min-width:560px;height:auto" role="img" aria-label="Run 状态机"></svg></div>
+    <aside class="panel" id="fsmPanel"><h4>点击一个状态</h4><p style="color:var(--ink2)">本次读到的关键状态变化都是<b>带前置条件的 UPDATE</b>：比如完成只对 <code>status='running'</code> 的行生效，领取只对 <code>status='queued'</code> 生效。旧请求晚到时更新 0 行，自然失效。</p></aside>
+  </div>
+
+  <details><summary>看源码：领取 SQL 的核心条件（agent.sql）</summary><div class="body">
+<pre><span class="c">-- ClaimAgentTask（节选）</span>
+<span class="k">UPDATE</span> agent_task_queue
+<span class="k">SET</span> status = 'dispatched', dispatched_at = now(),
+    prepare_lease_expires_at = now() + make_interval(secs =&gt; @prepare_lease_secs)
+<span class="k">WHERE</span> id = (
+  <span class="k">SELECT</span> atq.id <span class="k">FROM</span> agent_task_queue atq
+  <span class="k">WHERE</span> atq.agent_id = @agent_id <span class="k">AND</span> atq.runtime_id = @runtime_id
+    <span class="k">AND</span> atq.status = 'queued'
+    <span class="k">AND EXISTS</span> (... a.runtime_id = atq.runtime_id   <span class="c">-- 换绑后旧行不可领</span>
+                 <span class="k">AND</span> r.status = 'online' <span class="k">AND</span> 心跳足够新 ...)
+    <span class="k">AND NOT EXISTS</span> (... 同一 agent 在同一 issue 上已有
+                     dispatched/running/waiting_local_directory 的 Run ...)
+  <span class="k">ORDER BY</span> atq.priority <span class="k">DESC</span>, atq.created_at, atq.id
+  <span class="k">LIMIT</span> 1 <span class="k">FOR UPDATE SKIP LOCKED</span>)
+<span class="k">RETURNING</span> *;</pre>
+  <p>这一条语句同时保证了：只领本 Runtime 的、Runtime 在线、同一 Agent 对同一工单串行、不同 Agent 对同一工单可以并行、多个领取者互不阻塞。<a class="cite" data-s="claimsql"></a></p>
+  </div></details>
+  <details><summary>看源码：WS 优先领取，结果不确定时先停一拍再走 HTTP（wsrpc.go）</summary><div class="body">
+<pre><span class="k">if</span> errors.Is(err, errWSRPCUncertain) {
+    <span class="c">// The WS claim may have committed server-side; claiming the same
+    // free slots again over HTTP immediately would double-claim. Skip
+    // this cycle, then force one HTTP batch claim after the server-side
+    // execution budget plus response grace has elapsed.</span>
+    d.wsClaimHTTPFallbackAfter.Store(time.Now().Add(delay).UnixNano())
+    <span class="k">return</span> claimTasksResult{}, <span class="k">nil</span>
+}</pre>
+  <p>“没发出去”可以立刻改走 HTTP；“发出去了但没收到回复”不能，因为服务端可能已经领取成功。后者交给服务端的“已派发但未开始”回收机制。<a class="cite" data-s="wsfirst"></a><a class="cite" data-s="reclaim"></a></p>
+  </div></details>
+</section>
+
+<!-- ============ 05 CONTEXT ============ -->
+<section class="chapter" id="s5" data-title="上下文：当前指令直接给，历史背景按需读">
+  <div class="kicker">05 · CONTEXT</div>
+  <h2>上下文：当前指令直接给，历史背景按需读</h2>
+  <p class="lead">以普通的“工单指派 / 评论触发”路径为例（对话、自动化等其他入口本次未展开）：Multica 不会把工单描述和整条评论线程都拼进 prompt。<b>本轮要处理的内容直接内联</b>——触发评论原文、并入本轮的其他评论原文、工作流交接说明、续接时的变化提示；<b>历史背景则交给 Agent 用命令自己去读</b>。再加上写在工作目录里的稳定“岗位说明”，一共四层。点击左侧四层，右侧看示意 prompt。</p>
+  <div class="ctrl"><button class="btn on" id="pvFirst">首次运行（被 @）</button><button class="btn" id="pvResume">续接运行（第 7 幕）</button></div>
+  <div class="layers">
+    <div id="layerList"></div>
+    <div><div class="promptview" id="promptView"></div><p style="font-size:13px;color:var(--ink3);margin-top:6px"><span class="tag t-demo">示例</span>据 <code>prompt.go</code> 中真实模板改写缩短，ID 用示例值；实际文本为英文。<a class="cite" data-s="commentprompt"></a></p></div>
+  </div>
+  <div class="trio">
+    <div class="card"><h4 class="w">为什么这样设计</h4><p>工单可能有上百条评论。全量塞进去既贵又会淹没本轮指令。稳定内容放进工作目录里的简报文件（Claude Code 读 <code>CLAUDE.md</code>，Codex 读 <code>AGENTS.md</code>），每轮变化的内容<b>追加</b>在 prompt 末尾，这样续接会话时前缀能命中模型的提示缓存。<a class="cite" data-s="brief"></a><a class="cite" data-s="prompt"></a></p></div>
+    <div class="card"><h4 class="h">真实怎么工作</h4><p>续接同一会话时，服务端比较“上次 Run 开始时的工单快照”和现在，告诉 Agent 哪些字段变了、之后新增了几条评论；比不了就不报，让 Agent 照常去读。会话只在<b>同一 Agent、同一工单、同一 Runtime</b> 上续接。<a class="cite" data-s="resume"></a></p></div>
+    <div class="card"><h4 class="b">边界</h4><p>本次读到的主链路证明的是“共享记录 + 快照差异 + 引用指针”。至于是否另有企业级语义治理（统一事实库、结论版本、按权限检索、本体图谱），本次没有核验，<b>不能据此断言有或没有</b>。在这条主链路里，历史读没读、读得对不对，靠 prompt 里的工作规范约束 Agent；系统记录的是“哪些评论投递进了本轮”。<a class="cite" data-s="receipt"></a></p></div>
+  </div>
+  <details><summary>看源码：会话只在同一 Runtime 上续接（handler/daemon.go）</summary><div class="body">
+<pre><span class="c">// Non-rerun follow-up on the same issue: resume the most recent
+// (agent, issue) session so the agent keeps the issue's conversation
+// context across turns.</span>
+<span class="k">if</span> prior, err := h.Queries.GetLastTaskSession(...); err == <span class="k">nil</span> &amp;&amp; prior.SessionID.Valid {
+    <span class="k">if</span> prior.RuntimeID == task.RuntimeID {
+        resp.PriorSessionID = prior.SessionID.String
+        resumeAnchor = newResumedRunAnchor(prior.Status, prior.StartedAt, prior.IssueSnapshot)
+    }
+    <span class="k">if</span> prior.WorkDir.Valid { resp.PriorWorkDir = prior.WorkDir.String }
+}</pre>
+  <p>会话文件（如 Claude/Codex 的对话记录）存在执行机本地，换机器就读不到，所以只在同一 Runtime 上续接；工作目录指针则照常给出，daemon 找不到时会新建。<a class="cite" data-s="resume"></a></p>
+  </div></details>
+</section>
+
+<!-- ============ 06 MULTI-AGENT ============ -->
+<section class="chapter" id="s6" data-title="多 Agent 怎样组织">
+  <div class="kicker">06 · MULTI-AGENT</div>
+  <h2>多 Agent 怎样组织：三种机制，同一条队列</h2>
+  <p class="lead">Multica 有三种让多个 Agent 协作的方式。它们决定的是“<b>谁</b>下一步被排一次 Run”，底层执行路径完全一样：入队 → daemon 领取 → 执行 → 回写评论。</p>
+  <div class="tabs" id="maTabs">
+    <button class="on" data-t="mention">@ 提及：点名</button>
+    <button data-t="squad">小队：让队长分派</button>
+    <button data-t="workflow">工作流：按状态交接</button>
+  </div>
+
+  <div class="tabpane on" id="tp-mention">
+    <div class="flowsvg"><svg id="fMention" viewBox="0 0 860 230"></svg></div>
+    <div class="trio">
+      <div class="card"><h4 class="w">规则</h4><p>评论里用 mention 链接 @ 了哪个 Agent，就给它排一次 Run。<b>不同 Agent 可同时处理同一工单</b>；同一 Agent 在同一工单上严格串行。<a class="cite" data-s="claimsql"></a></p></div>
+      <div class="card"><h4 class="h">合并而不是丢弃</h4><p>某 Agent 在这张工单上已有一个<b>还没被领走</b>的 Run 时，新评论会并进去：新评论成为触发评论，旧的列为“也要处理”。已经开始执行的，新评论登记为待投递输入。<a class="cite" data-s="merge"></a></p></div>
+      <div class="card"><h4 class="b">边界</h4><p>纯文本 “@名字” 不会触发；插件代发的评论也不会触发 @。<a class="cite" data-s="squaddoc"></a><a class="cite" data-s="pluginsdk"></a> 多个 Agent 同时改同一个 Git 仓库资源时，默认各用 worktree/分支，合并由人决定；本地目录原地模式下则排队串行。</p></div>
+    </div>
+  </div>
+
+  <div class="tabpane" id="tp-squad">
+    <div class="flowsvg"><svg id="fSquad" viewBox="0 0 860 260"></svg></div>
+    <p>工单指派给小队后，<b>只给队长排一次 Run</b>。队长被领取时，服务端在它的指令后面追加三段：硬编码的「小队工作规范」、带可复制 mention 链接的「花名册」、用户写的「小队指令」。规范要求队长：读工单 → 用 @ 派活 → 记录评估 <code>multica squad activity</code> → <b>派完就停，不亲自动手</b>。<a class="cite" data-s="squadbrief"></a></p>
+    <h3 style="margin-top:14px">小测：哪条评论会再次唤醒队长？</h3>
+    <div class="quiz">
+      <div class="opts" id="quizOpts"></div>
+      <div class="card ans" id="quizAns">选左侧一条评论。</div>
+    </div>
+    <div class="limit"><b>要分清两层：</b>“队长怎么分派”是<b>写在 prompt 里的策略</b>，由 LLM 执行，系统并不能阻止队长自己写代码；“队长什么时候被叫醒、会不会重复入队”才是<b>代码里的触发规则</b>（评论路由、自触发抑制、待处理去重）。<a class="cite" data-s="squadwake"></a> 小队不会合成新 Agent，也不提高并发。<a class="cite" data-s="squaddoc"></a></div>
+  </div>
+
+  <div class="tabpane" id="tp-workflow">
+    <div class="flowsvg"><svg id="fWorkflow" viewBox="0 0 860 250"></svg></div>
+    <div class="trio">
+      <div class="card"><h4 class="w">规则</h4><p>工作流给项目的每一列配置“进入时交给谁”：不交接 / 交给 Agent / 交给成员。普通的状态变更进入某列时，负责人被改写为该列处理人；若是 Agent，就用这一步的说明作为交接说明排一次 Run。<a class="cite" data-s="workflow"></a></p></div>
+      <div class="card"><h4 class="h">谁推动下一步</h4><p><b>Run 结束不会自动推进状态。</b>由负责这一步的人或 Agent 改状态；Agent 改状态同样触发下一列的交接。“完成后进入/打回到哪一列”只是写给 Agent 的说明。<a class="cite" data-s="workflowdoc"></a></p></div>
+      <div class="card"><h4 class="b">防串步</h4><p>每个由交接启动的 Run 记着自己负责的步骤（<code>workflow_step</code>，重试时继承）。若工单已被别人移走，这个 Run 再改状态会被拒绝，避免覆盖人的决定。<a class="cite" data-s="workflow"></a><a class="cite" data-s="retrysql"></a></p></div>
+    </div>
+    <div class="limit"><b>边界：</b>这是“状态驱动的负责人交接”：每张工单同一时刻只有一个负责人，下一步走向由“完成后进入 / 打回时退回到”等配置写给 Agent，再由 Agent 或人改状态来触发。本次没有看到它被用作任意节点调度的 DAG 引擎；更复杂的跳转能力以官方文档和代码为准。<a class="cite" data-s="workflowdoc"></a></div>
+  </div>
+</section>
+
+<!-- ============ 07 RECOVERY ============ -->
+<section class="chapter" id="s7" data-title="出故障时谁来兜底">
+  <div class="kicker">07 · RECOVERY</div>
+  <h2>出故障时谁来兜底</h2>
+  <p class="lead">分布式执行的难点不在“跑起来”，而在“半路出事以后数据库里的状态还对不对”。从本次读到的主链路看，Multica 的做法是：领取、准备、执行这些可能中断的环节用<b>租约/心跳</b>判断死活，关键状态变更用<b>条件更新</b>防止旧请求覆盖新状态。选一个故障看过程。</p>
+  <div class="rec">
+    <div class="opts" id="recOpts"></div>
+    <div class="card" id="recCard"></div>
+  </div>
+  <div class="grid g2" style="margin-top:14px">
+    <div class="card"><b>自动重试的范围</b> <span class="tag t-fact">源码</span>
+      <div class="tblwrap"><table>
+        <tr><th>失败原因</th><th>最多执行次数</th></tr>
+        <tr><td>运行时离线 / daemon 重启回收 / 平台超时 / Codex 停滞 / Skill 包下载失败</td><td>默认 2 次</td></tr>
+        <tr><td>模型服务网络中断 <code>provider_network</code></td><td>3 次，最后一次约延迟 5 秒</td></tr>
+        <tr><td>鉴权、额度、配置、模型不可用、上下文溢出等</td><td>不自动重试</td></tr>
+      </table></div>
+      <p style="font-size:13.5px;color:var(--ink2)">自动化的“仅运行”模式不自动重试。<a class="cite" data-s="retryreasons"></a><a class="cite" data-s="tasksdoc"></a></p>
+    </div>
+    <div class="card"><b>重试 Run 继承什么</b> <span class="tag t-fact">源码</span>
+      <ul style="font-size:14.5px;padding-left:18px;margin:8px 0">
+        <li><b>同一个 Runtime</b>（复制 <code>runtime_id</code>），不会换到别的机器</li>
+        <li><b>同一个工作目录</b>（复制 <code>work_dir</code>），已写的文件尽量保留</li>
+        <li>会话一般保留；Codex 停滞类失败会清掉会话、强制新会话</li>
+        <li>触发评论、归因（谁发起、谁负责）、工作流步骤</li>
+      </ul>
+      <a class="cite" data-s="retrysql"></a><a class="cite" data-s="retry"></a>
+    </div>
+  </div>
+  <div class="limit"><b>不要误读成“自动无缝接管”：</b>①重试固定在原 Runtime，机器长期不回来，Run 最终失败，需要人换绑 Agent 后重新触发；②会话和目录都在执行机本地，换机器只能从新会话、新目录开始，靠工单记录接续；③平台的幂等只覆盖<b>它自己的状态行和评论投递回执</b>。Agent 在一次被中断的 Run 里已经做过的外部动作（git push、开 PR、调第三方 API、发消息），重试时可能再做一遍，平台无法撤销或去重。</div>
+</section>
+
+<!-- ============ 08 PERMISSIONS ============ -->
+<section class="chapter" id="s8" data-title="权限：平台管身份，机器隔离另设边界">
+  <div class="kicker">08 · PERMISSIONS</div>
+  <h2>权限：平台管身份，机器隔离另设边界</h2>
+  <p class="lead">Multica 的权限要分两层看：<b>Agent 以谁的身份调用平台 API</b>，这一层管得很细；<b>Agent 进程在机器上能碰到什么</b>，官方把边界定在 daemon 的操作系统用户上，默认不提供文件系统沙箱，建议用专用用户、容器或虚拟机另设边界。</p>
+  <div class="stack">
+    <div class="lv a"><h4>第一层 · 平台身份（服务端强制）<span class="tag t-fact" style="margin-left:8px">源码</span></h4><ul>
+      <li>每次领取签发一个 <code>mat_</code> 任务令牌，daemon 作为 <code>MULTICA_TOKEN</code> 注入 Agent 进程；daemon 拒绝用自己的凭据兜底。<a class="cite" data-s="inject"></a></li>
+      <li>服务端校验令牌后，用令牌绑定的（用户、Agent、任务、工作区）<b>覆盖</b>请求头，客户端伪造的 <code>X-Agent-ID</code> 无效；工作区不匹配直接拒绝；仅限人类的接口拒绝任务令牌。<a class="cite" data-s="auth"></a></li>
+      <li>每个 Run 记录发起人和问责人（originator / accountable）；找不到明确的人时可配置为拒绝入队。<a class="cite" data-s="enqueue"></a></li>
+      <li>成员能否 @ 某个 Agent 或小队，取决于他有没有权运行这个 Agent（小队看队长）。<a class="cite" data-s="squaddoc"></a></li>
+    </ul></div>
+    <div class="lv b"><h4>第二层 · 执行机（默认不提供文件系统沙箱，边界是 OS 用户）<span class="tag t-doc" style="margin-left:8px">文档</span></h4><ul>
+      <li>官方安全模型把权限边界定在 <b>daemon 所属的操作系统用户</b>：默认路径下，Run 能做该用户能做的事，例如读 SSH 私钥、改 shell 配置、访问网络。Multica 不保证文件系统沙箱。<a class="cite" data-s="security"></a></li>
+      <li>无人值守执行，审批被自动应答：Claude Code 以 <code>--permission-mode bypassPermissions</code> 启动，Codex 默认 <code>danger-full-access</code>。例外：Windows 上若显式开启 Codex 原生沙箱，Multica 会尊重该设置，保留 <code>workspace-write</code>。<a class="cite" data-s="claudeperm"></a><a class="cite" data-s="security"></a></li>
+      <li>平台自带的隔离主要是“便利性”的：Run 通常有自己的工作目录（但本地目录原地模式共享真实目录、靠路径锁串行；同一 Agent 在同一工单上的后续 Run 会复用上次目录）、独立的 Codex 状态目录、绑定到 Run 的 API 令牌。<a class="cite" data-s="resourcesdoc"></a><a class="cite" data-s="reuse"></a></li>
+      <li>官方建议把边界放在 daemon 外面：专用系统用户 → 容器 → 虚拟机。</li>
+    </ul></div>
+    <div class="lv c"><h4>插件 · 两道权限取交集<span class="tag t-doc" style="margin-left:8px">文档</span></h4><ul>
+      <li>插件界面跑在 <code>sandbox="allow-scripts"</code> 的 iframe 里；每次调用 = 管理员授予的 scope ∩ 当前用户本来就能做的事。<a class="cite" data-s="pluginsdk"></a></li>
+      <li>插件代发的评论署名为用户，且不触发 @ 派发——插件不能顺手启动 Agent。</li>
+    </ul></div>
+  </div>
+  <div class="why"><b>为什么默认不做文件系统沙箱：</b>官方的理由是，Agent 要装依赖、跑构建、用 <code>gh</code>/<code>aws</code>/<code>kubectl</code>，不完整的沙箱会以难以排查的方式破坏这些工作，又挡不住“读到凭据后通过网络发出去”。<a class="cite" data-s="security"></a> <span class="tag t-infer">推断</span>这对开发者团队是合理取舍；面向非技术员工、涉及企业数据的产品，执行层隔离必须是产品的一部分，而不是部署建议。</div>
+</section>
+
+<!-- ============ 09 EXTENSION ============ -->
+<section class="chapter" id="s9" data-title="扩展：适配层与插件">
+  <div class="kicker">09 · EXTENSION</div>
+  <h2>扩展：三个插口</h2>
+  <div class="grid g3" style="margin-top:14px">
+    <div class="card"><b>① 执行器适配层</b> <span class="tag t-fact">源码</span>
+      <p style="font-size:14.5px;color:var(--ink2)">所有 AI 工具实现同一个接口：<code>Execute(ctx, prompt, opts) → Session</code>。Session 吐出统一的 7 类消息（文本、思考、工具调用、工具结果、状态、错误、日志），最后给一个 Result（状态、输出、会话 ID、按模型的用量）。<a class="cite" data-s="backend"></a></p>
+      <p style="font-size:14.5px;color:var(--ink2)">接入协议各不相同：Claude 走 stream-json，Codex 走 app-server，DSH 走自有版本化 JSONL，多家走 ACP。<a class="cite" data-s="claude"></a><a class="cite" data-s="codex"></a><a class="cite" data-s="dsh"></a></p>
+    </div>
+    <div class="card"><b>② Skill 与 MCP</b> <span class="tag t-doc">文档</span>
+      <p style="font-size:14.5px;color:var(--ink2)">Skill 是挂在 Agent 上的“这类工作怎么做”的说明包，领取时随任务下发，由 daemon 写入本次执行环境；下载失败属于可自动重试的故障。<a class="cite" data-s="tasksdoc"></a></p>
+      <p style="font-size:14.5px;color:var(--ink2)">MCP 配置挂在 Agent 上；另外每个 Run 会按<b>发起人</b>生成一份“已连接应用”叠加配置，同一个 Agent 被不同人触发，能用的外部应用可能不同。<a class="cite" data-s="enqueue"></a></p>
+    </div>
+    <div class="card"><b>③ 插件</b> <span class="tag t-fact">源码</span>
+      <p style="font-size:14.5px;color:var(--ink2)">插件和宿主只有三种关系：<b>Action</b>（插件调平台）、<b>Hook</b>（平台调插件，可由界面、手动、Agent、事件、定时触发，定时最短 5 分钟）、<b>Resource</b>（静态贡献，如 Skill 文本）。界面挂在工单面板、侧栏或弹窗三个固定位置；scope 是封闭列表。<a class="cite" data-s="manifest"></a></p>
+    </div>
+  </div>
+  <div class="chips" aria-label="本提交内置的 provider">
+    <span class="chip">claude</span><span class="chip">codex</span><span class="chip">codebuddy</span><span class="chip">copilot</span><span class="chip">opencode</span><span class="chip">codearts</span><span class="chip">deveco</span><span class="chip">openclaw</span><span class="chip">hermes</span><span class="chip">pi</span><span class="chip">cursor</span><span class="chip">kimi</span><span class="chip">reasonix</span><span class="chip">dsh</span><span class="chip">dim</span><span class="chip">kiro</span><span class="chip">antigravity</span><span class="chip">qoder</span><span class="chip">traecli</span><span class="chip">grok</span><span class="chip">qwen</span><span class="chip">qwenpaw</span><span class="chip">mcode</span><span class="chip">devin</span><span class="chip">muse</span><span class="chip">…</span>
+  </div>
+  <p style="font-size:13.5px;color:var(--ink3)">以上为 <code>agent.New</code> 中可见的 provider 分支（节选），不代表每一种都经过同等程度的验证。<a class="cite" data-s="providers"></a></p>
+  <div class="why"><b>为什么值得注意：</b>适配层把“协作平台”和“具体的 Agent 引擎”解耦了。平台不关心模型怎么调工具，只要求执行器能接收 prompt、按统一格式吐事件、给出会话 ID 以便续接。<span class="tag t-infer">推断</span>换成办公类执行器（文档、表格、内部系统）在接口层面是可行的，难点会转移到工作目录、会话续接和权限隔离这些“daemon 侧”的假设上——它们目前都是为代码仓库设计的。</div>
+</section>
+
+<!-- ============ 10 IMPLICATIONS ============ -->
+<section class="chapter" id="s10" data-title="对类 Loop 产品的启示">
+  <div class="kicker">10 · IMPLICATIONS</div>
+  <h2>对类 Loop 产品的启示</h2>
+  <p class="lead"><span class="tag t-advice">建议</span>本节是基于公开 Multica 源码的判断，<b>不代表 Loop 的实现</b>，也不能替代对 Loop 私有改造的核实。是否采纳由你决定。</p>
+  <div class="grid g2">
+    <div class="card"><b style="color:var(--fact)">值得借鉴的结构</b>
+      <ul style="font-size:14.5px;padding-left:18px">
+        <li><b>工作项与执行记录分离</b>：一件事多次执行、多人多 Agent 接力，天然可追溯，费用和失败也能按次统计。</li>
+        <li><b>数据库即队列 + 条件更新</b>：组件少、状态唯一，重复回执、晚到请求都靠前置条件自然失效。</li>
+        <li><b>执行端主动领单</b>：数据和凭据留在执行机，内网也能接入。</li>
+        <li><b>Agent 是平台 API 的普通调用者</b>：权限、审计、通知、实时刷新全部复用人的那一套。</li>
+        <li><b>协作即评论</b>：路由信号（@）和工作记录是同一个东西，人随时可以插话、纠偏。</li>
+        <li><b>当前指令内联 + 历史按需读取 + 差异提示</b>：控制成本，同时不丢新输入。</li>
+      </ul></div>
+    <div class="card"><b style="color:#8a5a12">需要自己补的部分</b>
+      <ul style="font-size:14.5px;padding-left:18px">
+        <li><b>执行隔离</b>：Multica 默认交给部署方（专用用户/容器/虚拟机）；办公场景数据更敏感，可能需要产品内置。</li>
+        <li><b>上下文治理</b>：本次主链路只看到工单内的共享记录、快照差异与引用；团队级知识沉淀、结论版本、按权限检索是否存在需另行核验，类 Loop 产品要自己想清楚。</li>
+        <li><b>编排的可控性</b>：小队分派靠 LLM 遵守 prompt，结果不可预测时只能靠人看时间线纠正。</li>
+        <li><b>跨机接续</b>：会话和目录绑定机器，换机等于冷启动。</li>
+        <li><b>外部副作用</b>：重试可能重复执行外部动作，需要业务侧幂等或人工确认点。</li>
+        <li><b>非编程执行器</b>：工作目录、分支、worktree 等概念都假设产出是代码。</li>
+      </ul></div>
+  </div>
+  <h3>可以拿去问 POC 供应商的问题</h3>
+  <div class="tblwrap"><table>
+    <tr><th>#</th><th>问题</th><th>Multica 的参照答案</th></tr>
+    <tr><td>1</td><td>一件工作和一次 Agent 执行，在你们的数据模型里是不是两个对象？失败重试会不会覆盖原记录？</td><td>两张表；重试插新行并指向父行</td></tr>
+    <tr><td>2</td><td>任务派发靠什么保证不重复执行？连接中断时谁负责恢复？</td><td>条件 UPDATE + SKIP LOCKED；WS 不确定就暂停后走 HTTP；服务端回收已派发未开始的任务</td></tr>
+    <tr><td>3</td><td>Agent 写回结果时，用的是谁的身份？能否冒充别的 Agent 或用户？</td><td>每次执行一个绑定四元组的令牌，服务端覆盖请求头</td></tr>
+    <tr><td>4</td><td>多个 Agent 协作时，谁决定下一步？这个决定是代码规则还是模型判断？</td><td>@/状态交接是代码规则；小队分派是模型判断</td></tr>
+    <tr><td>5</td><td>Agent 每次能看到哪些上下文？新评论如何保证被看到？</td><td>简报文件 + 内联本轮评论 + 历史按需读取；投递回执记录哪些评论进了本轮</td></tr>
+    <tr><td>6</td><td>执行环境的隔离边界在哪？Agent 能读到执行机上的哪些凭据？</td><td>默认无文件系统沙箱，边界是 daemon 的系统用户；隔离靠部署方</td></tr>
+    <tr><td>7</td><td>执行机掉线后，任务能否换一台机器继续？会话和中间产物怎么办？</td><td>不能自动换机；会话与目录留在原机</td></tr>
+  </table></div>
+</section>
+
+<!-- ============ 11 EVIDENCE ============ -->
+<section class="chapter" id="s11" data-title="证据、边界与验证">
+  <div class="kicker">11 · EVIDENCE</div>
+  <h2>证据、边界与验证</h2>
+  <div class="grid g2">
+    <div class="card"><b>做了什么</b>
+      <ul style="font-size:14.5px;padding-left:18px">
+        <li>在本地克隆 <code>main@7a12304f</code>（提交时间 2026-11-03 23:06 +08:00）上静态阅读服务端调度、daemon、适配层、提示词装配、工作流与小队代码，以及仓库内中文文档。</li>
+        <li>所有源码链接固定到该提交和行号；行号范围已用脚本核对未越界，并记录文件哈希（见 <code>sources.md</code>）。</li>
+        <li>页面渲染与交互用本机 Chrome + Playwright 做了 50 项检查（桌面/手机宽度、导航锚点、步进交互、控制台错误、措辞回归），并人工查看了关键截图。</li>
+      </ul></div>
+    <div class="card"><b>没做什么</b>
+      <ul style="font-size:14.5px;padding-left:18px">
+        <li>没有启动 Multica、没有连接 daemon、没有通过 Multica 启动 Agent 或调用模型；没有运行上游测试。本材料本身由 Claude 阅读源码后编写。</li>
+        <li>没有核验 Multica Cloud 的线上行为、定价与可用范围。</li>
+        <li>没有核验 Loop 是否基于 Multica 或做了哪些改造——本文不能用作 Loop 的事实依据。</li>
+        <li>大文件（如 <code>daemon.go</code> 1.1 万行、<code>task.go</code> 8 千行）只精读了与主链路相关的段落，边角路径（对话、频道、自动化、快速创建）未逐一展开。</li>
+      </ul></div>
+  </div>
+  <h3>源码与文档索引</h3>
+  <div class="tblwrap"><table class="srcTable" id="srcTable"><tr><th>键</th><th>内容</th><th>位置（固定提交）</th></tr></table></div>
+  <div class="foot">本页为单文件 HTML，无外部依赖，可离线以 file:// 打开；源码链接需要网络。整理日期 2026-11-04。示例团队、人物与工单编号均为虚构。</div>
+</section>
+</main>
+</div>
+
+<script>
+/*SRC-BEGIN*/
+const SRC = {
+ "arch":{"p":"apps/docs/content/docs/developers/architecture.mdx","a":1,"b":131,"t":"整体组成、后端分层、两条实时通道、一次执行的代码路径","k":"doc"},
+ "howworks":{"p":"apps/docs/content/docs/how-multica-works.zh.mdx","a":11,"b":43,"t":"一次运行的路径与数据边界（中文文档）","k":"doc"},
+ "daemondoc":{"p":"apps/docs/content/docs/daemon-runtimes.zh.mdx","a":10,"b":30,"t":"守护进程与运行时的区分、执行位置与数据边界","k":"doc"},
+ "tasksdoc":{"p":"apps/docs/content/docs/tasks.zh.mdx","a":12,"b":185,"t":"运行的状态、超时、自动重试与手动重试规则","k":"doc"},
+ "compose":{"p":"docker-compose.selfhost.yml","a":36,"b":249,"t":"自托管部署的三个服务","k":"code"},
+ "enqueue":{"p":"server/internal/service/task.go","a":1285,"b":1418,"t":"按负责人入队：绑定运行时、归因、MCP 叠加、去重、先广播后唤醒","k":"code"},
+ "claim":{"p":"server/internal/service/task.go","a":3612,"b":3770,"t":"领取事务：锁 Agent、每 Agent 与每 Runtime 并发上限","k":"code"},
+ "claimsql":{"p":"server/pkg/db/queries/agent.sql","a":734,"b":795,"t":"ClaimAgentTask：在线运行时、同工单同 Agent 串行、SKIP LOCKED","k":"code"},
+ "receipt":{"p":"server/pkg/db/queries/agent.sql","a":797,"b":854,"t":"评论投递回执与工单快照的条件写入、领取失败退回队列","k":"code"},
+ "reclaim":{"p":"server/pkg/db/queries/agent.sql","a":856,"b":901,"t":"已派发未开始任务的重新投递","k":"code"},
+ "finalize":{"p":"server/internal/service/task.go","a":3975,"b":4055,"t":"领取收尾：授权、签发任务令牌、写快照与投递回执","k":"code"},
+ "wsfirst":{"p":"server/internal/daemon/wsrpc.go","a":307,"b":386,"t":"WS 优先领取、结果不确定时延迟 HTTP 回退","k":"code"},
+ "poll":{"p":"server/internal/daemon/daemon.go","a":5305,"b":5480,"t":"机器级批量领取：先占本地槽位再领取","k":"code"},
+ "handletask":{"p":"server/internal/daemon/daemon.go","a":5684,"b":5760,"t":"handleTask：运行时已下线则按离线失败、本地目录锁","k":"code"},
+ "reuse":{"p":"server/internal/daemon/daemon.go","a":8274,"b":8340,"t":"复用上次工作目录（加锁核对同一目录）或新建","k":"code"},
+ "start":{"p":"server/internal/daemon/daemon.go","a":8590,"b":8620,"t":"目录就绪后才调用 StartTask 进入 running","k":"code"},
+ "inject":{"p":"server/internal/daemon/daemon.go","a":8655,"b":8710,"t":"注入简报、构造 prompt、只用任务令牌作为 MULTICA_TOKEN","k":"code"},
+ "brief":{"p":"server/internal/daemon/execenv/runtime_config.go","a":185,"b":225,"t":"把运行时简报写入 CLAUDE.md / AGENTS.md 等文件","k":"code"},
+ "resume":{"p":"server/internal/handler/daemon.go","a":3440,"b":3600,"t":"会话续接（同一 Runtime）与工单/评论差异","k":"code"},
+ "prompt":{"p":"server/internal/daemon/prompt.go","a":49,"b":125,"t":"每轮追加的上下文块：工作流、父工单、代表谁执行等","k":"code"},
+ "promptbody":{"p":"server/internal/daemon/prompt.go","a":320,"b":400,"t":"BuildPrompt：指派路径的 prompt，指引用 multica CLI 读取历史","k":"code"},
+ "commentprompt":{"p":"server/internal/daemon/prompt.go","a":493,"b":600,"t":"评论触发的 prompt：触发评论与合并进来的评论","k":"code"},
+ "backend":{"p":"server/pkg/agent/agent.go","a":17,"b":292,"t":"Backend 接口、ExecOptions、消息类型与 Result","k":"code"},
+ "providers":{"p":"server/pkg/agent/agent.go","a":469,"b":530,"t":"agent.New：内置 provider 分支","k":"code"},
+ "claude":{"p":"server/pkg/agent/claude.go","a":54,"b":200,"t":"Claude Code stream-json 协议适配","k":"code"},
+ "claudeperm":{"p":"server/pkg/agent/claude.go","a":1145,"b":1170,"t":"Claude 无人值守参数 bypassPermissions","k":"code"},
+ "codex":{"p":"server/pkg/agent/codex.go","a":1,"b":210,"t":"Codex app-server 协议与超时","k":"code"},
+ "dsh":{"p":"server/pkg/agent/dsh.go","a":19,"b":70,"t":"DSH 版本化 JSONL 适配","k":"code"},
+ "retrysql":{"p":"server/pkg/db/queries/agent.sql","a":490,"b":550,"t":"CreateRetryTask：复制运行时与目录、attempt+1、会话清理规则","k":"code"},
+ "retryreasons":{"p":"server/internal/service/task.go","a":5497,"b":5517,"t":"可自动重试的失败原因","k":"code"},
+ "retry":{"p":"server/internal/service/task.go","a":5687,"b":5833,"t":"MaybeRetryFailedTask：次数上限、延迟、去重","k":"code"},
+ "complete":{"p":"server/internal/service/task.go","a":4643,"b":4760,"t":"完成：条件更新、已终结视为幂等成功","k":"code"},
+ "completesql":{"p":"server/pkg/db/queries/agent.sql","a":992,"b":1014,"t":"CompleteAgentTask 只对 running 生效","k":"code"},
+ "orphan":{"p":"server/pkg/db/queries/agent.sql","a":1203,"b":1218,"t":"daemon 重启回收在途任务","k":"code"},
+ "stale":{"p":"server/pkg/db/queries/agent.sql","a":1220,"b":1296,"t":"派发租约与心跳宽限判断卡死","k":"code"},
+ "queued":{"p":"server/pkg/db/queries/agent.sql","a":1297,"b":1357,"t":"排队任务过期的双条件","k":"code"},
+ "outbox":{"p":"server/internal/daemon/terminal_report_queue.go","a":29,"b":93,"t":"终态回执的本地文件队列（不含令牌）","k":"code"},
+ "outboxwrite":{"p":"server/internal/daemon/terminal_report_queue.go","a":209,"b":240,"t":"回执入队：同任务冲突检测","k":"code"},
+ "quarantine":{"p":"server/internal/daemon/terminal_report_queue.go","a":626,"b":700,"t":"回执重放、永久拒绝后隔离与补偿","k":"code"},
+ "merge":{"p":"server/pkg/db/queries/agent.sql","a":1740,"b":1760,"t":"新评论并入未领取的 Run","k":"code"},
+ "squadbrief":{"p":"server/internal/handler/squad_briefing.go","a":12,"b":110,"t":"小队工作规范（队长 briefing）","k":"code"},
+ "squadwake":{"p":"server/internal/handler/squad.go","a":1147,"b":1240,"t":"队长自触发抑制、@ 识别、入队去重","k":"code"},
+ "squaddoc":{"p":"apps/docs/content/docs/squads.zh.mdx","a":1,"b":117,"t":"小队：执行流程、唤醒时机、Access","k":"doc"},
+ "workflow":{"p":"server/internal/handler/issue_workflow_entry.go","a":18,"b":116,"t":"工作流：状态进入时改写负责人、防串步","k":"code"},
+ "workflowdoc":{"p":"apps/docs/content/docs/workflows.zh.mdx","a":1,"b":97,"t":"工作流：交接、完成与打回","k":"doc"},
+ "resourcesdoc":{"p":"apps/docs/content/docs/project-resources.zh.mdx","a":10,"b":200,"t":"项目资源与 in_place / worktree 两种目录模式","k":"doc"},
+ "security":{"p":"apps/docs/content/docs/security-model.zh.mdx","a":1,"b":57,"t":"安全模型：边界是 daemon 的系统用户","k":"doc"},
+ "auth":{"p":"server/internal/middleware/auth.go","a":100,"b":146,"t":"任务令牌：服务端覆盖身份请求头","k":"code"},
+ "manifest":{"p":"server/pkg/plugincontract/manifest.go","a":1,"b":95,"t":"插件契约：Action / Hook / Resource","k":"code"},
+ "pluginsdk":{"p":"packages/plugin-sdk/README.md","a":1,"b":80,"t":"插件界面沙箱、双重权限、评论不触发 @","k":"doc"}
+};
+/*SRC-END*/
+const COMMIT='7a12304f1473c71e0cee970c773246eaf96abc49';
+const REPO='https://github.com/multica-ai/multica/blob/'+COMMIT+'/';
+const srcUrl=k=>{const s=SRC[k];return REPO+s.p+'#L'+s.a+'-L'+s.b;};
+const fname=p=>p.split('/').pop();
+function cite(k){const s=SRC[k];if(!s)return '';return `<a class="cite" href="${srcUrl(k)}" target="_blank" rel="noopener" title="${s.t}">${fname(s.p)} L${s.a}</a>`;}
+function fillCites(root){(root||document).querySelectorAll('a.cite[data-s]').forEach(a=>{const k=a.dataset.s,s=SRC[k];if(!s){a.textContent='?';return;}a.href=srcUrl(k);a.target='_blank';a.rel='noopener';a.title=s.t+'（'+s.p+'）';a.textContent=fname(s.p)+' L'+s.a;a.removeAttribute('data-s');});}
+const $=s=>document.querySelector(s);
+const NS='http://www.w3.org/2000/svg';
+function el(tag,attrs,parent,text){const e=document.createElementNS(NS,tag);for(const k in attrs)e.setAttribute(k,attrs[k]);if(text!=null)e.textContent=text;if(parent)parent.appendChild(e);return e;}
+const C={human:'#6b55c9',server:'#2563c9',data:'#0d8a76',edge:'#d06a1c',agent:'#c03a68',gray:'#8b93a1'};
+const CB={human:'#f1edfc',server:'#eaf1fd',data:'#e6f5f1',edge:'#fdf1e6',agent:'#fbeaf0',gray:'#f3f4f6'};
+
+/* ---------- arrow marker helper ---------- */
+function defs(svg){const d=el('defs',{},svg);for(const k in C){const m=el('marker',{id:svg.id+'-ar-'+k,viewBox:'0 0 10 10',refX:'9',refY:'5',markerWidth:'7',markerHeight:'7',orient:'auto-start-reverse'},d);el('path',{d:'M0,0 L10,5 L0,10 z',fill:C[k]},m);}}
+function drawNode(svg,n,onClick){
+  const g=el('g',{class:'node','data-id':n.id,tabindex:'0',role:'button','aria-label':n.label},svg);
+  el('rect',{class:'box',x:n.x,y:n.y,width:n.w,height:n.h,rx:10,fill:n.fill||'#fff',stroke:C[n.c],'stroke-width':1.5,'stroke-dasharray':n.dash?'5 4':''},g);
+  const cy=n.y+n.h/2+(n.sub?-6:5);
+  el('text',{x:n.x+n.w/2,y:cy,'text-anchor':'middle','font-size':n.fs||15,'font-weight':700,fill:'#1c2330'},g,n.label);
+  if(n.sub)el('text',{x:n.x+n.w/2,y:cy+19,'text-anchor':'middle','font-size':11.5,fill:'#5b6474'},g,n.sub);
+  if(onClick){g.addEventListener('click',()=>onClick(n.id));g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();onClick(n.id);}});}
+  return g;
+}
+function drawEdge(svg,e){
+  const g=el('g',{class:'edge','data-id':e.id},svg);
+  el('path',{d:e.d,stroke:C[e.c],'marker-end':`url(#${svg.id}-ar-${e.c})`,'marker-start':e.both?`url(#${svg.id}-ar-${e.c})`:'','stroke-dasharray':e.dash?'6 5':'',class:e.dash?'':'flow'},g);
+  if(e.l){const t=el('text',{x:e.lx,y:e.ly,'text-anchor':e.la||'middle',fill:C[e.c],'font-weight':600},g);(Array.isArray(e.l)?e.l:[e.l]).forEach((line,i)=>el('tspan',{x:e.lx,dy:i?14:0},t,line));}
+  return g;
+}
+
+/* ================= 00 ARCH MAP ================= */
+const ARCH_NODES=[
+ {id:'people',x:40,y:60,w:180,h:70,c:'human',label:'团队成员',sub:'PM · 开发 · 测试'},
+ {id:'clients',x:40,y:180,w:180,h:80,c:'human',label:'客户端',sub:'Web · Desktop · Mobile · CLI'},
+ {id:'inbox',x:40,y:310,w:180,h:70,c:'human',label:'时间线 / 收件箱',sub:'实时事件刷新本地缓存'},
+ {id:'api',x:310,y:60,w:340,h:70,c:'server',label:'API 层',sub:'router → middleware → handler → service'},
+ {id:'sched',x:310,y:170,w:340,h:80,c:'server',label:'TaskService 调度',sub:'入队 · 领取事务 · 完成 · 重试 · 清扫'},
+ {id:'rt',x:310,y:300,w:160,h:80,c:'server',label:'实时推送',sub:'realtime → 客户端'},
+ {id:'dws',x:490,y:300,w:160,h:80,c:'server',label:'daemon 通道',sub:'daemonws：唤醒 + RPC'},
+ {id:'pg',x:310,y:460,w:220,h:64,c:'data',label:'PostgreSQL',sub:'唯一事实源（含任务队列表）'},
+ {id:'redis',x:550,y:460,w:100,h:64,c:'data',label:'Redis',sub:'可选',dash:true},
+ {id:'cli',x:740,y:60,w:220,h:70,c:'agent',label:'AI 编程工具',sub:'Claude Code · Codex · …'},
+ {id:'adapter',x:740,y:170,w:220,h:70,c:'edge',label:'Provider 适配层',sub:'pkg/agent · 统一事件'},
+ {id:'daemon',x:740,y:290,w:220,h:90,c:'edge',label:'daemon 守护进程',sub:'注册 · 领单 · 备目录 · 回执'},
+ {id:'wd',x:740,y:410,w:220,h:56,c:'edge',label:'工作目录 / 仓库',sub:'Run 级工作目录（有复用/共享例外）'},
+ {id:'outbox',x:740,y:482,w:220,h:50,c:'edge',label:'本地回执队列',sub:'终态先落盘再上报',fs:14},
+];
+const ARCH_EDGES=[
+ {id:'e1',d:'M130 130 L130 178',c:'human',l:'操作',lx:150,ly:158,la:'start'},
+ {id:'e2',d:'M220 215 C 265 215 265 100 308 100',c:'human',l:'HTTP',lx:252,ly:150,la:'middle'},
+ {id:'e3',d:'M480 130 L480 168',c:'server'},
+ {id:'e4',d:'M480 250 L480 458',c:'data',l:['事务','条件更新'],lx:480,ly:398,both:true},
+ {id:'e5',d:'M360 250 L360 298',c:'server'},
+ {id:'e6',d:'M310 340 L222 345',c:'server',l:'WS 事件',lx:266,ly:333},
+ {id:'e7',d:'M600 250 L600 298',c:'server'},
+ {id:'e8',d:'M650 335 L738 335',c:'edge',l:['唤醒','领单'],lx:694,ly:318,both:true},
+ {id:'e9',d:'M850 290 L850 242',c:'edge'},
+ {id:'e10',d:'M850 170 L850 132',c:'edge'},
+ {id:'e11',d:'M738 95 L652 95',c:'agent',dash:true,l:['multica','CLI'],lx:695,ly:68},
+ {id:'e12',d:'M738 300 L652 232',c:'edge',l:['进度','回执'],lx:676,ly:282},
+ {id:'e13',d:'M850 380 L850 408',c:'edge'},
+ {id:'e14',d:'M962 95 L982 95 L982 438 L962 438',c:'agent',dash:true},
+ {id:'e15',d:'M760 380 C 720 420 720 500 738 505',c:'edge'},
+];
+const ARCH_INFO={
+ people:{t:'团队成员',s:'人类协作者',w:'在工单上指派、评论、改状态。人与 Agent 在同一个工作区里用同一套对象协作。',h:'人从不直接“调用”Agent：每次执行都由一个明确动作触发——指派、评论里 @、对话、自动化或定时唤醒。',b:'人的通知进收件箱；Agent 不用收件箱，它通过被排 Run 来“收到消息”。',src:['tasksdoc']},
+ clients:{t:'客户端',s:'apps/web · apps/desktop · apps/mobile · CLI',w:'Web 与桌面共用 core（数据与缓存）、ui（基础组件）、views（业务页面）三层；移动端独立实现。',h:'服务端数据归 TanStack Query 管，WebSocket 事件只用来刷新或失效缓存；重连后必须重新查询校准，因为数据库才是最终状态。',b:'桌面端还负责管理本机 daemon；网页端不能选择本地文件夹，所以“本地目录”资源只能在桌面端添加。',src:['arch','resourcesdoc']},
+ inbox:{t:'时间线 / 收件箱',s:'实时事件的落点',w:'任务入队、被领取、完成，评论新增，都会广播事件；页面开着时执行日志和状态条自动更新。',h:'入队时代码刻意“先广播 queued，再唤醒 daemon”，保证客户端不会先看到 dispatch 再看到 queued。',b:'实时推送只是加速，丢了也不影响正确性。',src:['enqueue','arch']},
+ api:{t:'API 层',s:'server/internal/{middleware,handler,service}',w:'请求按 router → middleware → handler → service → sqlc 查询 → PostgreSQL 流动。业务查询必须按 workspace_id 限定。',h:'人和 Agent 走同一套 API。区别只在认证：Agent 带的是 mat_ 任务令牌，中间件用令牌绑定的身份覆盖请求头。',b:'X-Workspace-ID 只是“选中哪个工作区”，不替代成员资格校验。',src:['arch','auth']},
+ sched:{t:'TaskService 调度',s:'server/internal/service/task.go',w:'整个调度器是一个 Go service + 一张表 agent_task_queue。负责入队、领取、开始、完成/失败、自动重试、各种超时清扫。',h:'领取在一个事务里完成：锁住 Agent 行 → 检查每 Agent 并发上限 → 锁 Runtime 并检查每 Runtime 上限 → 条件 UPDATE 领一行。',b:'调度粒度是“某 Agent 在某 Runtime 上的下一条”，不是全局资源调度；没有跨机器的负载均衡。',src:['claim','claimsql']},
+ rt:{t:'实时推送',s:'server/internal/realtime',w:'把工单、评论、收件箱、任务状态的变化推给用户客户端。',h:'多实例部署时通过 Redis 跨实例转发；单实例用进程内实现。',b:'只是通知通道，不承载状态。',src:['arch']},
+ dws:{t:'daemon 通道',s:'server/internal/daemonws',w:'daemon 长连在这里：服务端用它“叫醒”某个 Runtime，daemon 也可以在上面发 RPC（例如 tasks.claim 领单）。',h:'领单优先走 WS RPC；连接不存在、发送失败可以立刻改走 HTTP；“发出去但没回音”则先跳过一轮再走 HTTP，避免重复领取。',b:'daemon 始终保留轮询路径，一次掉线不会让排队任务永远卡住。',src:['wsfirst','arch']},
+ pg:{t:'PostgreSQL',s:'唯一事实源',w:'工单、评论、Agent、Runtime、任务队列全在这里。任务队列就是 agent_task_queue 表，状态、会话 ID、工作目录、尝试次数、父任务都是它的列。',h:'领取、开始、完成等关键状态变化都是带前置条件的 UPDATE；并发领取用 FOR UPDATE SKIP LOCKED；同一(工单, Agent, 线程)上只能有一条待处理 Run，靠唯一索引保证。',b:'仓库约定不用外键和级联删除，关系一致性由应用代码在事务里维护。',src:['claimsql','enqueue']},
+ redis:{t:'Redis（可选）',s:'跨实例协调',w:'用于跨实例实时事件、缓存或临时协调。',h:'没有 Redis 时，单实例用进程内实现照常工作；自托管 compose 默认不含 Redis。',b:'不是队列，也不存业务状态。',src:['arch','compose']},
+ cli:{t:'AI 编程工具',s:'Claude Code / Codex / 其他 20 余种',w:'真正“干活”的进程，由 daemon 作为子进程启动，在本次 Run 的工作目录里执行。',h:'它读到的是：工作目录里的简报文件（CLAUDE.md / AGENTS.md）+ 一段薄 prompt。需要工单内容时，它自己执行 multica issue get / comment list；要汇报就 multica issue comment add。',b:'无人值守运行，审批被自动应答；默认不启用文件系统沙箱（Windows 显式开启 Codex 原生沙箱是例外）。',src:['promptbody','brief','security']},
+ adapter:{t:'Provider 适配层',s:'server/pkg/agent',w:'把各家 CLI 不同的启动参数、流式协议、取消方式和用量统计，统一成 Backend.Execute → Session（消息流 + Result）。',h:'Claude 用 stream-json，Codex 用 app-server，DSH 用自有 JSONL，不少工具用 ACP；daemon 只认统一的 7 类消息。',b:'适配层不管目录和会话存放——那是 daemon 的职责。',src:['backend','dsh']},
+ daemon:{t:'daemon 守护进程',s:'server/internal/daemon（multica daemon）',w:'装在执行机上：发现本机工具，为每个工作区 × 工具注册 Runtime 并发心跳；领单、准备目录、启动工具、上报事件和结果。',h:'一个机器级循环：先占本地并发槽，再按空槽数批量领取所有 Runtime 的任务；每个任务一个 goroutine。准备阶段每 15 秒续一次“准备租约”。',b:'默认路径下，daemon 运行在哪个系统用户下，Agent 就能做那个用户能做的事；隔离要靠专用用户、容器或虚拟机。',src:['poll','handletask','security']},
+ wd:{t:'工作目录 / 仓库',s:'~/multica_workspaces/…',w:'通常每个 Run 有自己的 workdir；但同一 Agent 在同一工单上的后续 Run 会尽量复用上次目录，本地目录原地模式则多个 Run 共享同一真实目录（加锁串行）。',h:'项目可绑 Git 仓库（由运行时管理 checkout，默认 worktree 可并发）或本地目录（默认原地、同目录串行，等待时状态为 waiting_local_directory）。',b:'本地目录原地模式不是隔离环境：Agent 直接改你当前分支和未提交文件。',src:['resourcesdoc','reuse']},
+ outbox:{t:'本地回执队列',s:'terminal_report_queue.go',w:'Run 结束时，“完成/失败”回执先写成本地文件（每个任务一个文件，不含令牌），再发给服务端，确认后删除。',h:'网络断了、服务端暂时不可用，daemon 之后会重放；服务端对“已经终结的任务”再次报告视为幂等成功。连续被永久拒绝会被隔离并补报失败。',b:'保证的是“平台状态最终一致”，不是“Agent 的外部动作只做一次”。',src:['outbox','quarantine','complete']},
+};
+const ARCH_PLAY=[
+ {n:['people','clients'],e:['e1'],cap:'<b>①</b> 林悦把 WEB-128 指派给前端交付小队。'},
+ {n:['clients','api'],e:['e2'],cap:'<b>②</b> 客户端通过 HTTP 写入变更，服务端校验权限、判断是否需要排 Run。'},
+ {n:['api','sched','pg'],e:['e3','e4'],cap:'<b>③</b> TaskService 在数据库里插入一行 <code>queued</code> 任务（Runtime 取自队长当前绑定）。'},
+ {n:['sched','rt','inbox'],e:['e5','e6'],cap:'<b>④</b> 先广播 <code>task:queued</code>，页面上出现“排队中”。'},
+ {n:['sched','dws','daemon'],e:['e7','e8'],cap:'<b>⑤</b> 再唤醒目标 Runtime；daemon 用 WS RPC 领单，事务内改为 <code>dispatched</code> 并签发任务令牌。'},
+ {n:['daemon','wd'],e:['e13'],cap:'<b>⑥</b> daemon 准备工作目录、写入简报文件，然后通知服务端进入 <code>running</code>。'},
+ {n:['daemon','adapter','cli'],e:['e9','e10'],cap:'<b>⑦</b> 通过适配层启动 Claude Code，流式事件回传为执行日志。'},
+ {n:['cli','api','wd'],e:['e11','e14'],cap:'<b>⑧</b> Agent 用 <code>multica</code> 命令读工单与评论、发评论——身份由任务令牌决定。'},
+ {n:['daemon','outbox','sched'],e:['e15','e12'],cap:'<b>⑨</b> 结束时终态回执先落盘，再上报；服务端只对 <code>running</code> 的行生效。'},
+ {n:['sched','pg','rt','inbox'],e:['e4','e5','e6'],cap:'<b>⑩</b> 任务行变为 completed，客户端实时刷新。工单状态则由 Agent 或人另外改。'},
+];
+(function(){
+  const svg=$('#archMap');defs(svg);
+  [['人与客户端',20,20,220,520,'human'],['Multica 服务端（Go）',290,20,380,410,'server'],['数据',290,440,380,100,'data'],['执行机（成员电脑 / 服务器）',720,20,265,525,'edge']].forEach(([t,x,y,w,h,c])=>{el('rect',{x,y,width:w,height:h,rx:14,fill:CB[c],stroke:'none'},svg);el('text',{x:x+12,y:y+20,'font-size':12,'font-weight':700,fill:C[c],'letter-spacing':'.05em'},svg,t);});
+  ARCH_EDGES.forEach(e=>drawEdge(svg,e));
+  ARCH_NODES.forEach(n=>drawNode(svg,n,showArch));
+  let step=-1,timer=null;
+  function clearHot(){svg.classList.remove('dim');svg.querySelectorAll('.hot').forEach(x=>x.classList.remove('hot'));}
+  function showArch(id){
+    stop();clearHot();svg.querySelectorAll('.node').forEach(n=>n.classList.toggle('sel',n.dataset.id===id));
+    const i=ARCH_INFO[id];
+    $('#mapPanel').innerHTML=`<h4>${i.t}</h4><div class="sub">${i.s}</div><div class="pcols"><div><div class="dt">负责什么</div><p>${i.w}</p></div><div><div class="dt">真实怎么工作</div><p>${i.h}</p></div><div><div class="dt">边界</div><p>${i.b}</p></div><div><div class="dt">依据</div><p>${i.src.map(cite).join(' ')}</p></div></div>`;
+  }
+  function go(k){
+    svg.querySelectorAll('.node').forEach(n=>n.classList.remove('sel'));
+    clearHot();svg.classList.add('dim');const s=ARCH_PLAY[k];
+    s.n.forEach(id=>svg.querySelector(`.node[data-id="${id}"]`).classList.add('hot'));
+    s.e.forEach(id=>svg.querySelector(`.edge[data-id="${id}"]`).classList.add('hot'));
+    $('#mapCap').innerHTML=s.cap+` <span style="color:var(--ink3)">(${k+1}/${ARCH_PLAY.length})</span>`;
+  }
+  function stop(){if(timer){clearInterval(timer);timer=null;$('#mapPlay').textContent='▶ 播放一次运行';}}
+  $('#mapStep').onclick=()=>{stop();step=(step+1)%ARCH_PLAY.length;go(step);};
+  $('#mapReset').onclick=()=>{stop();step=-1;clearHot();svg.querySelectorAll('.node').forEach(n=>n.classList.remove('sel'));$('#mapCap').textContent='点击任一模块看它负责什么；或播放一次运行的路径。';};
+  $('#mapPlay').onclick=()=>{if(timer){stop();return;}$('#mapPlay').textContent='❚❚ 暂停';step=-1;const tick=()=>{step++;if(step>=ARCH_PLAY.length){stop();return;}go(step);};tick();timer=setInterval(tick,2600);};
+})();
+
+/* ================= 01 STORY ================= */
+const SCENES=[
+ {t:'林悦创建工单，指派给小队',who:'林悦 · Web',see:'工单出现在「官网」项目看板，负责人显示「前端交付小队」，执行日志里出现一条“排队中”的运行，归属队长「协调员」。',sys:'指派给小队时只给<b>队长</b>入队一次 Run（不是给每个成员各一个）；入队前检查队长没归档、绑定了 Runtime、林悦有权运行它，且队长在这张工单上没有待处理的 Run。工单若在 Backlog 则不触发。',add:[['issue','WEB-128','负责人=小队:前端交付小队 · todo'],['task','T1','协调员 · 小周MacBook/Claude · 队长 · queued']],src:['squadwake','enqueue','squaddoc']},
+ {t:'小周电脑上的 daemon 领走队长的 Run',who:'协调员 · 小周的 MacBook',see:'执行日志变为“启动中”，随后“工作中”；工单顶部出现“协调员在工作”。',sys:'服务端通过 daemon 通道唤醒该 Runtime；daemon 先占本地并发槽再领单。领取事务把 T1 改为 dispatched，签发只属于 T1 的任务令牌；因为是队长，领取包里额外附上「小队工作规范 + 花名册 + 小队指令」。',add:[['task','T1','协调员 · 小周MacBook/Claude · 队长 · running · 令牌 mat_…(仅限 T1)'],['note','N1','T1 领取包附加：小队工作规范 + 花名册 + 小队指令']],src:['claim','finalize','squadbrief']},
+ {t:'队长 @ 前端 Agent 派活，然后停下',who:'协调员',see:'工单上出现一条短评论：“@前端 Agent 这个归你：注意年付价格要从配置读，测试补在 e2e/pricing。”时间线上记录了队长的一次评估：action。',sys:'队长用花名册给的 mention 链接 @ 成员（纯文本 @ 无效）。这条评论让前端 Agent 入队一次 Run，触发评论就是这条。队长执行 <code>multica squad activity … action</code> 后结束，按约定工单进入 in_progress。',add:[['cmt','C1','协调员：“@前端Agent 这个归你…”'],['note','N2','squad activity：outcome=action'],['task','T2','前端Agent · 小周MacBook/Claude · 触发=C1 · queued'],['task','T1','协调员 · 小周MacBook/Claude · 队长 · completed'],['issue','WEB-128','负责人=小队:前端交付小队 · in_progress']],src:['squadbrief','squaddoc']},
+ {t:'前端 Agent 干活，中途网络抖了一下',who:'前端 Agent · 小周的 MacBook',see:'执行日志：第一次运行失败（模型服务网络中断），紧接着自动出现第二次运行并完成。工单上出现前端 Agent 的结果评论，附分支名。',sys:'T2 失败原因被归类为 <code>provider_network</code>，属于可自动重试。系统<b>插入新行</b> T3：attempt=2，同一 Runtime、同一工作目录，会话保留；T3 领取时续接 T2 的会话。Agent 用 <code>multica issue comment add</code> 发评论，身份是 T3 的令牌。',add:[['task','T2','前端Agent · 小周MacBook/Claude · 触发=C1 · failed(provider_network)'],['task','T3','前端Agent · 重试自 T2 · attempt=2 · 同 Runtime 同目录 · completed'],['cmt','C2','前端Agent：“已完成，分支名见评论…”']],src:['retryreasons','retrysql','inject']},
+ {t:'队长被唤醒，确认可以进入审查',who:'协调员 → 林悦',see:'队长发评论“开发完成，建议进入审查”，并记录评估。林悦把卡片拖到「审查」列，确认窗口提示“将交给审查 Agent”，可预览它收到的说明。',sys:'成员发不带 @ 的进展评论会再次唤醒队长（带 @ 的则不会）。卡片进入「审查」列时，工作流把负责人改写为该列处理人「审查 Agent」，并以这一步的说明作为交接说明排一次 Run，记下 <code>workflow_step=审查</code>。',add:[['task','T4','协调员 · 队长 · 触发=C2 · completed'],['cmt','C3','协调员：“开发完成，建议进入审查”'],['issue','WEB-128','负责人=审查Agent · 审查'],['task','T5','审查Agent · 构建机/Codex · workflow_step=审查 · 交接说明=步骤说明 · queued']],src:['squaddoc','workflow','workflowdoc']},
+ {t:'审查 Agent 在另一台机器上审查',who:'审查 Agent · 团队构建机',see:'构建机上的 Codex 开始工作；审查意见以评论形式出现。审查通过后它把工单移到「QA」，负责人变成阿杰，阿杰的收件箱收到通知。',sys:'T5 在构建机的 Runtime 上执行，工作目录在构建机本地，与小周电脑上的目录无关；它通过 <code>multica issue get</code> 和分支名读取前一步的成果。移到 QA 列时交接给成员：只改负责人、发通知，不启动 Agent。',add:[['task','T5','审查Agent · 构建机/Codex · workflow_step=审查 · completed'],['cmt','C4','审查Agent：“通过，补充一个边界用例建议”'],['issue','WEB-128','负责人=阿杰 · QA（交接给成员，无 Run）']],src:['workflowdoc','resourcesdoc']},
+ {t:'阿杰试用后 @ 前端 Agent 小改',who:'阿杰 → 前端 Agent',see:'阿杰评论“@前端 Agent 年付按钮文案改成‘按年付费省 2 个月’”。前端 Agent 很快回复并更新了同一分支。',sys:'@ 直接给前端 Agent 排 Run T6（负责人仍是阿杰）。领取时服务端找到它在这张工单上的上一个会话（T3，同一 Runtime），于是续接；同时告诉它：自那次 Run 开始后工单的状态、负责人变了，新增了几条评论。',add:[['cmt','C5','阿杰：“@前端Agent 文案改成…”'],['task','T6','前端Agent · 触发=C5 · 续接 T3 会话 + 差异提示 · completed'],['cmt','C6','前端Agent：“已更新，见分支最新提交”']],src:['resume','commentprompt']},
+ {t:'阿杰把工单标为完成',who:'阿杰',see:'工单进入 Done。执行日志汇总了 6 次运行的耗时、Token 和估算费用，其中 1 次失败。',sys:'工单完成是一次普通的状态变更，由人决定。6 条 Run 各自早已 completed / failed——<b>Run 完成从不等于工单完成</b>。所有协作过程都保留在评论线程、活动记录和 Run 表里。',add:[['issue','WEB-128','负责人=阿杰 · done']],src:['tasksdoc','howworks']},
+];
+(function(){
+  let cur=0;const btns=$('#sceneBtns');
+  SCENES.forEach((s,i)=>{const b=document.createElement('button');b.textContent=(i+1)+' '+s.t.slice(0,8)+(s.t.length>8?'…':'');b.title=s.t;b.onclick=()=>show(i);btns.appendChild(b);});
+  function show(i){
+    cur=i;const s=SCENES[i];
+    [...btns.children].forEach((b,j)=>{b.classList.toggle('on',j===i);b.classList.toggle('done',j<i);});
+    $('#sceneCard').innerHTML=`<span class="tag t-demo">示例 · 第 ${i+1}/8 幕</span><h4 style="margin-top:8px">${s.t}</h4><div class="who">${s.who}</div><div class="row"><div class="h">用户看到</div><p>${s.see}</p></div><div class="row"><div class="h">系统里发生</div><p>${s.sys}</p></div><div class="row"><div class="h">依据</div><p>${s.src.map(cite).join(' ')}</p></div>`;
+    const state={},order=[],changed=new Set();
+    SCENES.slice(0,i+1).forEach((sc,j)=>sc.add.forEach(([t,id,txt])=>{const k=t+':'+id;if(!(k in state))order.push(k);state[k]={t,id,txt};if(j===i)changed.add(k);}));
+    let html='<div class="hd">账本：截至本幕数据库里的行（每个对象一行，<span style="background:#fff8e1;padding:0 4px;border-radius:4px">黄色</span>为本幕新增或变化）</div>';
+    [['issue','工单 issue'],['task','运行 agent_task_queue'],['cmt','评论 comment'],['note','其他记录']].forEach(([t,lbl])=>{const ks=order.filter(k=>state[k].t===t);if(!ks.length)return;html+=`<div class="lgrp">${lbl}</div>`;ks.forEach(k=>{const r=state[k];html+=`<div class="lrow ${t} ${changed.has(k)?'new':'old'}"><span class="k">${r.id==='WEB-128'?'#128':r.id}</span><span>${r.txt}</span></div>`;});});
+    $('#ledger').innerHTML=html;
+    $('#scPrev').disabled=i===0;$('#scNext').disabled=i===SCENES.length-1;
+  }
+  $('#scPrev').onclick=()=>cur>0&&show(cur-1);
+  $('#scNext').onclick=()=>cur<SCENES.length-1&&show(cur+1);
+  show(0);
+})();
+
+/* ================= 02 OBJECTS ================= */
+const OBJ_NODES=[
+ {id:'ws',x:20,y:20,w:720,h:430,c:'gray'},
+ {id:'project',x:50,y:60,w:150,h:64,c:'human',label:'Project 项目',sub:'资源 · 工作流'},
+ {id:'issue',x:270,y:60,w:170,h:64,c:'human',label:'Issue 工单',sub:'负责人可多态'},
+ {id:'comment',x:510,y:60,w:200,h:64,c:'human',label:'Comment 评论',sub:'线程 · @mention'},
+ {id:'squad',x:50,y:200,w:150,h:64,c:'agent',label:'Squad 小队',sub:'队长 + 成员'},
+ {id:'agent',x:270,y:200,w:170,h:64,c:'agent',label:'Agent 智能体',sub:'一份配置，不是进程'},
+ {id:'task',x:510,y:200,w:200,h:64,c:'server',label:'Run（task）',sub:'agent_task_queue 一行'},
+ {id:'skill',x:50,y:340,w:150,h:64,c:'agent',label:'Skill',sub:'可复用的做法说明'},
+ {id:'runtime',x:270,y:340,w:170,h:64,c:'edge',label:'Runtime 运行时',sub:'机器 × 工具 × 工作区'},
+ {id:'daemon2',x:510,y:340,w:200,h:64,c:'edge',label:'Daemon',sub:'一台机器一个进程'},
+];
+const OBJ_EDGES=[
+ {id:'o1',d:'M200 92 L268 92',c:'gray',l:'包含',lx:234,ly:84},
+ {id:'o2',d:'M440 92 L508 92',c:'gray',l:'有很多',lx:474,ly:84},
+ {id:'o3',d:'M355 124 L355 198',c:'gray',l:'负责人可以是',lx:362,ly:165,la:'start'},
+ {id:'o3b',d:'M300 124 C 240 160 160 160 125 198',c:'gray',l:'或小队',lx:205,ly:150},
+ {id:'o4',d:'M200 232 L268 232',c:'gray',l:'队长/成员',lx:234,ly:224},
+ {id:'o5',d:'M440 232 L508 232',c:'server',l:'每次触发生成',lx:474,ly:224},
+ {id:'o6',d:'M610 124 L610 198',c:'server',l:'触发评论',lx:618,ly:165,la:'start'},
+ {id:'o7',d:'M355 264 L355 338',c:'edge',l:'绑定一个',lx:362,ly:305,la:'start'},
+ {id:'o8',d:'M268 372 L202 372',c:'gray'},
+ {id:'o8b',d:'M300 264 C 260 300 220 330 202 350',c:'agent',l:'挂载',lx:238,ly:300},
+ {id:'o9',d:'M610 264 L610 338',c:'edge',l:'被它领取执行',lx:618,ly:305,la:'start'},
+ {id:'o10',d:'M508 372 L442 372',c:'edge',l:'注册多个',lx:475,ly:364},
+];
+const OBJ_INFO={
+ project:{t:'Project 项目',f:'资源（Git 仓库 / 本地目录）、工作流、负责人',w:'资源让 Agent 不用每次贴仓库地址：执行时项目资源写进 <code>.multica/project/resources.json</code>，并加入执行上下文。工作流规定每一列交给谁。',src:['resourcesdoc','workflowdoc']},
+ issue:{t:'Issue 工单',f:'标题、描述、状态、优先级、负责人(assignee_type + assignee_id)、父工单',w:'协作的主对象和“共享记忆”。负责人多态：成员、Agent 或小队。优先级会写进 Run 的 priority，影响领取顺序。子工单的 Run 会被提示去读父工单，因为决策在父工单上。',src:['arch','prompt','enqueue']},
+ comment:{t:'Comment 评论',f:'作者（人/Agent/系统）、线程、mention 链接',w:'既是记录，也是路由信号：mention 链接决定给谁排 Run。触发评论、合并进来的评论都写在 Run 行上（trigger_comment_id、coalesced_comment_ids），领取时再记录“本轮实际投递了哪些”。',src:['merge','receipt']},
+ squad:{t:'Squad 小队',f:'队长（必须是 Agent）、成员（Agent 或人）、角色说明、小队指令',w:'一种“负责人”。指派给小队只唤醒队长，队长再用 @ 分派。角色说明只是给队长的上下文，不授予权限、不自动触发成员。',src:['squaddoc','squadbrief']},
+ agent:{t:'Agent 智能体',f:'名称、指令、模型、Skill、MCP、custom_env、runtime_id、max_concurrent_tasks、Access',w:'可复用的身份配置，被触发才执行。<b>同一时刻只绑定一个 Runtime</b>，这决定了它的 Run 在哪台机器上跑。max_concurrent_tasks 限制它同时跑几条 Run。',src:['claim','enqueue']},
+ task:{t:'Run（代码里叫 task）',f:'status、priority、agent_id、runtime_id、issue_id、trigger_comment_id、session_id、work_dir、attempt、parent_task_id、workflow_step、originator / accountable…',w:'一次执行的完整记录，也就是队列里的一行。它既是调度单元，也是审计单元：谁触发、谁负责、在哪跑、用了哪个会话、在哪个目录、第几次尝试、花了多少。',src:['retrysql','claimsql']},
+ skill:{t:'Skill',f:'说明文本与附带文件',w:'“这类工作怎么做”。挂给多个 Agent 复用；领取时随任务下发，daemon 写进本次执行环境。',src:['tasksdoc']},
+ runtime:{t:'Runtime 运行时',f:'所属 daemon、provider、工作区、在线状态、last_seen_at、并发上限、可见性',w:'一台机器上的一种 AI 工具在一个工作区里的“执行入口”。一台装了 Claude Code 和 Codex、连了两个工作区的电脑，会注册 4 个 Runtime。心跳约 15 秒一次。',src:['daemondoc','claim']},
+ daemon2:{t:'Daemon',f:'daemon_id、所在机器、系统用户、本地并发槽',w:'真正的进程。一个 daemon 承载多个 Runtime，用一个机器级循环替所有 Runtime 领单，本地并发槽在它们之间共享。',src:['poll']},
+};
+(function(){
+  const svg=$('#objMap');defs(svg);
+  el('rect',{x:20,y:20,width:720,height:430,rx:16,fill:'#faf9f6',stroke:'#e3e1da'},svg);
+  el('text',{x:34,y:42,'font-size':12,'font-weight':700,fill:'#7b8494'},svg,'Workspace 工作区（一切按 workspace_id 隔离）');
+  OBJ_EDGES.forEach(e=>drawEdge(svg,e));
+  OBJ_NODES.slice(1).forEach(n=>drawNode(svg,n,show));
+  function show(id){svg.querySelectorAll('.node').forEach(n=>n.classList.toggle('sel',n.dataset.id===id));const i=OBJ_INFO[id];$('#objPanel').innerHTML=`<h4>${i.t}</h4><dl><dt>关键字段</dt><dd style="font-size:13.5px;font-family:var(--mono)">${i.f}</dd><dt>为什么需要它</dt><dd>${i.w}</dd><dt>依据</dt><dd>${i.src.map(cite).join(' ')}</dd></dl>`;}
+})();
+
+/* ================= 04 SEQUENCE ================= */
+const LANES=[['人 / 客户端','human'],['API · 调度','server'],['PostgreSQL','data'],['daemon','edge'],['AI 工具','agent']];
+const SEQ=[
+ {f:0,to:1,l:'评论 @前端Agent',h:'触发：判断要不要排 Run',b:['评论里的 mention 链接被解析出来；纯文本 @ 不算。','检查评论人有权运行该 Agent、Agent 未归档且绑定了 Runtime。','如果这个 Agent 在本工单上已有<b>未领取</b>的 Run，新评论并进去而不是再建一条。'],src:['merge','squadwake']},
+ {f:1,to:2,l:'INSERT queued',h:'入队：一行新任务',b:['<code>runtime_id</code> 取 Agent <b>当前</b>绑定的 Runtime；同时写入优先级、触发评论、发起人/问责人、按发起人生成的 MCP 叠加配置。','唯一索引保证同一(工单, Agent, 线程)只有一条待处理 Run；撞上了就当作“已被合并”。'],src:['enqueue']},
+ {f:1,to:3,l:'广播 queued → 唤醒',h:'先通知人，再叫醒机器',b:['先向客户端广播 <code>task:queued</code>，再通知目标 Runtime 有活。','顺序是刻意的：避免客户端先看到“已领取”后看到“排队中”。'],src:['enqueue']},
+ {f:3,to:1,l:'tasks.claim（WS 优先）',h:'先占槽，再领单',b:['daemon 的机器级循环先拿到本地空闲槽位，再按槽位数批量领取所有 Runtime 的任务——避免领到了却没地方跑。','优先走 WS RPC；没连接/没发出去就立刻走 HTTP；发出去没回音则跳过一轮再走 HTTP。'],src:['poll','wsfirst']},
+ {f:1,to:2,l:'领取事务',h:'一个事务里的四道闸',b:['锁住 Agent 行 → 每 Agent 并发上限 → 锁 Runtime 并检查每 Runtime 并发上限 → 条件 UPDATE 领一行。','条件包括：Runtime 在线且心跳新鲜（150 秒内）、同一 Agent 在同一工单上没有进行中的 Run、按优先级和创建时间排序、<code>SKIP LOCKED</code>。','领取后状态为 dispatched，并设置 45 秒的“准备租约”。'],src:['claim','claimsql']},
+ {f:1,to:3,l:'领取包 + mat_ 令牌',h:'装配“本轮需要的一切”',b:['Agent 指令、Skill、项目资源、工作流步骤说明、父工单指针、上次会话与目录指针、工单与评论的差异。','同一事务里签发任务令牌，并用条件写入记录“本轮投递了哪些评论”和“工单快照”——只对仍是这一次派发、尚未开始的行生效。','如果这一步失败且响应还没发出，就把这一次派发原样退回队列。'],src:['finalize','receipt','resume']},
+ {f:3,to:3,l:'准备目录 → StartTask',h:'目录准备好才算开始',b:['尝试复用上次的工作目录（加锁并核对确实是同一个目录），否则新建；Git 仓库资源默认用 worktree。','本地目录原地模式要抢路径锁，抢不到就上报 <code>waiting_local_directory</code>。','准备期间每 15 秒续租；目录真正存在后才调用 StartTask 进入 running，避免别人读到 running 却找不到目录。'],src:['reuse','handletask','start']},
+ {f:3,to:4,l:'简报 + prompt + 令牌',h:'启动 AI 工具',b:['把运行时简报写进工作目录（Claude Code → CLAUDE.md，Codex → AGENTS.md）。','prompt 内联本轮的触发评论和并入的评论原文，再给一组“去读什么”的命令；每轮变化的块追加在末尾。','环境变量注入 <code>MULTICA_TOKEN</code>（必须是 mat_ 任务令牌，不用 daemon 自己的凭据兜底），经适配层 Execute，事件流式回传。'],src:['inject','brief','backend']},
+ {f:4,to:1,l:'multica CLI 读写',h:'Agent 回到工单上',b:['<code>multica issue get</code>、<code>comment list --roots-only --summary</code> 读上下文；<code>comment add</code> 汇报；也可以改状态。','服务端用令牌绑定的身份覆盖请求头：它只能以“这个 Agent、这次 Run”的身份行事。'],src:['promptbody','auth']},
+ {f:3,to:1,l:'终态回执（先落盘）',h:'结束：回执、落库、重试判定',b:['回执先写入本地文件队列，再发 complete/fail；失败可重放。','服务端的完成更新只对 <code>status=running</code> 生效；已经终结的再报一次，按幂等成功处理。','失败时按原因判断是否自动重试：可重试就插入新的一行 Run。最后广播状态，页面刷新。'],src:['outbox','complete','completesql','retry']},
+];
+(function(){
+  const svg=$('#seqSvg');defs(svg);
+  const W=760,X=[70,240,400,560,700],top=50,gap=46,H=top+SEQ.length*gap+30;
+  svg.setAttribute('viewBox',`0 0 ${W} ${H}`);
+  LANES.forEach(([t,c],i)=>{el('rect',{x:X[i]-58,y:8,width:116,height:28,rx:8,fill:CB[c],stroke:C[c]},svg);el('text',{x:X[i],y:27,'text-anchor':'middle','font-size':12.5,'font-weight':700,fill:C[c]},svg,t);el('line',{x1:X[i],y1:36,x2:X[i],y2:H-10,stroke:'#d9d6cd','stroke-dasharray':'3 4'},svg);});
+  const steps=[];
+  SEQ.forEach((s,i)=>{
+    const y=top+i*gap+18,g=el('g',{class:'seqstep',tabindex:'0',role:'button','aria-label':`第${i+1}步 ${s.l}`},svg);
+    const col=LANES[s.f][1];
+    el('rect',{class:'bg',x:0,y:y-22,width:W,height:gap-2,rx:6},g);
+    if(s.f===s.to){el('path',{d:`M${X[s.f]} ${y-8} h46 v18 h-42`,stroke:C[col],'stroke-width':1.8,fill:'none','marker-end':`url(#seqSvg-ar-${col})`},g);el('text',{x:X[s.f]+54,y:y+5,'font-size':12,fill:'#1c2330'},g,s.l);}
+    else{const x1=X[s.f],x2=X[s.to],dir=x2>x1?1:-1;el('line',{x1:x1+dir*4,y1:y,x2:x2-dir*4,y2:y,stroke:C[col],'stroke-width':1.8,'marker-end':`url(#seqSvg-ar-${col})`},g);el('text',{x:(x1+x2)/2,y:y-7,'text-anchor':'middle','font-size':12,fill:'#1c2330'},g,s.l);}
+    el('circle',{cx:16,cy:y,r:10,fill:'#fff',stroke:'#c9c6bc'},g);el('text',{x:16,y:y+4,'text-anchor':'middle','font-size':11,'font-weight':700,fill:'#4a5363'},g,String(i+1));
+    g.addEventListener('click',()=>{stop();show(i);});g.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();stop();show(i);}});
+    steps.push(g);
+  });
+  let cur=0,timer=null;
+  function show(i){cur=i;steps.forEach((g,j)=>{g.classList.toggle('on',j===i);g.style.opacity=j===i?1:(j<i?.55:.3);});const s=SEQ[i];$('#seqDetail').innerHTML=`<div class="n">STEP ${i+1} / ${SEQ.length} · ${LANES[s.f][0]} → ${LANES[s.to][0]}</div><h4>${s.h}</h4><ul>${s.b.map(x=>'<li>'+x+'</li>').join('')}</ul><p style="margin:8px 0 0">${s.src.map(cite).join(' ')}</p>`;}
+  function stop(){if(timer){clearInterval(timer);timer=null;$('#sqPlay').textContent='▶ 自动播放';}}
+  $('#sqPrev').onclick=()=>{stop();show(Math.max(0,cur-1));};
+  $('#sqNext').onclick=()=>{stop();show(Math.min(SEQ.length-1,cur+1));};
+  $('#sqPlay').onclick=()=>{if(timer){stop();return;}$('#sqPlay').textContent='❚❚ 暂停';if(cur>=SEQ.length-1)cur=-1;timer=setInterval(()=>{if(cur>=SEQ.length-1){stop();return;}show(cur+1);},2800);show(cur<0?0:cur+1>SEQ.length-1?cur:cur+1);};
+  show(0);
+})();
+
+/* ================= 04 FSM ================= */
+const FSM_NODES=[
+ {id:'deferred',x:20,y:40,w:120,h:44,c:'gray',label:'deferred',fs:13},
+ {id:'queued',x:180,y:40,w:120,h:44,c:'server',label:'queued',fs:13},
+ {id:'dispatched',x:340,y:40,w:130,h:44,c:'server',label:'dispatched',fs:13},
+ {id:'waiting',x:320,y:150,w:170,h:44,c:'edge',label:'waiting_local_directory',fs:12},
+ {id:'running',x:520,y:40,w:120,h:44,c:'agent',label:'running',fs:13},
+ {id:'completed',x:690,y:10,w:115,h:40,c:'data',label:'completed',fs:13},
+ {id:'failed',x:690,y:80,w:115,h:40,c:'agent',label:'failed',fs:13},
+ {id:'cancelled',x:690,y:150,w:115,h:40,c:'gray',label:'cancelled',fs:13},
+];
+const FSM_EDGES=[
+ {id:'f1',d:'M140 62 L178 62',c:'gray'},
+ {id:'f2',d:'M300 62 L338 62',c:'server',l:'领取',lx:319,ly:54},
+ {id:'f3',d:'M405 84 L405 148',c:'edge',l:'抢不到目录锁',lx:412,ly:120,la:'start'},
+ {id:'f4',d:'M490 160 C 540 150 560 110 572 86',c:'edge',l:'拿到锁',lx:548,ly:140,la:'start'},
+ {id:'f5',d:'M470 62 L518 62',c:'agent',l:'StartTask',lx:494,ly:54},
+ {id:'f6',d:'M640 55 L688 32',c:'data'},
+ {id:'f7',d:'M640 70 L688 98',c:'agent'},
+ {id:'f8',d:'M600 84 C 620 140 660 168 688 170',c:'gray'},
+ {id:'f9',d:'M748 120 C 748 270 240 280 240 86',c:'agent',dash:true,l:'可重试 → 插入新行（attempt+1）',lx:500,ly:262},
+ {id:'f10',d:'M380 40 C 360 0 270 0 250 38',c:'server',dash:true,l:'派发后未开始 → 重新投递 / 退回',lx:315,ly:12},
+];
+const FSM_INFO={
+ deferred:['deferred · 延后','定时触发、或需要等待的重试（例如运行时离线后的重试、网络中断的第 3 次尝试）先处于 deferred，到点且运行时心跳恢复后才提升为 queued。',['retryreasons','tasksdoc']],
+ queued:['queued · 排队','等待对应 Runtime 领取。只要 Runtime 还在发心跳就一直等；只有当 Runtime 心跳缺席超过重连宽限期（默认 3 小时）<b>并且</b>这条 Run 自己也排了这么久，才过期失败，且不自动重试。',['queued','tasksdoc']],
+ dispatched:['dispatched · 已领取','服务端已领取、daemon 正在准备。daemon 每 15 秒续一次准备租约；租约过期会被判为卡住。若响应丢了 daemon 根本没收到，服务端会把这条“已派发未开始”的 Run 重新投递，并刷新派发时间。默认停留超过 5 分钟按失败处理。',['stale','reclaim','tasksdoc']],
+ waiting:['waiting_local_directory · 等目录','项目绑定了本地目录（原地模式）时，同一真实目录同一时间只允许一个 Run。后到的在这里等，不改目录，可以取消，没有独立超时。',['handletask','resourcesdoc']],
+ running:['running · 执行中','AI 工具在跑。服务端不因为时间长而强杀；存活看 Runtime 心跳（约 15 秒一次），心跳缺席超过重连宽限期才失败。daemon 自己有空闲看门狗判断进程是否卡死。daemon 重启时会把自己名下在途的 Run 直接判失败（runtime_recovery）并交给重试。',['stale','orphan','tasksdoc']],
+ completed:['completed · 完成','这一次执行正常结束。完成更新只对 running 行生效；重复回执视为幂等成功。注意：这不代表工单完成。',['completesql','complete']],
+ failed:['failed · 失败','记录失败原因码（平台侧或 agent_error.*）。可重试原因会插入一条新 Run；工单上没有其他活动 Run、也没有待执行重试时，in_progress 的工单回到 todo。',['retry','tasksdoc']],
+ cancelled:['cancelled · 取消','人在执行日志里停止、工单删除/归档、或工作流交接时勾选“停止上一位 Agent”。修改负责人或状态本身<b>不会</b>停止已开始的 Run。daemon 每 5 秒检查一次是否被取消。',['tasksdoc','handletask']],
+};
+(function(){
+  const svg=$('#fsm');defs(svg);
+  FSM_EDGES.forEach(e=>drawEdge(svg,e));
+  FSM_NODES.forEach(n=>drawNode(svg,n,show));
+  function show(id){svg.querySelectorAll('.node').forEach(n=>n.classList.toggle('sel',n.dataset.id===id));const [t,d,s]=FSM_INFO[id];$('#fsmPanel').innerHTML=`<h4>${t}</h4><p>${d}</p><p>${s.map(cite).join(' ')}</p>`;}
+})();
+
+/* ================= 05 CONTEXT ================= */
+const LAYERS=[
+ {id:'brief',t:'① 运行时简报',m:'写进工作目录的文件，跨轮稳定',d:'Agent 的身份与指令、挂载的 Skill、工作区和项目资源、工作规范（例如“先扫评论线程，再展开相关的”）。Claude Code 写 CLAUDE.md，Codex 写 AGENTS.md。',src:['brief']},
+ {id:'turn',t:'② 本轮任务单',m:'prompt 正文，当前指令内联',d:'工单 ID、触发评论<b>原文</b>、合并进本轮的其他评论<b>原文</b>（带线程 ID）、交接说明，以及“先运行哪些命令”。整条评论线程和工单历史不内联。',src:['promptbody','commentprompt']},
+ {id:'append',t:'③ 本轮追加块',m:'追加在 prompt 末尾',d:'代表哪位成员执行、可用的已连接应用、工作流步骤说明、父工单指针、worktree 分支说明、会话无法续接的提示。放在末尾是为了不破坏前面可缓存的前缀。',src:['prompt']},
+ {id:'pull',t:'④ 按需读取 + 差异',m:'Agent 自己用 CLI 拉',d:'<code>multica issue get</code>、<code>comment list --roots-only --summary</code>，再 <code>--thread &lt;id&gt; --tail 30</code> 展开。续接会话时，服务端额外告诉它哪些工单字段变了、之后新增几条评论。',src:['resume','promptbody']},
+];
+const PV={
+ first:`<span class="cm"># 工作目录/CLAUDE.md（运行时简报，示意）</span>
+<span class="hl">Agent 身份与指令 · Skills · 项目资源 · 工作规范…</span>
+
+<span class="cm"># prompt（本轮）</span>
+You are running as a local coding agent for a Multica workspace.
+Your assigned issue ID is: <span class="tagx">WEB-128</span>
+
+<span class="tagx">[NEW COMMENT]</span> Another agent (协调员) just left a new comment.
+Focus on THIS comment — do not confuse it with previous ones:
+> @前端Agent 这个归你：年付价格从配置读，测试补在 e2e/pricing。
+
+<span class="cm">…回复模板：写入 reply.md，再用 multica issue comment add 发布…</span>
+
+<span class="tagx">[On behalf of]</span> 林悦
+<span class="tagx">[Project workflow]</span> <span class="cm">（项目启用工作流时出现）</span>`,
+ resume:`<span class="cm"># 同一 Runtime 上续接 T3 的会话：前缀已在会话历史中</span>
+
+You are running as a local coding agent for a Multica workspace.
+Your assigned issue ID is: <span class="tagx">WEB-128</span>
+
+<span class="tagx">[NEW COMMENT]</span> A user just left a new comment.
+Focus on THIS comment — do not confuse it with previous ones:
+> @前端Agent 年付按钮文案改成“按年付费省 2 个月”
+
+<span class="hl">Since your last run: status, assignee changed;
+3 new comment(s) on this issue.</span>  <span class="cm">← 服务端算出的差异（示意）</span>
+
+<span class="cm">无法确定差异时不报，Agent 按工作规范重新扫一遍评论。
+若会话无法续接（换了 Runtime、会话被判污染），改为提示
+“上一轮上下文不可用”，并开新会话。</span>`
+};
+(function(){
+  const list=$('#layerList');let mode='first';
+  LAYERS.forEach((L,i)=>{const d=document.createElement('div');d.className='layer'+(i===0?' on':'');d.tabIndex=0;d.innerHTML=`<h4>${L.t}<span>${L.m}</span></h4><p>${L.d}</p><p style="margin-top:6px">${L.src.map(cite).join(' ')}</p>`;d.onclick=()=>{[...list.children].forEach(c=>c.classList.remove('on'));d.classList.add('on');};d.onkeydown=e=>{if(e.key==='Enter')d.click();};list.appendChild(d);});
+  function render(){$('#promptView').innerHTML=PV[mode];$('#pvFirst').classList.toggle('on',mode==='first');$('#pvResume').classList.toggle('on',mode==='resume');}
+  $('#pvFirst').onclick=()=>{mode='first';render();};$('#pvResume').onclick=()=>{mode='resume';render();};render();
+})();
+
+/* ================= 06 MULTI-AGENT ================= */
+function flow(svgId,nodes,edges,lanes){
+  const svg=$(svgId);defs(svg);
+  (lanes||[]).forEach(L=>{el('rect',{x:L.x,y:L.y,width:L.w,height:L.h,rx:12,fill:CB[L.c],stroke:'none'},svg);el('text',{x:L.x+10,y:L.y+18,'font-size':11.5,'font-weight':700,fill:C[L.c]},svg,L.t);});
+  edges.forEach(e=>drawEdge(svg,e));nodes.forEach(n=>drawNode(svg,n));
+  svg.classList.add('static');
+}
+flow('#fMention',[
+ {id:'a',x:20,y:85,w:150,h:60,c:'human',label:'评论',sub:'@审查Agent @前端Agent'},
+ {id:'b',x:260,y:30,w:170,h:56,c:'server',label:'Run · 审查Agent',sub:'queued'},
+ {id:'c',x:260,y:145,w:170,h:56,c:'server',label:'Run · 前端Agent',sub:'queued'},
+ {id:'d',x:520,y:30,w:150,h:56,c:'edge',label:'构建机 daemon',sub:'Codex'},
+ {id:'e',x:520,y:145,w:150,h:56,c:'edge',label:'小周 daemon',sub:'Claude Code'},
+ {id:'f',x:740,y:85,w:105,h:60,c:'agent',label:'回到评论',sub:'各自回复'},
+],[
+ {id:'1',d:'M170 105 L258 62',c:'server',l:'各排一条',lx:210,ly:72},
+ {id:'2',d:'M170 125 L258 170',c:'server'},
+ {id:'3',d:'M430 58 L518 58',c:'edge',l:'并行',lx:474,ly:50},
+ {id:'4',d:'M430 173 L518 173',c:'edge',l:'并行',lx:474,ly:165},
+ {id:'5',d:'M670 58 L738 100',c:'agent'},
+ {id:'6',d:'M670 173 L738 130',c:'agent'},
+]);
+flow('#fSquad',[
+ {id:'a',x:20,y:100,w:130,h:56,c:'human',label:'指派给小队',sub:'负责人=squad'},
+ {id:'b',x:200,y:100,w:140,h:56,c:'agent',label:'队长 Run',sub:'+ 规范 + 花名册'},
+ {id:'c',x:390,y:100,w:150,h:56,c:'human',label:'派活评论',sub:'@成员 + 记评估'},
+ {id:'d',x:600,y:30,w:120,h:50,c:'server',label:'成员 Agent',sub:'排一条 Run'},
+ {id:'e',x:600,y:175,w:120,h:50,c:'human',label:'成员（人）',sub:'收到通知'},
+ {id:'f',x:760,y:100,w:90,h:56,c:'human',label:'回报评论',sub:'不带 @'},
+],[
+ {id:'1',d:'M150 128 L198 128',c:'server'},
+ {id:'2',d:'M340 128 L388 128',c:'agent',l:'派完就停',lx:364,ly:118},
+ {id:'3',d:'M540 118 L598 58',c:'server'},
+ {id:'4',d:'M540 140 L598 198',c:'human'},
+ {id:'5',d:'M720 58 L758 115',c:'agent'},
+ {id:'6',d:'M805 156 C 805 250 270 250 270 158',c:'agent',dash:true,l:'无 @ 的回报 → 再次唤醒队长（已有待处理 Run 则不重复）',lx:540,ly:244},
+]);
+flow('#fWorkflow',[
+ {id:'a',x:20,y:90,w:120,h:56,c:'gray',label:'开发',sub:'不交接'},
+ {id:'b',x:220,y:90,w:150,h:56,c:'agent',label:'审查',sub:'交给 审查Agent'},
+ {id:'c',x:450,y:90,w:140,h:56,c:'human',label:'QA',sub:'交给 阿杰'},
+ {id:'d',x:670,y:90,w:120,h:56,c:'data',label:'Done',sub:'人确认'},
+],[
+ {id:'1',d:'M140 118 L218 118',c:'agent',l:'状态进入',lx:180,ly:108},
+ {id:'2',d:'M370 118 L448 118',c:'human',l:'完成后进入',lx:410,ly:108},
+ {id:'3',d:'M590 118 L668 118',c:'data'},
+ {id:'4',d:'M290 146 C 290 210 80 210 80 148',c:'agent',dash:true,l:'打回时退回',lx:185,ly:218},
+ {id:'5',d:'M295 88 C 295 30 295 30 295 30',c:'gray'},
+]);
+(function(){
+  const svg=$('#fWorkflow');
+  el('text',{x:295,y:40,'text-anchor':'middle','font-size':11.5,fill:C.agent},svg,'改负责人 + 排一条 Run（交接说明=步骤说明）');
+  el('text',{x:520,y:178,'text-anchor':'middle','font-size':11.5,fill:C.human},svg,'只改负责人 + 通知，不启动 Agent');
+})();
+document.querySelectorAll('#maTabs button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#maTabs button').forEach(x=>x.classList.toggle('on',x===b));document.querySelectorAll('.tabpane').forEach(p=>p.classList.toggle('on',p.id==='tp-'+b.dataset.t));});
+const QUIZ=[
+ ['外部人员（林悦）发了一条普通评论',true,'非小队成员的评论会唤醒队长。'],
+ ['前端 Agent 回报进展，评论里不带任何 @',true,'成员不带 @ 的进展更新会唤醒队长，让它重新评估下一步。'],
+ ['阿杰的评论里 @ 了审查 Agent',false,'显式 @ 就是路由信号，队长让位，避免多一轮空转。'],
+ ['队长自己发的评论',false,'防止自己触发自己。'],
+ ['前端 Agent 回报结果时顺手 @ 了审查 Agent',true,'例外：Agent 发结果时 @ 了另一个 Agent，队长仍被唤醒，以便协调整条线程。'],
+ ['评论里只有一个工单互链 #WEB-99',true,'工单引用不算路由，按普通评论处理。'],
+];
+(function(){
+  const box=$('#quizOpts');QUIZ.forEach(([q,yes,why],i)=>{const b=document.createElement('button');b.className='btn';b.textContent=q;b.onclick=()=>{[...box.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');$('#quizAns').innerHTML=`<p><span class="${yes?'yes':'no'}">${yes?'会唤醒队长':'不会唤醒队长'}</span></p><p>${why}</p><p style="color:var(--ink2);font-size:14px">在此之上还有去重：队长在这张工单上已有排队或已领取的 Run 时，新触发不会重复入队。</p><p>${cite('squaddoc')} ${cite('squadwake')}</p>`;};box.appendChild(b);});
+})();
+
+/* ================= 07 RECOVERY ================= */
+const REC=[
+ {k:'领单响应在路上丢了',ev:[['bad','daemon 发出 tasks.claim，WS 在等回复时断开','服务端可能已经把任务改成 dispatched'],['','daemon 判定“结果不确定”，本轮不再领，记下一个安全等待时间','不会立刻用 HTTP 再领一次，避免同一空槽领两次'],['','服务端发现这条 Run 已派发却一直没 StartTask、准备租约也没续','把它重新投递给该 Runtime，并刷新 dispatched_at'],['ok','旧的迟到请求因 dispatched_at 不匹配而更新 0 行','“哪一次派发算数”由时间戳做前置条件']],lim:'恢复限定在同一个 Runtime；若领取收尾（签令牌、写回执）本身失败且响应未发出，则精确退回 queued。',src:['wsfirst','reclaim','receipt']},
+ {k:'daemon 进程崩溃 / 重启',ev:[['bad','Run 正在执行，daemon 进程被杀',''],['','daemon 重新启动，向服务端报到','服务端把该 Runtime 名下所有 dispatched / running / waiting 的 Run 一次性判为失败，原因 runtime_recovery'],['','runtime_recovery 属于可自动重试','插入新 Run：同 Runtime、同工作目录'],['ok','新 Run 被领取，尽量复用目录、续接会话','若目录被清理或会话不可用，则新建并在 prompt 里说明']],lim:'被中断的那次执行里 Agent 已经做过的外部动作，重试时可能再做一次。',src:['orphan','retrysql','resume']},
+ {k:'执行机断网 / 合盖休眠',ev:[['bad','Runtime 心跳中断','约 3 分钟后显示离线'],['','running 的 Run 不会马上失败','要等心跳缺席超过重连宽限期（默认 3 小时）'],['','排队中的 Run 继续等','同时满足“心跳缺席超过宽限”与“自己也排了这么久”才过期'],['ok','机器在宽限期内回来，心跳恢复','照常继续或被领取；离线类重试先 deferred，心跳恢复后才提升']],lim:'不会把 Run 改派到别的在线机器。机器长期不回来，需要人把 Agent 换绑到别的 Runtime，再重新触发。',src:['stale','queued','retryreasons']},
+ {k:'模型服务网络中断',ev:[['bad','AI 工具报错，被归类为 agent_error.provider_network',''],['','立即插入第 2 次尝试','同 Runtime、同目录、保留会话，续接被截断的对话'],['bad','第 2 次又断',''],['ok','第 3 次延迟约 5 秒后发起','之后仍失败则停止，等人处理']],lim:'只有“新会话也治不好”的错误才会清会话；网络、限流、额度、鉴权类错误都保留会话指针。',src:['retryreasons','retry','backend']},
+ {k:'终态回执发不出去',ev:[['bad','Run 已结束，但 complete 请求失败',''],['','回执早已写入本地文件（每个任务一个文件，不含令牌）','daemon 之后会重放'],['','本地入队时先做一致性检查','同一任务已有待发回执且内容不同 → daemon 本地拒绝覆盖（不是服务端校验）'],['','服务端收到重复的终态回执','任务已不在 running → 条件更新 0 行 → 按“已终结”视为幂等成功，返回现有记录；服务端不比对两次回执的内容'],['ok','确认后删除本地文件','连续被永久拒绝（3 次且超过 10 分钟）则隔离，并尝试补报失败']],lim:'这是平台状态的“至少一次”投递 + 服务端按状态条件幂等；先到的终态为准。它不涉及 Agent 已产生的外部副作用。',src:['outbox','outboxwrite','quarantine','complete']},
+ {k:'会话坏了（上下文溢出等）',ev:[['bad','续接会话时被模型拒绝，或判定上下文溢出',''],['','daemon 在同一次执行内开新会话重跑','提示 Agent“上一轮上下文不可用”，需重新阅读工单'],['','被判污染的会话被标记为退役','后续 Run 不再续接它'],['ok','手动重试：上下文溢出、无效请求类，在原目录上开新会话','原目录不存在则用新目录']],lim:'上下文溢出本身不自动重试，需要人缩小任务或手动重试。',src:['backend','tasksdoc','retrysql']},
+ {k:'鉴权失效 / 额度用尽',ev:[['bad','AI 工具返回 401/403 或 402',''],['','归类为 agent_error.provider_auth_or_access / provider_quota_limit','不自动重试'],['','工单若无其他活动 Run，从 in_progress 回到 todo',''],['ok','人修好后在执行日志点重试','重试调用当时负责这次 Run 的 Agent，不换成新负责人']],lim:'重试按钮沿用原 Agent 和触发上下文；--fresh 可从新会话和新目录开始。',src:['tasksdoc','retryreasons']},
+];
+(function(){
+  const box=$('#recOpts');
+  REC.forEach((r,i)=>{const b=document.createElement('button');b.className='btn';b.textContent=r.k;b.onclick=()=>show(i);box.appendChild(b);});
+  function show(i){[...box.children].forEach((c,j)=>c.classList.toggle('on',j===i));const r=REC[i];$('#recCard').innerHTML=`<h4 style="font-size:16px;margin-bottom:8px">${r.k}</h4><div class="tl">${r.ev.map(([c,a,b])=>`<div class="ev ${c}"><p><b>${a}</b></p>${b?`<p style="color:var(--ink2)">${b}</p>`:''}</div>`).join('')}</div><div class="limit" style="margin:6px 0"><b>边界：</b>${r.lim}</div><p style="margin:6px 0 0">${r.src.map(cite).join(' ')}</p>`;}
+  show(0);
+})();
+
+/* ================= SOURCES TABLE ================= */
+(function(){const t=$('#srcTable');Object.keys(SRC).forEach(k=>{const s=SRC[k];const tr=document.createElement('tr');tr.id='ref-'+k;tr.innerHTML=`<td>${k}<br><span class="tag ${s.k==='doc'?'t-doc':'t-fact'}" style="margin-top:4px">${s.k==='doc'?'文档':'源码'}</span></td><td>${s.t}</td><td><a href="${srcUrl(k)}" target="_blank" rel="noopener">${s.p}#L${s.a}-L${s.b}</a></td>`;t.appendChild(tr);});})();
+
+fillCites();
+
+/* ================= NAV ================= */
+(function(){
+  const links=[...document.querySelectorAll('nav.toc a')],secs=links.map(a=>document.querySelector(a.getAttribute('href')));
+  const toc=$('#toc');
+  $('#menuBtn').onclick=()=>toc.classList.toggle('open');
+  links.forEach(a=>a.addEventListener('click',()=>toc.classList.remove('open')));
+  document.addEventListener('click',e=>{if(toc.classList.contains('open')&&!toc.contains(e.target)&&e.target!==$('#menuBtn'))toc.classList.remove('open');});
+  function onScroll(){
+    const y=window.scrollY+100;let idx=0;secs.forEach((s,i)=>{if(s&&s.offsetTop<=y)idx=i;});
+    links.forEach((a,i)=>a.classList.toggle('on',i===idx));
+    $('#curTitle').textContent=secs[idx]?secs[idx].dataset.title:'';
+    const h=document.documentElement.scrollHeight-innerHeight;$('#prog').style.width=(h>0?Math.min(100,window.scrollY/h*100):0)+'%';
+  }
+  addEventListener('scroll',onScroll,{passive:true});onScroll();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,89 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/kernel/mock-flags.ts
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：e4bf93956e4582cbaadfb541bbe68f0a568ce9ef0a97bc22e473148f376350f6
+以下是带原行号的节选，不是完整文件。
+
+00001  /**
+00002   * MobileWork renderer feature flags (build-time `VITE_*` env toggles).
+00003   *
+00004   * Originally the mock-UI flag module; also hosts general renderer switches
+00005   * (auto-reload, knowledge center). Same idiom as
+00006   * `VITE_MOBILEWORK_BILLING_ENABLED` (see settings/mobilework/sections.ts).
+00007   */
+00008  
+00009  /**
+00010   * Feature flag for prototype/demo "mock" UI.
+00011   *
+00012   * A number of MobileWork screens were landed mock-first (hardcoded sample data,
+00013   * placeholder cards, demo-only buttons) with no real backend yet. These are
+00014   * hidden by default and only shown when `VITE_MOBILEWORK_MOCK_ENABLED=1` (e.g. for
+00015   * design demos / prototype walkthroughs).
+00016   *
+00017   * Default (env unset / "0") → mock content is NOT rendered.
+00018   * Gate any mock block with `isMockUiEnabled() && (...)` or `{isMockUiEnabled() ? … : null}`.
+00019   */
+00020  export function isMockUiEnabled(): boolean {
+00046   * session sidebar「知识中心」function entry (ModuleFunctionNav), the composer
+00047   * toolbar「知识库」picker, and the /knowledge route (redirects to
+00048   * /session when hidden). Engine-side session usage is NOT affected: the
+00049   * wiki-query / llmwiki-ingest preset skills stay installed and the model can
+00050   * still query local wiki vaults in a session.
+00051   *
+00052   * Default (env unset / anything but "0") → entries shown. Set
+00053   * `VITE_MOBILEWORK_KNOWLEDGE_ENABLED=0` to hide them.
+00054   */
+00055  
+00056  /**
+00057   * 硬关闭开关：为 true 时无条件隐藏知识中心全部入口，忽略
+00058   * `VITE_MOBILEWORK_KNOWLEDGE_ENABLED`（各 `.env.*` 已置 0，但历史构建产物、
+00059   * 本地 `.env.*.local` 覆盖仍可能把值烤成 1）。要恢复入口把它改回 false。
+00060   */
+00061  const KNOWLEDGE_CENTER_FORCE_HIDDEN = true;
+00062  
+00063  export function isKnowledgeCenterEnabled(): boolean {
+00064    if (KNOWLEDGE_CENTER_FORCE_HIDDEN) return false;
+00065    return String(import.meta.env.VITE_MOBILEWORK_KNOWLEDGE_ENABLED ?? "1").trim() !== "0";
+00066  }
+00067  
+00068  /**
+00069   * Show/hide the「灵犀知识库」section in the composer knowledge picker.
+00070   * The main process still decides whether Lingxi is configured (LINGXI_* env).
+00071   *
+00072   * Default (env unset / anything but "0") → shown. Set
+00073   * `VITE_MOBILEWORK_LINGXI_KB_ENABLED=0` to hide it.
+00074   */
+00075  export function isLingxiKbEnabled(): boolean {
+00076    return String(import.meta.env.VITE_MOBILEWORK_LINGXI_KB_ENABLED ?? "1").trim() !== "0";
+00077  }
+00078  
+00079  /**
+00080   * 会话异常卡「检测网络」入口开关（SRS v1.1 4.2.7 的检测弹窗）。
+00081   *
+00082   * 置 0 的包不再提供这个入口：异常卡片的动作目录在构建展示记录时裁掉 `network-check`
+00083   * （主按钮顺延到目录里的下一个动作），会话面板也不渲染检测弹窗。卡片与其余动作不受影响；
+00084   * 重试阈值处的自动网络探测（`officeNetworkCheck` / `internetNetworkCheck`）是另一条链路，
+00085   * 不归这个开关管。
+00086   *
+00087   * Default (env unset / anything but "0") → 入口显示。打包需要屏蔽时在
+00088   * `.env.<env>` 里设 `VITE_MOBILEWORK_NETWORK_DIAGNOSTICS_ENABLED=0`。
+00089   */
+00090  export function isNetworkDiagnosticsEnabled(): boolean {
+00091    return String(import.meta.env.VITE_MOBILEWORK_NETWORK_DIAGNOSTICS_ENABLED ?? "1").trim() !== "0";
+00092  }
+00093  
+00094  /**
+00095   * 意见反馈（门户客服工单）入口开关。
+00096   *
+00097   * 本期云端能力不上线：设置页的「意见反馈」行、会话异常卡的「提交反馈」按钮、
+00098   * 沙箱异常卡的「提交反馈」按钮统一由本开关控制。入口代码保留，恢复时把
+00099   * `FEEDBACK_ENTRY_FORCE_HIDDEN` 改回 false；整体下线时连同
+00100   * `portal-links.openHelpFeedback` 一并清理。
+00101   *
+00102   * 注意：只关「提交反馈」这一条门户工单链路；「一键上报」（意见箱上传）是
+00103   * 另一个能力，不受本开关影响。
+00104   */
+00105  const FEEDBACK_ENTRY_FORCE_HIDDEN = true;
+00106  
+00107  export function isHelpFeedbackEntryEnabled(): boolean {
+00108    return !FEEDBACK_ENTRY_FORCE_HIDDEN;
+00109  }

@@ -1,0 +1,44 @@
+sequenceDiagram
+    autonumber
+    participant p0 as 王蕾 / 当前用户
+    participant p1 as MobileWork 页面
+    participant p2 as Workspace / Session
+    participant p3 as 本地引擎
+    participant p4 as 主专家 / 工具
+    participant p5 as 外部开发 / 测试
+    p0->>p1: 登录并准备本地或远程空间
+    Note over p0,p1: 默认空间是目录/连接；不是团队成员容器
+    p0->>p1: 选择主专家、技能、模型与工具
+    Note over p0,p1: 专家全局资产；连接器已连不等于本会话授权
+    p0->>p2: 首次发送弱网缺陷需求与附件
+    Note over p0,p2: 新 session / 任务目录此时创建；不是共享 issue
+    p2->>p3: 提交本轮上下文与执行配置
+    Note over p2,p3: 发送时确定模型；当前回合不因后续设置而变化
+    p3->>p4: 主专家调用子代理、文件或浏览器
+    Note over p3,p4: 专家团属于执行组合；不是多成员组织
+    p4->>p1: 工具高风险操作请求用户确认
+    Note over p1,p4: HITL 是工具授权；不是批准修复结果
+    p0->>p3: 允许本次操作或调整执行
+    Note over p0,p3: 黑名单不因完全访问就被豁免
+    p4->>p2: 输出补丁 v1、工具记录与文件成果
+    Note over p2,p4: 成果注册并可预览；远端文件复制与本地注册分开
+    p3->>p1: 最终回复且引擎空闲后收尾
+    Note over p1,p3: 待权限应答仍算进行中；不能只看最后一段正文
+    p0->>p5: 人工衔接：把 v1 交给陈晓回归
+    Note over p0,p5: 当前原生团队指派、评论与独立验收闭环未核验
+    p5->>p0: 人工反馈：弱网仍重复，要求返工
+    Note over p0,p5: 不是已证明存在的产品内通知或共享评论
+    p0->>p2: 在当前任务追问并附测试差异
+    Note over p0,p2: 消息通常再次进入主专家回合；排队在本轮真正结束后发送
+    p3->>p4: 执行第二轮并生成 v2
+    Note over p3,p4: 支持错误恢复与停止；不承诺撤销既有副作用
+    p4->>p2: 交付 v2 与新的执行记录
+    Note over p2,p4: 消息、子代理、文件可在个人任务中查看
+    p0->>p5: 人工衔接：请陈晓复测 v2
+    Note over p0,p5: 多人项目工作流属于文档 04 的建议
+    p5->>p0: 人工返回测试通过证据
+    Note over p0,p5: 示例预期 1、实际 1
+    p0->>p1: 用户判断成果可用并整理任务
+    Note over p0,p1: 当前未核验一等多人业务验收对象
+    p0->>p2: 后续查历史、文件或删除任务
+    Note over p0,p2: 删除任务不等于删除磁盘成果；知识中心当前强制隐藏

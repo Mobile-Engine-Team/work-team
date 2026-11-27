@@ -1,0 +1,165 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/workspace/share-workspace-access-panel.tsx
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：8384eb31defc6f3755c968d051073e67be5e00a898477d7fa7489697148c5ce1
+以下是带原行号的节选，不是完整文件。
+
+00001  /** @jsxImportSource react */
+00002  import { useId } from "react";
+00003  import {
+00004    Check,
+00005    ChevronDown,
+00006    Copy,
+00007    Eye,
+00008    EyeOff,
+00009  } from "lucide-react";
+00010  
+00011  import {
+00012    iconTileClass,
+00013    inputClass,
+00014    pillGhostClass,
+00015    pillSecondaryClass,
+00016    softCardClass,
+00017    surfaceCardClass,
+00018    warningBannerClass,
+00019  } from "./modal-styles";
+00020  import type { RemoteAccessControl, ShareField } from "./types";
+00078          >
+00079            {props.copiedKey === props.fieldKey ? (
+00080              <Check size={14} className="text-emerald-600" />
+00081            ) : (
+00082              <Copy size={14} />
+00083            )}
+00084          </button>
+00085        </div>
+00086        {props.field.hint?.trim() ? (
+00087          <p className="mt-1.5 text-[12px] text-dls-secondary">{props.field.hint}</p>
+00088        ) : null}
+00089      </div>
+00090    );
+00091  }
+00092  
+00093  export type ShareWorkspaceAccessPanelProps = {
+00094    fields: ShareField[];
+00095    copiedKey: string | null;
+00096    onCopy: (value: string, key: string) => void;
+00097    revealedByKey: Record<string, boolean>;
+00098    onToggleReveal: (key: string) => void;
+00099    collaboratorExpanded: boolean;
+00100    onToggleCollaboratorExpanded: () => void;
+00101    remoteAccess?: RemoteAccessControl;
+00102    remoteAccessEnabled: boolean;
+00103    onRemoteAccessEnabledChange: (value: boolean) => void;
+00104    note?: string | null;
+00105  };
+00106  
+00107  export function ShareWorkspaceAccessPanel(
+00108    props: ShareWorkspaceAccessPanelProps,
+00109  ) {
+00110    const remoteAccessToggleId = useId();
+00111    const accessFields = props.fields.filter(
+00112      (field) => !isInviteField(field.label),
+00113    );
+00114    const collaboratorField =
+00115      accessFields.find((field) => isCollaboratorField(field.label)) ?? null;
+00116    const primaryAccessFields = accessFields.filter(
+00117      (field) => !isCollaboratorField(field.label),
+00118    );
+00119    const remoteAccessNeedsEnable = Boolean(
+00120      props.remoteAccess && !props.remoteAccess.enabled && !props.remoteAccessEnabled,
+00121    );
+00122    const remoteSaveDisabled = props.remoteAccess
+00123      ? props.remoteAccess.busy ||
+00124        (props.remoteAccess.enabled &&
+00125          props.remoteAccessEnabled === props.remoteAccess.enabled)
+00126      : true;
+00127    const remoteSaveLabel = props.remoteAccess?.busy
+00128      ? "Saving…"
+00129      : remoteAccessNeedsEnable
+00130        ? "Enable remote access"
+00131        : props.remoteAccess?.enabled === false && props.remoteAccessEnabled
+00132          ? "Save & restart worker"
+00133          : "Save";
+00134  
+00135    return (
+00136      <div className="space-y-5 pt-2 animate-in fade-in slide-in-from-right-4 duration-300">
+00137        <div className={warningBannerClass}>
+00138          <span className="leading-relaxed">
+00139            {props.remoteAccess
+00140              ? "These credentials grant live access to this workspace. Sharing this workspace remotely may allow anyone with access to your network to control your worker."
+00141              : "Share with trusted people only. These credentials grant live access to this workspace."}
+00142          </span>
+00143        </div>
+00144  
+00145        {props.remoteAccess ? (
+00146          <div className={surfaceCardClass}>
+00147            <div className="flex items-start justify-between gap-3">
+00148              <div>
+00149                <h3 className="text-[18px] font-semibold tracking-[-0.3px] text-dls-text">
+00150                  Remote access
+00151                </h3>
+00152                <p className="mt-1 text-[14px] leading-relaxed text-dls-secondary">
+00153                  Off by default. Turn this on only when you want this worker
+00154                  reachable from another machine.
+00155                </p>
+00156              </div>
+00157              <label htmlFor={remoteAccessToggleId} className="relative inline-flex shrink-0 cursor-pointer items-center">
+00158                <input
+00159                  id={remoteAccessToggleId}
+00160                  type="checkbox"
+00161                  aria-label="Remote access"
+00162                  className="peer sr-only"
+00163                  checked={props.remoteAccessEnabled}
+00164                  onChange={(event) =>
+00165                    props.onRemoteAccessEnabledChange(event.currentTarget.checked)
+00166                  }
+00167                  disabled={props.remoteAccess.busy}
+00168                />
+00169                <div className="h-6 w-11 rounded-full bg-zinc-300 transition-colors peer-checked:bg-[var(--dls-accent)] peer-disabled:opacity-50 after:absolute after:left-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white after:transition-transform peer-checked:after:translate-x-5" />
+00170              </label>
+00171            </div>
+00172  
+00173            <div className="mt-4 flex items-center justify-between gap-3">
+00174              <div className="text-[13px] text-dls-secondary">
+00175                {props.remoteAccess.status?.trim() ||
+00176                  (props.remoteAccess.enabled
+00177                    ? "Remote access is currently enabled."
+00178                    : "Remote access is currently disabled.")}
+00179              </div>
+00180              <button
+00181                type="button"
+00182                onClick={() => {
+00183                  if (remoteAccessNeedsEnable) {
+00184                    props.onRemoteAccessEnabledChange(true);
+00185                    return;
+00186                  }
+00187                  void props.remoteAccess?.onSave(props.remoteAccessEnabled);
+00188                }}
+00189                disabled={remoteSaveDisabled}
+00190                className={pillSecondaryClass}
+00191              >
+00192                {remoteSaveLabel}
+00193              </button>
+00194            </div>
+00195  
+00196            {props.remoteAccess.error ? (
+00197              <WorkspaceErrorBanner
+00198                error={props.remoteAccess.error}
+00199                className="mt-4"
+00200              />
+00201            ) : null}
+00202          </div>
+00203        ) : null}
+00204  
+00205        {primaryAccessFields.length > 0 ? (
+00206          <div className={surfaceCardClass}>
+00207            <div className="mb-4 text-[13px] font-medium text-dls-text">
+00208              Connection details
+00209            </div>
+00210            <div className="space-y-4">
+00211              {primaryAccessFields.map((field) => (
+00212                <div key={field.label}>
+00213                  <CredentialField
+00214                    field={field}
+00215                    fieldKey={`primary:${field.label}`}
+00216                    copiedKey={props.copiedKey}
+00217                    revealedByKey={props.revealedByKey}

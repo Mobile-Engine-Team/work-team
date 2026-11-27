@@ -1,0 +1,165 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/shell/module-nav.tsx
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：ab41c5cd56fa14adbbb990fd9d8895ce57a8bfa29e1c4b5978cf64b618c4b4ec
+以下是带原行号的节选，不是完整文件。
+
+00001  /** @jsxImportSource react */
+00002  import { useEffect, useRef, useState } from "react";
+00003  import { useLocation, useNavigate } from "react-router-dom";
+00004  import type { ComponentType } from "react";
+00005  
+00006  import { cn } from "@/lib/utils";
+00007  import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
+00008  import { useSidebar } from "@/components/ui/sidebar";
+00009  import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+00010  import { currentLocale, LOCALE_CHANGE_EVENT, t, type Language } from "@/i18n";
+00011  import { MODULE_ROUTES } from "./module-routes";
+00012  import { shouldCloseSidebarOverlayOnPathChange } from "./sidebar-controller";
+00013  import { isKnowledgeCenterEnabled } from "../kernel/mock-flags";
+00014  import {
+00015    AutomationGlyph,
+00016    ExpertTeamGlyph,
+00017    KnowledgeCenterGlyph,
+00018  } from "../design-system/mw-glyphs";
+00019  import { QrCard, type WelcomeQr } from "../domains/session/surface/welcome-qr";
+00020  
+00035    /** "route" (default) navigates to `route`; "qr" opens the QR dialog instead. */
+00036    kind?: "route" | "qr";
+00037    /** Target route for kind="route". */
+00038    route?: string;
+00039    /** Active-match prefix for kind="route". */
+00040    match?: string;
+00041    /** QR card content for kind="qr". */
+00042    qr?: WelcomeQr;
+00043  };
+00044  
+00045  /**
+00046   * Persistent function-entry nav shown in AppSidebar — switches the top-level
+00047   * MobileWork modules. Shared by the workbench and all feature-module routes
+00048   * under the unified app shell.
+00049   */
+00050  export const SIDEBAR_PRIMARY_FUNCTIONS: SidebarFunction[] = [
+00051    {
+00052      id: "expert-workspace",
+00053      labelKey: "sidebar.nav.expert_workspace",
+00054      hintKey: "sidebar.nav.expert_workspace_hint",
+00055      icon: ExpertTeamGlyph,
+00056      route: MODULE_ROUTES.experts,
+00057      match: "/experts",
+00058    },
+00059    {
+00060      id: "automation",
+00061      labelKey: "sidebar.nav.automation",
+00062      hintKey: "sidebar.nav.automation_hint",
+00063      icon: AutomationGlyph,
+00064      route: MODULE_ROUTES.automation,
+00065      match: "/automation",
+00066    },
+00067    {
+00068      id: "knowledge-center",
+00069      labelKey: "sidebar.nav.knowledge_center",
+00070      hintKey: "sidebar.nav.knowledge_center_hint",
+00071      icon: KnowledgeCenterGlyph,
+00072      route: MODULE_ROUTES.knowledge,
+00073      match: "/knowledge",
+00074    },
+00075  ];
+00076  
+00077  export const SIDEBAR_MORE_FUNCTIONS: SidebarFunction[] = [
+00078    // 内嵌应用入口（前 2 个走 /embedded 内嵌页，拍照即懂弹二维码）。
+00079    // 移除深洞察、金融专家、照片理解
+00080  //   {
+00081  //     id: "deep-insight",
+00082  //     labelKey: "sidebar.nav.deep_insight",
+00083  //     hintKey: "sidebar.nav.deep_insight_hint",
+00084  //     icon: Telescope,
+00085  //     route: embeddedRoute("deep-insight"),
+00086  //     match: embeddedRoute("deep-insight"),
+00087  //   },
+00088  //   {
+00089  //     id: "finance-expert",
+00090  //     labelKey: "sidebar.nav.finance_expert",
+00091  //     hintKey: "sidebar.nav.finance_expert_hint",
+00092  //     icon: Landmark,
+00093  //     route: embeddedRoute("finance-expert"),
+00094  //     match: embeddedRoute("finance-expert"),
+00095  //   },
+00096  //   {
+00097  //     id: "photo-understanding",
+00098  //     labelKey: "sidebar.nav.photo_understanding",
+00099  //     hintKey: "sidebar.nav.photo_understanding_hint",
+00100  //     icon: ScanLine,
+00101  //     kind: "qr",
+00102  //     qr: DEEPLENS_QR,
+00103  //   },
+00104  ];
+00105  
+00106  /** Back-compat export: the full ordered list (primary + more). */
+00107  export const SIDEBAR_FUNCTIONS: SidebarFunction[] = [
+00108    ...SIDEBAR_PRIMARY_FUNCTIONS,
+00109    ...SIDEBAR_MORE_FUNCTIONS,
+00110  ];
+00111  
+00112  // VITE_MOBILEWORK_KNOWLEDGE_ENABLED=0 时隐藏「知识中心」功能入口。
+00113  const HIDDEN_SIDEBAR_FUNCTION_IDS = isKnowledgeCenterEnabled() ? [] : ["knowledge-center"];
+00114  const RENDERED_SIDEBAR_FUNCTIONS: SidebarFunction[] = HIDDEN_SIDEBAR_FUNCTION_IDS.length
+00115    ? SIDEBAR_FUNCTIONS.filter((entry) => !HIDDEN_SIDEBAR_FUNCTION_IDS.includes(entry.id))
+00116    : SIDEBAR_FUNCTIONS;
+00117  
+00118  function isFunctionActive(pathname: string, entry: SidebarFunction): boolean {
+00119    if (!entry.match) return false;
+00120    return pathname === entry.match || pathname.startsWith(`${entry.match}/`);
+00121  }
+00122  
+00123  function FunctionNavButton({
+00124    entry,
+00125    active,
+00126    locale,
+00127    onOpenQr,
+00128  }: {
+00129    entry: SidebarFunction;
+00130    active: boolean;
+00131    locale: Language;
+00132    onOpenQr: (qr: WelcomeQr) => void;
+00133  }) {
+00134    const navigate = useNavigate();
+00135    const { overlayMode, setOverlayOpen } = useSidebar();
+00136    const Icon = entry.icon;
+00137    const label = t(entry.labelKey, locale);
+00138    const hint = t(entry.hintKey, locale);
+00139    const tip = `${label} - ${hint}`;
+00140  
+00141    return (
+00142      <Tooltip>
+00143        <TooltipTrigger
+00144          render={
+00145            <button
+00146              type="button"
+00147              data-sidebar-function-id={entry.id}
+00148              data-active={active || undefined}
+00149              aria-current={active ? "page" : undefined}
+00150              aria-label={`${label}: ${hint}`}
+00151              onClick={() => {
+00152                if (entry.kind === "qr" && entry.qr) {
+00153                  onOpenQr(entry.qr);
+00154                  return;
+00155                }
+00156                if (entry.route) {
+00157                  navigate(entry.route);
+00158                  if (overlayMode) setOverlayOpen(false);
+00159                }
+00160              }}
+00161              className={cn(
+00162                // 选中底比「新建任务」左右各宽 8（-mx-2 + calc 对称外扩）；icon/标题左缘、
+00163                // 描述右缘仍落在新建任务左右框上（外层 px-4 列 + 内边距 8）。
+00164                // 必须用 calc(100%+16px)，单用 w-full+-mx-2 右边会短一截。
+00165                "flex h-[38px] w-[calc(100%+16px)] flex-none items-center justify-between gap-2 overflow-hidden rounded-[6px] -mx-2 px-2 text-[14px] leading-[22px] transition-colors",
+00166                active
+00167                  ? "bg-[var(--mw-row-active-bg)] text-[var(--mw-brand)] dark:text-[var(--mw-sidebar-nav-title)]"
+00168                  : "text-[var(--mw-sidebar-nav-title)] hover:bg-[var(--mw-hover)] dark:hover:bg-transparent",
+00169              )}
+00170            >
+00171              <span className="flex min-w-0 flex-1 items-center gap-2">
+00172                <Icon className="size-4 shrink-0" />
+00173                <span className="truncate font-normal">{label}</span>
+00174              </span>

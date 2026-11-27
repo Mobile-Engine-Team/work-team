@@ -1,0 +1,83 @@
+源文件：/Users/xymtop/Desktop/multica/packages/views/settings/components/billing-state.ts
+版本：3c5c8b245359b9b8e913a47f97211f2a3426f149
+SHA-256：564dbaea5b505b57d3441cd978b0855bba13254805146a11eb609b6124f06abb
+以下是带原行号的节选，不是完整文件。
+
+00001  import type {
+00002    AutopilotQuotaUsage,
+00003    WorkspaceSubscriptionEntitlements,
+00004    WorkspaceSubscriptionSummary,
+00005  } from "@multica/core/types";
+00006  
+00007  export type AutopilotUsageView =
+00008    | { kind: "unlimited" }
+00009    | { kind: "unavailable" }
+00010    | {
+00011        kind: "metered";
+00012        used: number;
+00013        reserved: number;
+00014        total: number;
+00015        limit: number;
+00016        progress: number;
+00017        reached: boolean;
+00018        resetAt: string;
+00019      };
+00020  
+00021  /**
+00022   * Quota admission counts completed and reserved runs. Keep reserved work
+00023   * visible so the progress bar matches the server's blocking decision for a
+00024   * limited workspace. Limit mode and the reached decision are server facts;
+00025   * this helper only prepares presentation values.
+00026   */
+00027  export function resolveAutopilotUsage(
+00028    entitlements: WorkspaceSubscriptionEntitlements,
+00029    usage: AutopilotQuotaUsage | undefined,
+00030    failed: boolean,
+00031  ): AutopilotUsageView {
+00032    if (entitlements.limits.autopilotRuns.mode === "unlimited") {
+00033      return { kind: "unlimited" };
+00034    }
+00035  
+00036    if (!failed && usage !== undefined && usage.action !== "off") {
+00037      const { used, reserved, total, limit, reached, reset_at: resetAt } = usage;
+00038      if (
+00039        used !== null &&
+00040        reserved !== null &&
+00041        total !== null &&
+00042        limit !== null &&
+00043        reached !== null &&
+00044        resetAt !== null &&
+00045        used >= 0 &&
+00046        reserved >= 0 &&
+00047        limit >= 0 &&
+00048        Number.isFinite(used) &&
+00049        Number.isFinite(reserved) &&
+00050        Number.isFinite(total) &&
+00051        Number.isFinite(limit)
+00052      ) {
+00053        const progress =
+00054          limit === 0
+00055            ? 100
+00056            : Math.min(100, Math.max(0, (total / limit) * 100));
+00057  
+00058        return {
+00059          kind: "metered",
+00060          used,
+00061          reserved,
+00062          total,
+00063          limit,
+00064          progress,
+00065          reached,
+00066          resetAt,
+00067        };
+00068      }
+00069    }
+00070  
+00071    return { kind: "unavailable" };
+00072  }
+00073  
+00074  export function hasActiveWorkspaceSeatCapacity(
+00075    summary: WorkspaceSubscriptionSummary | null | undefined,
+00076  ): boolean {
+00077    return summary?.seatCapacity != null;
+00078  }

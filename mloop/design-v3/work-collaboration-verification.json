@@ -1,0 +1,32 @@
+{
+  "date": "2026-11-13",
+  "validation": "Three browser pages with separate identities; isolated temporary team",
+  "passed": [
+    "Private Work conversation retains execution display",
+    "Mentioning people invites them and turns private conversation into group",
+    "Unjoined assistants are absent from suggestions and blocked on manual mention",
+    "Owners bring their own assistant; other members can then mention it",
+    "Simultaneous messages survive and appear without refresh",
+    "Conversation title, project and membership updates merge",
+    "Create and bind task from discussion",
+    "Simultaneous task comments survive",
+    "Independent task status and priority updates merge with both activity records",
+    "Refresh preserves messages, comments, membership and task properties",
+    "Task embedded conversation shares messages and original execution history",
+    "Attachments appear in all pages and persist as data URLs",
+    "Per-page draft restores after reload",
+    "Removed assistants disappear from mention candidates",
+    "New-tab links carry team context",
+    "Narrow layout has no document overflow; resize collapses sidebar",
+    "Homepage invite shortcut opens member picker"
+  ],
+  "applicationErrorsObserved": [],
+  "excludedErrors": "Browser extension StorageArea TypeErrors from chrome-extension origins",
+  "build": "node build.mjs",
+  "limitations": "Same browser profile and origin only; actual Work execution and cross-device communication require services.",
+  "screenshots": [
+    "previews/work-style-conversation.png",
+    "previews/work-style-task.png"
+  ],
+  "temporaryTestTeamRemoved": true
+}

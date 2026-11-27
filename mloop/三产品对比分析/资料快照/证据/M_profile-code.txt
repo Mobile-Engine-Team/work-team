@@ -1,0 +1,164 @@
+源文件：/Users/xymtop/Desktop/multica/packages/views/settings/components/account-tab.tsx
+版本：3c5c8b245359b9b8e913a47f97211f2a3426f149
+SHA-256：58c9bea67465925408fbee552fc1908f0cc53f0a4da05896e48bdaa383825b48
+以下是带原行号的节选，不是完整文件。
+
+00001  "use client";
+00002  
+00003  import { useCallback, useEffect, useMemo, useState } from "react";
+00004  import { Input } from "@multica/ui/components/ui/input";
+00005  import { Textarea } from "@multica/ui/components/ui/textarea";
+00006  import { toast } from "sonner";
+00007  import { useAuthStore } from "@multica/core/auth";
+00008  import { api } from "@multica/core/api";
+00009  import { AvatarUploadControl } from "../../common/avatar-upload-control";
+00010  import { useT } from "../../i18n";
+00011  import {
+00012    SettingsCard,
+00013    SettingsRow,
+00014    SettingsSaveState,
+00015    SettingsSection,
+00016    SettingsTab,
+00017  } from "./settings-layout";
+00018  import { useAutoSave } from "./use-auto-save";
+00019  
+00020  // Mirror server/internal/handler/auth.go:MaxProfileDescriptionLen. Counted in
+00021  // JS String.length (UTF-16 code units) here while the server counts runes,
+00022  // so a profile full of supplementary-plane emoji will trip the client cap
+00023  // before the server's — which is the safer direction of drift.
+00024  const MAX_PROFILE_DESCRIPTION_LEN = 2000;
+00025  
+00026  interface ProfileDraft {
+00027    name: string;
+00028    profileDescription: string;
+00029  }
+00030  
+00031  function profilesEqual(left: ProfileDraft, right: ProfileDraft) {
+00032    return left.name === right.name && left.profileDescription === right.profileDescription;
+00033  }
+00034  
+00035  export function AccountTab() {
+00036    const { t } = useT("settings");
+00037    const user = useAuthStore((s) => s.user);
+00038    const setUser = useAuthStore((s) => s.setUser);
+00039  
+00040    const [profileName, setProfileName] = useState(user?.name ?? "");
+00041    const [profileDescription, setProfileDescription] = useState(
+00042      user?.profile_description ?? "",
+00043    );
+00044  
+00045    useEffect(() => {
+00046      setProfileName(user?.name ?? "");
+00047      setProfileDescription(user?.profile_description ?? "");
+00048      // Preserve in-progress edits when an avatar upload or auto-save replaces
+00049      // the current user object in the auth store.
+00050      // eslint-disable-next-line react-hooks/exhaustive-deps -- intentionally keyed on user identity
+00051    }, [user?.id]);
+00052  
+00053    const descriptionTooLong = profileDescription.length > MAX_PROFILE_DESCRIPTION_LEN;
+00054  
+00055    const draft = useMemo(
+00056      () => ({ name: profileName, profileDescription }),
+00057      [profileDescription, profileName],
+00058    );
+00059    const savedDraft = useMemo(
+00060      () => ({
+00061        name: user?.name ?? "",
+00062        profileDescription: user?.profile_description ?? "",
+00063      }),
+00064      [user?.name, user?.profile_description],
+00065    );
+00066    const saveProfile = useCallback(
+00067      async (next: ProfileDraft) => {
+00068        const updated = await api.updateMe({
+00069          name: next.name,
+00070          profile_description: next.profileDescription,
+00071        });
+00072        setUser(updated);
+00073      },
+00074      [setUser],
+00075    );
+00076    const autoSave = useAutoSave({
+00077      value: draft,
+00078      savedValue: savedDraft,
+00079      onSave: saveProfile,
+00080      onError: (error) =>
+00081        toast.error(
+00082          error instanceof Error
+00083            ? error.message
+00084            : t(($) => $.account.toast_profile_failed),
+00085        ),
+00086      enabled: !!user && !!profileName.trim() && !descriptionTooLong,
+00087      isEqual: profilesEqual,
+00088    });
+00089  
+00090    return (
+00091      <SettingsTab title={t(($) => $.page.tabs.profile)} scope="account">
+00092        <SettingsSection
+00093          title={t(($) => $.account.section_profile)}
+00094          action={
+00095            <SettingsSaveState
+00096              status={autoSave.status}
+00097              savingLabel={t(($) => $.auto_save.saving)}
+00098              savedLabel={t(($) => $.auto_save.saved)}
+00099              errorLabel={t(($) => $.auto_save.failed)}
+00100            />
+00101          }
+00102        >
+00103          <SettingsCard>
+00104            <SettingsRow
+00105              anchor="avatar"
+00106              label={t(($) => $.account.avatar_label)}
+00107              description={t(($) => $.account.click_avatar_hint)}
+00108              size="none"
+00109            >
+00110              <div className="flex justify-start sm:justify-end">
+00111                <AvatarUploadControl
+00112                  variant="user"
+00113                  value={user?.avatar_url ?? null}
+00114                  name={user?.name ?? ""}
+00115                  size={64}
+00116                  onUploaded={async (url) => {
+00117                    try {
+00118                      const updated = await api.updateMe({ avatar_url: url });
+00119                      setUser(updated);
+00120                    } catch (error) {
+00121                      toast.error(
+00122                        error instanceof Error
+00123                          ? error.message
+00124                          : t(($) => $.account.toast_avatar_failed),
+00125                      );
+00126                    }
+00127                  }}
+00128                />
+00129              </div>
+00130            </SettingsRow>
+00131  
+00132            <SettingsRow
+00133              anchor="name"
+00134              label={t(($) => $.account.name_label)}
+00135              size="text"
+00136            >
+00137              <Input
+00138                type="text"
+00139                name="profile-name"
+00140                autoComplete="name"
+00141                aria-label={t(($) => $.account.name_label)}
+00142                value={profileName}
+00143                onChange={(event) => setProfileName(event.target.value)}
+00144                onBlur={autoSave.flush}
+00145              />
+00146            </SettingsRow>
+00147  
+00148            <SettingsRow
+00149              anchor="about"
+00150              label={t(($) => $.account.profile_description_label)}
+00151              description={t(($) => $.account.profile_description_hint)}
+00152              size="text"
+00153              align="start"
+00154            >
+00155              <div>
+00156                <Textarea
+00157                  name="profile-description"
+00158                  autoComplete="off"
+00159                  aria-label={t(($) => $.account.profile_description_label)}

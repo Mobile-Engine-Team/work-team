@@ -1,0 +1,33 @@
+.desktop-mac .design-sidebar{overflow:visible}
+.sidebar-brand-row{position:relative;display:flex;align-items:center;gap:10px;height:50px;min-height:50px;padding:0 12px 12px;z-index:85}
+.sidebar-brand-row .mac-brand{height:auto;padding:0;flex-shrink:0}
+.team-switcher{min-width:0;margin-left:auto}
+.team-switch-trigger{display:flex;align-items:center;justify-content:flex-end;gap:4px;width:100%;height:28px;padding:0 4px;border-radius:5px;text-align:left;color:var(--mw-gray-3);transition:background .15s,color .15s}
+.team-switch-trigger:hover,.team-switch-trigger.is-open{color:var(--mw-brand);background:var(--mw-brand-bg)}
+.team-avatar{width:32px;height:32px;flex-shrink:0;display:flex;align-items:center;justify-content:center;border:1px solid color-mix(in srgb,var(--mw-brand) 18%,transparent);border-radius:7px;background:var(--mw-brand-bg);color:var(--mw-brand);font-size:14px;font-weight:600}
+.team-switch-label{min-width:0;font-size:12px;line-height:20px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.team-switch-trigger>svg{color:var(--mw-gray-3);flex-shrink:0}
+.team-switch-menu{position:absolute;left:12px;top:calc(100% - 5px);width:320px;max-width:calc(100vw - 24px);border:1px solid var(--mw-divider);border-radius:10px;background:var(--mw-dialog-surface,var(--mw-home-pane));color:var(--mw-gray-1);box-shadow:0 8px 28px #182b4d1c;overflow:hidden}
+.team-switch-menu header{display:flex;align-items:center;justify-content:space-between;padding:16px 16px 12px;font-size:13px}
+.team-switch-menu header strong{font-weight:500}
+.team-switch-menu header>span{font-size:12px;color:var(--mw-gray-3)}
+.team-switch-search{display:flex;align-items:center;gap:8px;height:34px;margin:0 12px 8px;padding:0 10px;border:1px solid var(--mw-divider);border-radius:5px;color:var(--mw-gray-3)}
+.team-switch-search:focus-within{border-color:var(--mw-brand)}
+.team-switch-search input{min-width:0;flex:1;font-size:13px;background:transparent;outline:none;color:var(--mw-gray-1)}
+.team-switch-options{padding:0 6px 8px;max-height:280px;overflow:auto}
+.team-switch-options button{display:flex;align-items:center;gap:10px;width:100%;padding:11px 9px;border-radius:6px;text-align:left}
+.team-switch-options button:hover{background:var(--mw-gray-9)}
+.team-switch-options button.selected{background:var(--mw-brand-bg)}
+.team-switch-options button>span:nth-child(2){display:flex;flex:1;min-width:0;flex-direction:column;gap:4px}
+.team-switch-options strong{font-size:14px;font-weight:500}
+.team-switch-options small{font-size:11px;line-height:16px;color:var(--mw-gray-3)}
+.team-switch-options button>svg{color:var(--mw-brand);flex-shrink:0}
+.team-switch-menu footer{display:flex;align-items:center;gap:7px;padding:12px 14px;background:var(--mw-gray-9);border-top:1px solid var(--mw-divider);font-size:11px;line-height:18px;color:var(--mw-gray-3)}
+.team-switch-empty{padding:20px 10px;text-align:center;font-size:13px;color:var(--mw-gray-3)}
+.team-switcher button:focus-visible{outline:2px solid var(--mw-brand);outline-offset:2px}
+.desktop-mac .sidebar-modules{padding-top:4px;padding-bottom:12px}
+.desktop-mac .sidebar-regions{padding-top:8px}
+.team-switch-actions{padding:6px;border-top:1px solid var(--mw-divider)}
+.team-switch-actions>button{display:flex;align-items:center;gap:10px;padding:10px;width:100%;border-radius:5px;font-size:13px;text-align:left;color:var(--mw-gray-2)}
+.team-switch-actions>button:hover{background:var(--mw-gray-9);color:var(--mw-brand)}
+.team-switch-actions>button small{margin-left:auto;font-size:11px;color:var(--mw-gray-4)}

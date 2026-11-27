@@ -1,0 +1,277 @@
+{
+  "date": "2026-11-09",
+  "viewport": {
+    "width": 1470,
+    "height": 841
+  },
+  "browser": "Tabbit / Chromium",
+  "build": "node design-v2/build.mjs: passed",
+  "pages": [
+    {
+      "name": "index",
+      "title": "新建任务",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "task",
+      "title": "工作任务",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "skills",
+      "title": "技能市场",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "skills-installed",
+      "title": "已安装技能",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "skill-detail",
+      "title": "技能详情",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "experts",
+      "title": "专家",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "my-experts",
+      "title": "我的专家",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "tools",
+      "title": "工具市场",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "my-tools",
+      "title": "我的工具",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "automation",
+      "title": "定时任务",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "automation-empty",
+      "title": "定时任务空状态",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "automation-runs",
+      "title": "运行记录",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "automation-create",
+      "title": "新建定时任务",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "files",
+      "title": "我的文件",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "settings-account",
+      "title": "账户管理",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "settings-system",
+      "title": "系统设置",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "settings-memory",
+      "title": "记忆",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "settings-models",
+      "title": "模型",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "settings-personalization",
+      "title": "个性化",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "settings-software",
+      "title": "软件配置",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "settings-security",
+      "title": "安全与审计",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "settings-help",
+      "title": "帮助与反馈",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "inbox",
+      "title": "收件箱",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "multica-automation",
+      "title": "自动化",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "multica-automation-empty",
+      "title": "自动化 · 空状态",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "multica-automation-create",
+      "title": "新建自动化",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "team",
+      "title": "团队",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    },
+    {
+      "name": "work",
+      "title": "工作",
+      "mounted": true,
+      "horizontalOverflow": false,
+      "brokenImages": []
+    }
+  ],
+  "applicationErrors": [],
+  "interactions": {
+    "automation": [
+      "template prefill",
+      "editable runbook",
+      "output selection",
+      "webhook/schedule switch",
+      "create",
+      "pause",
+      "persistence across navigation",
+      "edit and save Runbook contents"
+    ],
+    "inbox": [
+      "reply",
+      "comment",
+      "subtask creation",
+      "completion"
+    ],
+    "team": [
+      "search",
+      "agent details",
+      "runtime navigation"
+    ],
+    "work": [
+      "status and progress",
+      "task creation",
+      "inspector toggle"
+    ],
+    "shell": [
+      "menu order",
+      "active state"
+    ]
+  },
+  "screenshots": {
+    "inbox": "previews/multica-inbox.png",
+    "multica-automation": "previews/multica-multica-automation.png",
+    "multica-automation-empty": "previews/multica-multica-automation-empty.png",
+    "multica-automation-create": "previews/multica-multica-automation-create.png",
+    "team": "previews/multica-team.png",
+    "work": "previews/multica-work.png",
+    "inbox-embedded": "previews/multica-inbox-embedded.png"
+  },
+  "notes": [
+    "六张用户参考图以 1470×841 同尺寸视觉核对。",
+    "浏览器扩展 contentScript.bundle.js 存在 StorageArea Illegal invocation；已按来源排除，应用本身未报告脚本错误。",
+    "次级菜单中的延伸视图使用静态示例，未接入真实后端。"
+  ],
+  "offlineFileProtocol": {
+    "tested": [
+      "inbox",
+      "multica-automation-empty",
+      "team",
+      "work"
+    ],
+    "allPassed": true
+  },
+  "desktop1280x800": {
+    "tested": [
+      "inbox",
+      "multica-automation-empty",
+      "team",
+      "work"
+    ],
+    "allMounted": true,
+    "horizontalOverflow": false
+  },
+  "comparison": {
+    "sixImagePairsLoaded": true,
+    "referenceAndSplitModes": true
+  }
+}

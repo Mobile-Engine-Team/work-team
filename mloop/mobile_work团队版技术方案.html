@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>分布式多人多智能体协作引擎｜技术方案 v0.2</title>
+<style>
+:root{
+  --bg:#f5f4ef; --paper:#fff; --ink:#1b2230; --ink2:#465062; --ink3:#7a8292; --line:#e2e0d8; --soft:#eeece5;
+  --mw:#6a4fd0; --mw-bg:#f1edfc;
+  --col:#1f5fbf; --col-bg:#e8f0fc;
+  --exe:#c0621a; --exe-bg:#fcefe3;
+  --sdk:#b4305c; --sdk-bg:#fbe8ef;
+  --ctx:#0d8270; --ctx-bg:#e3f3ef;
+  --gray:#8a909c; --gray-bg:#f1f2f4;
+  --up:#16794a; --up-bg:#eaf6ef; --add:#6d3fd6; --add-bg:#f3eefe; --ver:#a66a0c; --ver-bg:#fdf4e2; --bad:#b42318; --bad-bg:#fdecea;
+  --hdr:56px; --r:12px; --mono:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth;scroll-padding-top:calc(var(--hdr) + 14px)}
+@media (prefers-reduced-motion:reduce){html{scroll-behavior:auto}*{transition:none!important;animation:none!important}}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 -apple-system,BlinkMacSystemFont,"PingFang SC","Hiragino Sans GB","Microsoft YaHei","Noto Sans CJK SC",sans-serif;-webkit-font-smoothing:antialiased}
+a{color:var(--col)}
+code,.mono{font-family:var(--mono);font-size:.86em;background:var(--soft);padding:.06em .35em;border-radius:5px}
+pre{font-family:var(--mono);font-size:12.5px;line-height:1.6;background:#1c2230;color:#e6e8ee;padding:14px 16px;border-radius:10px;overflow:auto;margin:10px 0}
+h1,h2,h3,h4{line-height:1.35;margin:0}
+h2{font-size:1.7rem;letter-spacing:.01em}
+h3{font-size:1.16rem;margin:30px 0 8px}
+h4{font-size:1rem}
+p{margin:.55em 0}
+:focus-visible{outline:3px solid #f0a020;outline-offset:2px;border-radius:6px}
+button{font:inherit;color:inherit}
+
+header.top{position:fixed;top:0;left:0;right:0;height:var(--hdr);z-index:50;background:rgba(245,244,239,.93);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-bottom:1px solid var(--line);display:flex;align-items:center;gap:14px;padding:0 18px}
+header.top .brand{font-weight:700;font-size:15px;white-space:nowrap}
+header.top .cur{color:var(--ink2);font-size:14px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1}
+.badge-status{font-size:12.5px;font-weight:700;color:#8a4b00;background:#fff3d6;border:1px solid #f1d08a;border-radius:999px;padding:3px 10px;white-space:nowrap}
+header.top button.menu{display:none;border:1px solid var(--line);background:var(--paper);border-radius:8px;padding:5px 12px;font-size:14px;cursor:pointer}
+.progress{position:absolute;left:0;bottom:-1px;height:2px;background:var(--col);width:0}
+
+.wrap{display:grid;grid-template-columns:236px minmax(0,1fr);max-width:1340px;margin:0 auto;padding-top:var(--hdr)}
+nav.toc{position:sticky;top:var(--hdr);align-self:start;height:calc(100vh - var(--hdr));overflow:auto;padding:24px 12px 30px 18px;border-right:1px solid var(--line)}
+nav.toc .lbl{font-size:12px;color:var(--ink3);letter-spacing:.08em;margin:0 0 8px 8px}
+nav.toc a{display:flex;gap:8px;align-items:baseline;color:var(--ink2);text-decoration:none;padding:6px 8px;border-radius:8px;font-size:14px;line-height:1.45}
+nav.toc a .n{font-family:var(--mono);font-size:12px;color:var(--ink3);min-width:20px}
+nav.toc a:hover{background:var(--soft)}
+nav.toc a.on{background:var(--paper);color:var(--ink);box-shadow:0 0 0 1px var(--line);font-weight:600}
+nav.toc .legend{margin:22px 8px 0;font-size:12.5px;color:var(--ink2);line-height:2}
+main{padding:26px 40px 120px;min-width:0}
+.chapter{max-width:1020px;margin:0 auto 84px}
+.kicker{font-family:var(--mono);font-size:12px;color:var(--ink3);letter-spacing:.1em;margin-bottom:6px}
+.lead{font-size:1.08rem;color:var(--ink2);max-width:800px;margin-top:10px}
+.answer{font-size:1.14rem;font-weight:600;line-height:1.65;margin:16px 0 6px;padding:14px 18px;background:var(--paper);border:1px solid var(--line);border-left:4px solid var(--col);border-radius:10px}
+
+.tag{display:inline-block;font-size:11.5px;line-height:1;padding:4px 7px;border-radius:999px;border:1px solid;vertical-align:2px;margin-right:4px;white-space:nowrap;font-weight:600}
+.t-up{color:var(--up);border-color:#9fd3b8;background:var(--up-bg)}
+.t-add{color:var(--add);border-color:#cdb6f6;background:var(--add-bg)}
+.t-ver{color:var(--ver);border-color:#ecd09a;background:var(--ver-bg)}
+.t-bad{color:var(--bad);border-color:#f3b4ad;background:var(--bad-bg)}
+.t-keep{color:#5b6270;border-color:#d3d6dc;background:var(--gray-bg)}
+a.cite{display:inline-block;font-family:var(--mono);font-size:11.5px;line-height:1.3;padding:1px 6px;margin:0 2px;border-radius:5px;background:#eef1f6;color:#3d4a60;text-decoration:none;border:1px solid #dde2ea;vertical-align:1px;white-space:nowrap}
+a.cite:hover{background:#dfe7f5;color:var(--col)}
+
+.card{background:var(--paper);border:1px solid var(--line);border-radius:var(--r);padding:18px 20px}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:repeat(2,minmax(0,1fr))}
+.g3{grid-template-columns:repeat(3,minmax(0,1fr))}
+.g4{grid-template-columns:repeat(4,minmax(0,1fr))}
+.card h4{margin-bottom:6px}
+.card p,.card li{font-size:15px;color:var(--ink2)}
+.card ul{margin:6px 0 0;padding-left:18px}
+.why{border-left:3px solid var(--col);padding:2px 0 2px 14px;margin:16px 0;color:var(--ink2)}
+.why b{color:var(--ink)}
+.limit{border-left:3px solid var(--ver);padding:2px 0 2px 14px;margin:16px 0;color:var(--ink2)}
+.limit b{color:#7d4f08}
+.boundary{display:flex;gap:10px;align-items:flex-start;background:#fffaf0;border:1px solid #f0dfb5;border-radius:10px;padding:10px 14px;margin:14px 0;font-size:14.5px;color:#5c4a22}
+.boundary::before{content:"边界";flex:none;font-size:11.5px;font-weight:700;color:#8a5a12;border:1px solid #e9c97f;border-radius:999px;padding:2px 8px;margin-top:2px}
+table{border-collapse:collapse;width:100%;font-size:14.5px;background:var(--paper);border:1px solid var(--line);border-radius:10px;overflow:hidden}
+th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--line);vertical-align:top}
+th{background:var(--soft);font-weight:600;font-size:13.5px;color:var(--ink2)}
+tr:last-child td{border-bottom:0}
+.tblwrap{overflow-x:auto;margin:12px 0}
+details{background:var(--paper);border:1px solid var(--line);border-radius:10px;margin:12px 0}
+details>summary{cursor:pointer;padding:11px 14px;font-size:14.5px;color:var(--ink2);list-style:none;font-weight:600}
+details>summary::-webkit-details-marker{display:none}
+details>summary::before{content:"▸";display:inline-block;width:16px;color:var(--ink3);transition:transform .15s}
+details[open]>summary::before{transform:rotate(90deg)}
+details>.body{padding:0 16px 14px}
+details>.body p,details>.body li{font-size:14.5px}
+
+.hero{padding-top:18px}
+.hero h1{font-size:2.15rem;letter-spacing:.01em;margin:6px 0 12px}
+.status-banner{display:flex;gap:14px;align-items:center;background:#fff6dd;border:1.5px solid #ecc770;border-radius:12px;padding:12px 16px;margin:14px 0 18px}
+.status-banner strong{font-size:1.05rem;color:#7a4300;white-space:nowrap}
+.status-banner span{color:#5c4a22;font-size:14.5px}
+.baselines{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px;margin:14px 0}
+.baselines div{background:var(--paper);border:1px solid var(--line);border-radius:10px;padding:10px 14px;font-size:13.5px;color:var(--ink2)}
+.baselines b{display:block;color:var(--ink);font-size:14.5px}
+.baselines code{font-size:12px}
+.four{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.four .card{padding:14px 16px}
+.four .q{font-size:12.5px;color:var(--ink3);font-weight:600;letter-spacing:.04em}
+.four .a{font-size:15px;font-weight:600;margin-top:4px;line-height:1.55}
+.readmap{font-size:14.5px;color:var(--ink2)}
+
+/* diagram shells */
+.fig{background:var(--paper);border:1px solid var(--line);border-radius:14px;padding:16px;margin:16px 0}
+.fig .figcap{font-size:13.5px;color:var(--ink3);margin:0 0 8px}
+.fig .scroll{overflow-x:auto}
+.fig svg{display:block;width:100%;height:auto;min-width:720px}
+.figrow{display:grid;grid-template-columns:minmax(0,1fr);gap:16px;align-items:start}
+.figrow .panel{position:static}
+.figrow .panel dl{display:grid;grid-template-columns:110px minmax(0,1fr);gap:7px 16px}
+.figrow .panel dt,.figrow .panel dd{margin:0}
+nav.toc .legend a.cite{display:inline-block}
+@media(max-width:560px){.figrow .panel dl{grid-template-columns:1fr;gap:4px}.figrow .panel dd{margin-bottom:8px}}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:12px;padding:16px 18px;position:sticky;top:calc(var(--hdr) + 14px)}
+.panel h4{font-size:1.06rem;margin-bottom:4px}
+.panel .meta{font-size:12.5px;color:var(--ink3);margin-bottom:8px}
+.panel dl{margin:8px 0 0;font-size:14.5px}
+.panel dt{font-size:12.5px;color:var(--ink3);font-weight:600;margin-top:10px}
+.panel dd{margin:2px 0 0;color:var(--ink2)}
+svg text{font-family:-apple-system,BlinkMacSystemFont,"PingFang SC","Microsoft YaHei",sans-serif}
+svg .node{cursor:pointer}
+svg .node rect.b{transition:stroke-width .15s,opacity .2s}
+svg .node:hover rect.b,svg .node:focus rect.b{stroke-width:2.6}
+svg .node.sel rect.b{stroke-width:3.2}
+svg .node:focus{outline:none}
+svg .node:focus-visible rect.b{stroke:#f0a020;stroke-width:3.4}
+svg .dim{opacity:.28}
+svg .t1{font-size:15px;font-weight:700;fill:var(--ink)}
+svg .t2{font-size:12.5px;fill:var(--ink2)}
+svg .t3{font-size:11.5px;fill:var(--ink3)}
+svg .band{font-size:12px;font-weight:700;fill:var(--ink3);letter-spacing:.05em}
+svg .elabel{font-size:12px;fill:var(--ink);font-weight:600}
+.legendrow{display:flex;flex-wrap:wrap;gap:8px 16px;font-size:13px;color:var(--ink2);margin-top:10px}
+.legendrow i{display:inline-block;width:12px;height:12px;border-radius:3px;margin-right:5px;vertical-align:-1px}
+
+.split{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:16px 0}
+.split .card h4{display:flex;gap:8px;align-items:center}
+.split li{margin:4px 0}
+
+/* buttons/tabs */
+.tabs{display:flex;flex-wrap:wrap;gap:6px;margin:6px 0 12px}
+.tabs [role=tab],.btn{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:6px 13px;font-size:14px;cursor:pointer;color:var(--ink2)}
+.tabs [role=tab][aria-selected=true]{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:600}
+.btn:hover,.tabs [role=tab]:hover{border-color:#b8bcc6}
+.btn.primary{background:var(--col);border-color:var(--col);color:#fff;font-weight:600}
+.btn[disabled]{opacity:.4;cursor:default}
+
+/* stepper */
+.stepper .ctrl{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-bottom:10px}
+.stepper .dots{display:flex;flex-wrap:wrap;gap:5px;margin:0 6px}
+.stepper .dots button{width:30px;height:30px;border-radius:50%;border:1px solid var(--line);background:var(--paper);font-size:12.5px;font-family:var(--mono);cursor:pointer;color:var(--ink2);padding:0}
+.stepper .dots button[aria-current=step]{background:var(--col);border-color:var(--col);color:#fff;font-weight:700}
+.stepper .dots button.done{background:var(--col-bg);border-color:#bcd0f2}
+.stepinfo{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px 18px;margin-top:12px}
+.stepinfo .full{grid-column:1/-1}
+.stepinfo .k{font-size:12.5px;color:var(--ink3);font-weight:600}
+.stepinfo .v{font-size:15px;color:var(--ink)}
+.stephead{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+.stephead .no{font-family:var(--mono);font-size:13px;color:var(--col);font-weight:700}
+.stephead h4{font-size:1.2rem}
+
+/* faults */
+.lanes{display:grid;grid-template-columns:110px repeat(5,minmax(0,1fr));gap:6px;font-size:13.5px;margin-top:10px}
+.lanes .ln{font-size:12.5px;font-weight:700;color:var(--ink3);display:flex;align-items:center}
+.lanes .cell{min-height:54px;border-radius:8px;background:var(--soft);padding:6px 8px;color:var(--ink2);line-height:1.45}
+.lanes .cell.empty{background:transparent;border:1px dashed var(--line)}
+.lanes .ok{background:var(--up-bg);color:#145c39;border:1px solid #bfe2cd}
+.lanes .warn{background:var(--ver-bg);color:#6b4507;border:1px solid #f0d9a5}
+.lanes .bad{background:var(--bad-bg);color:#8d1c13;border:1px solid #f3c2bc}
+.lanes .hold{background:var(--add-bg);color:#4b2aa0;border:1px solid #dccdfa}
+.lanes .beat{font-family:var(--mono);font-size:11.5px;color:var(--ink3);text-align:center}
+.faultout{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin-top:14px}
+.faultout .card{padding:12px 14px}
+.faultout h4{font-size:13.5px;margin-bottom:4px}
+.faultout ul{margin:0;padding-left:17px}
+
+/* context */
+.pipe{display:flex;gap:0;margin:14px 0;overflow-x:auto}
+.pipe div{flex:1;min-width:128px;background:var(--ctx-bg);color:#0b5e51;padding:12px 14px 12px 22px;font-size:13.5px;line-height:1.45;clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%);margin-right:-6px}
+.pipe div:first-child{clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%);padding-left:14px}
+.pipe b{display:block;font-size:14px;color:#08483e}
+.mf td.st{white-space:nowrap}
+
+/* gates */
+.gates{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0;margin:14px 0;position:relative}
+.gates button{border:0;background:transparent;cursor:pointer;padding:0 4px;text-align:left}
+.gates .g{display:block;border:1.5px solid var(--line);background:var(--paper);border-radius:12px;padding:12px;min-height:104px}
+.gates button[aria-pressed=true] .g{border-color:var(--col);box-shadow:0 0 0 3px var(--col-bg)}
+.gates .gid{font-family:var(--mono);font-weight:700;color:var(--col);font-size:14px}
+.gates .gt{font-weight:700;font-size:14.5px;display:block;margin-top:2px}
+.gates .gs{font-size:12.5px;color:var(--ink3);display:block;margin-top:4px}
+.principle{background:var(--ink);color:#fff;border-radius:12px;padding:14px 18px;font-size:1.05rem;font-weight:600;margin:18px 0}
+.principle span{display:block;font-weight:400;font-size:14px;color:#c9cfdb;margin-top:4px}
+
+.evfilter{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.ev td:first-child{font-family:var(--mono);font-size:12.5px;white-space:nowrap}
+.ev .loc{font-family:var(--mono);font-size:12px;color:var(--ink2);word-break:break-all}
+.ev tr.flash{background:#fff4cc}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin:10px 0}
+.chips span{border:1px solid var(--line);background:var(--paper);border-radius:999px;padding:4px 12px;font-size:13.5px}
+.chips span.no{color:var(--ink3);text-decoration:line-through;text-decoration-color:#c5c8cf}
+.idchain{display:flex;flex-wrap:wrap;align-items:center;gap:6px;margin:10px 0;font-size:14px}
+.idchain span{background:var(--mw-bg);color:#4a33a8;border-radius:8px;padding:4px 10px;font-weight:600}
+.idchain em{color:var(--ink3);font-style:normal}
+footer{max-width:1020px;margin:0 auto;padding:24px 0 0;border-top:1px solid var(--line);font-size:13.5px;color:var(--ink3)}
+.print-only{display:none}
+.rl{display:inline-block;font-size:11.5px;line-height:1;padding:4px 7px;border-radius:5px;font-weight:700;color:#fff;white-space:nowrap;vertical-align:1px;margin-right:4px}
+.rl.r{background:#16794a}.rl.l{background:#a66a0c}.rl.s{background:#6d3fd6}.rl.m{background:#b42318}.rl.n{background:#8a909c}
+.acts td:first-child{white-space:nowrap;font-weight:700}
+
+@media (max-width:1100px){.figrow{grid-template-columns:1fr}.panel{position:static}}
+@media (max-width:900px){
+  .wrap{grid-template-columns:1fr}
+  nav.toc{position:fixed;left:0;top:var(--hdr);width:270px;background:var(--bg);z-index:60;transform:translateX(-105%);transition:transform .2s;box-shadow:4px 0 18px rgba(0,0,0,.08)}
+  nav.toc.open{transform:none}
+  header.top button.menu{display:block}
+  header.top .cur{display:none}
+  main{padding:20px 16px 90px}
+  .g3,.g4,.four,.baselines,.faultout{grid-template-columns:1fr 1fr}
+  .g2,.split,.stepinfo{grid-template-columns:1fr}
+  .gates{grid-template-columns:1fr 1fr}
+  .lanes{grid-template-columns:76px repeat(5,minmax(120px,1fr));overflow-x:auto}
+}
+@media (max-width:560px){.g3,.g4,.four,.baselines,.faultout,.gates{grid-template-columns:1fr}.hero h1{font-size:1.6rem}.status-banner{flex-direction:column;align-items:flex-start}.badge-status{display:none}}
+@media print{
+  header.top,nav.toc,.ctrl,.tabs,.evfilter,.noprint{display:none!important}
+  .wrap{display:block;padding:0}
+  main{padding:0}
+  body{background:#fff;font-size:12.5px}
+  .chapter{margin-bottom:28px;page-break-inside:auto}
+  .panel{position:static}
+  .figrow{grid-template-columns:1fr}
+  .fig svg{min-width:0}
+  details{border:0}
+  details>.body{display:block!important}
+  details>summary::before{content:""}
+  .print-only{display:block}
+  .screen-only{display:none!important}
+  a.cite{border:0;background:none;padding:0}
+  .fig,.card,table{break-inside:avoid}
+}
+</style>
+</head>
+<body>
+<header class="top">
+  <button class="menu" type="button" aria-expanded="false" aria-controls="toc">目录</button>
+  <div class="brand">协作引擎技术方案 v0.2</div>
+  <div class="cur" id="curTitle">概览</div>
+  <span class="badge-status">静态源码分析 · 方案待评审/待验证</span>
+  <div class="progress" id="progress"></div>
+</header>
+<div class="wrap">
+<nav class="toc" id="toc" aria-label="章节目录">
+  <div class="lbl">目录</div>
+  <a href="#s0"><span class="n">00</span>概览与基线</a>
+  <a href="#s1"><span class="n">01</span>推荐路线与总图</a>
+  <a href="#s2"><span class="n">02</span>当前真实架构</a>
+  <a href="#s3"><span class="n">03</span>自有接口约定与备选路线</a>
+  <a href="#s4"><span class="n">04</span>分层、部署与数据权威</a>
+  <a href="#s5"><span class="n">05</span>端到端走一遍</a>
+  <a href="#s6"><span class="n">06</span>对象与状态</a>
+  <a href="#s7"><span class="n">07</span>产品 CLI 接入与 Provider 适配</a>
+  <a href="#s8"><span class="n">08</span>出了问题会怎样</a>
+  <a href="#s9"><span class="n">09</span>可信上下文</a>
+  <a href="#s10"><span class="n">10</span>多 Agent 策略与公共机制</a>
+  <a href="#s11"><span class="n">11</span>MobileWork 双重身份与融合</a>
+  <a href="#s12"><span class="n">12</span>闸门、评审与证据</a>
+  <a href="#s13"><span class="n">13</span>近期 Demo 实施方案</a>
+  <div class="legend">
+    <div><span class="tag t-up">上游已有</span>固定版源码机制</div>
+    <div><span class="tag t-add">目标补足</span>本方案建议</div>
+    <div><span class="tag t-ver">待验证</span>需原型证明</div>
+    <div><a class="cite" href="#evidence">M07</a>证据编号</div>
+  </div>
+</nav>
+<main id="main">
+<!-- 00 -->
+<section class="chapter hero" id="s0" data-title="概览与基线">
+  <div class="kicker">IDEA-001 · 引擎预研 · 2026-11-05 · 团队评审稿 · v0.2</div>
+  <h1>分布式多人多智能体协作引擎｜技术方案 v0.2</h1>
+  <div class="status-banner" role="note">
+    <strong>静态源码分析 · 方案待评审 / 待验证</strong>
+    <span>本页说明的是一份设计方案，不是产品原型。我们没有部署、运行或测试 Multica、SDK、Mobile Coder 和 MobileWork，也没有许可证法务结论。图中的“流程”是推荐的目标设计，不是运行记录；标 <span class="tag t-up">上游已有</span> 的才是固定版源码事实。</span>
+  </div>
+  <p class="lead">本方案回答四个问题：Multica 能复用什么，自有的 Agent 产品保留什么，需要新增什么，以及这些怎样进入 MobileWork。目标是让团队能据此拆原型、讨论接口、评估投入。</p>
+  <div class="four">
+    <div class="card"><div class="q">复用什么</div><div class="a">Multica 协作后端和执行端（daemon）：队列、原子领取、唤醒、回执，以及统一的 Backend/Provider 适配机制</div></div>
+    <div class="card"><div class="q">保留什么</div><div class="a">完整的 Agent 产品：Mobile Coder、MobileWork 各自的产品装配，以及产品内部同源的 SDK harness</div></div>
+    <div class="card"><div class="q">新增什么</div><div class="a">团队应用服务、协作工具边界、各产品的 Provider 适配器、业务关卡、版本关系与上下文供给</div></div>
+    <div class="card"><div class="q">怎样进入 MW</div><div class="a">双重身份：人使用的个人/团队入口；被 daemon 调用的办公 Agent 执行能力</div></div>
+  </div>
+  <div class="baselines" aria-label="分析基线">
+    <div><b>Multica</b><code>main@7a12304f</code><br>公开仓库，沿用 11/4 的固定版，不代表最新</div>
+    <div><b>mobile-coder-sdk</b><code>gitee-origin/dev-v0.1.2@72caa8f</code><br>私有仓库，使用本地归档</div>
+    <div><b>MobileWork</b><code>gitee-origin/develop_public@3663af82</code><br>私有仓库，使用本地归档</div>
+    <div><b>Mobile Coder 产品</b><code>ych/fix/ci-execution@4bc4fa5c</code><br>私有仓库只读归档；与左侧 SDK/MW 不是已验收的配套版本</div>
+  </div>
+  <div class="why"><b>v0.2 相对 v0.1 的主要变化：</b>①执行端统一经 <b>Provider 适配层</b>接入完整 Agent 产品的 CLI / 可编程入口（Mobile Coder、MobileWork 办公 Agent、第三方 Agent），不再默认“daemon 直连 SDK HTTP 服务”，直连 SDK 降为备选/协议验证路径；②MobileWork 同时画出“人使用的入口”和“被调用的执行者”两种身份；③工具按职责分为业务专用工具、通用协作工具、产品内文件/命令工具；④完整流程加入 MW 并行准备发布材料的支路，并把“提交修复 → 提测 → 云端测试”拆成成果、提测、运行回执、领取四件事；⑤新增第 13 章近期 Demo 实施方案。</div>
+  <p class="readmap">阅读建议：赶时间可以只看第 1 章总图、第 5 章端到端步进、第 7 章 Provider 适配和第 11 章 MW 双重身份；想知道近期能演示什么、成本和风险在哪里，直接看第 13 章。本版说明与版本差异见 <a href="README.md">README.md</a>；v0.1 的完整论证见 <a href="../engine-design-v0.1-2026-11-05/design.md">v0.1 design.md</a>，固定行号见 <a href="sources.json">sources.json</a>，v0.1 评议取舍见 <a href="../engine-design-v0.1-2026-11-05/review-decisions.md">review-decisions.md</a>。</p>
+</section>
+
+<!-- 01 -->
+<section class="chapter" id="s1" data-title="推荐路线与总图">
+  <div class="kicker">01 · 推荐路线</div>
+  <h2>复用协作机制，经 Provider 适配接入完整 Agent 产品</h2>
+  <div class="answer">内部预研以 Multica 的完整协作后端和执行端（daemon）为起点。daemon 通过统一的 Provider 适配层，调用各个完整 Agent 产品的 CLI 或可编程入口：Mobile Coder、MobileWork 办公 Agent，以及 Codex、Claude Code 这类第三方产品。MobileWork 同时提供团队协作入口。近期复用的是 Multica 的具体实现，长期稳定的是我们自己定义的接口与职责。暂不先拆出一个新的引擎仓库。</div>
+  <div class="boundary"><span><b>许可前提：</b>只限内部原型范围。Multica License 由 Apache 2.0 与 Part I 附加条件共同构成，两者冲突时以附加条件为准，所以不能当作普通 Apache 2.0 项目直接商用。附加条件规定：单一组织内部使用不需要商业授权；对第三方托管或嵌入商用需要商业授权；UI 品牌和非 UI 归因要分别满足。本轮没有做法务结论。<cite>M01</cite> 详见第 12 章。</span></div>
+  <p>Agent 产品继续负责在<b>一次运行之内</b>把事做完，Mobile Coder 和 MobileWork 内部都消费同一来源的 SDK harness（运行循环、会话、上下文、工具）。新增的协作能力负责<b>跨人、跨运行、跨执行环境</b>推进工作：安排什么、由谁承接、依据是什么、结果交到哪里、什么时候需要人来决定。</p>
+  <div class="grid g2">
+    <div class="card"><h4>为什么接“产品”，不直接接 SDK</h4><p>Mobile Coder 对标的是 Codex、Claude Code 这类完整 Agent 产品：产品身份、供模、业务插件和宿主装配在产品里，SDK 只提供通用执行机制。<cite>C01</cite> 让 daemon 调用产品入口，团队执行和个人使用的是同一个产品，产品也能在团队场景里继续被使用和打磨；只套一层 SDK 壳，得到的不是完整的 Mobile Coder 或 MobileWork。</p></div>
+    <div class="card"><h4>Provider 是什么，不是什么</h4><p>Provider 是执行端里的<b>调用适配代码</b>：把统一的执行请求翻译成某个产品的 CLI 调用，再把它的输出翻译回统一的事件和终态。它不是 Agent 本体，也不是模型厂商意义上的 provider。Multica 已有统一 Backend 接口和按 runtime/协议族构建后端的机制<cite>M05</cite><cite>M25</cite><cite>M26</cite>，本轮未核实已有可直接使用的 MC/MW 适配器。</p></div>
+  </div>
+
+  <div class="fig">
+    <p class="figcap">一眼总图：点任意组件，查看它负责什么、权威数据在哪、首期是复用还是新增。切换执行环境，看端侧和云侧怎样用同一种接入模式、但具备不同的能力。</p>
+    <div class="tabs" role="tablist" aria-label="执行环境" id="ovEnv"></div>
+    <div class="figrow">
+      <div class="scroll"><svg id="ovSvg" viewBox="0 0 1000 762" role="group" aria-label="总体架构图，组件可点击"></svg></div>
+      <aside class="panel" id="ovPanel" aria-live="polite"></aside>
+    </div>
+    <div class="legendrow">
+      <span><i style="background:var(--mw)"></i>MobileWork 产品/应用</span>
+      <span><i style="background:var(--col)"></i>协作服务</span>
+      <span><i style="background:var(--exe)"></i>执行端与 Provider 适配</span>
+      <span><i style="background:var(--sdk)"></i>Agent 产品内部的 SDK harness</span>
+      <span><i style="background:var(--ctx)"></i>上下文与产物</span>
+      <span>实线框＝复用或保留；虚线框＝新增或待补齐</span>
+    </div>
+  </div>
+
+  <div class="split">
+    <div class="card"><h4><span class="tag t-up">不用重做</span>固定版里已有实现，可以直接复用</h4>
+      <ul>
+        <li>运行队列、原子领取、同 Agent 同工单排他 <cite>M07</cite></li>
+        <li>领取时的 Agent/Runtime 并发限制 <cite>M08</cite></li>
+        <li>持久唤醒规则、跨工单条件 <cite>M09</cite><cite>M10</cite></li>
+        <li>终态回执先落盘再发送 <cite>M14</cite><cite>M15</cite></li>
+        <li>按失败原因和次数重试的线索 <cite>M16</cite></li>
+        <li>任务令牌、Agent 访问与发起人归因 <cite>M17</cite><cite>M18</cite></li>
+        <li>统一 Backend 接口与按 runtime/协议族选择后端 <cite>M05</cite><cite>M25</cite><cite>M26</cite></li>
+        <li>第三方 Agent CLI 的既有接入（授权行为需逐项核查）<cite>M23</cite><cite>M24</cite></li>
+        <li>Mobile Coder 产品的 run/session/JSON 入口（接入候选）<cite>C02</cite></li>
+        <li>产品内 SDK 的会话分派、工具、权限、运行内子 Agent <cite>S05</cite><cite>S07</cite><cite>S09</cite></li>
+        <li>MW 的个人链路和 SDK 宿主管理 <cite>W09</cite></li>
+      </ul></div>
+    <div class="card"><h4><span class="tag t-add">要补的</span>本方案的目标增量</h4>
+      <ul>
+        <li>Mobile Coder 与 MobileWork 的 Provider 适配器：启动、事件翻译、终态对账、取消收敛</li>
+        <li>MW 可编程办公任务执行入口（待补齐/待验证），保留产品装配</li>
+        <li>团队应用服务（Team API、业务专用工具）与通用协作工具边界</li>
+        <li>业务关卡：批准绑定具体动作和证据版本</li>
+        <li>输入和产物的版本关系；执行世代，用来拦截迟到的旧结果</li>
+        <li>可信上下文供给：来源、版本、授权、按任务装配</li>
+        <li>身份映射链：企业用户 → 成员 → Agent → Runtime → 每次运行</li>
+        <li>MW 团队入口：工作项、成果、待决定事项、执行端连接状态（按角色默认工作视图待细化）</li>
+      </ul></div>
+  </div>
+  <div class="limit"><b>直接接 SDK HTTP 保留为备选。</b>v0.1 画的“daemon → SDK HTTP 服务”可以作为协议验证或调试路径（见第 7 章折叠部分），但不是默认主路线：它不会自动继承完整的产品装配，相关能力需要另行装配。v0.1 针对 HTTP 路径写的语义要求，也不能直接当成 CLI 路径已经具备的保证。</div>
+  <h3>这条路线成立的三个前提</h3>
+  <div class="grid g3">
+    <div class="card"><h4>① 内部原型范围</h4><p>对外产品化之前，先解决许可、品牌和归因条件。<cite>M01</cite></p></div>
+    <div class="card"><h4>② 唯一的工作项记录</h4><p>首期共同工作项映射到 Multica Issue，运行沿用它现有的运行记录。不另建同义的任务状态再做双向同步。</p></div>
+    <div class="card"><h4>③ 用原型证明</h4><p>要证明产品 CLI 接入、权限收口和关键失败处理都能做出来。如果改动持续侵入大量产品模块，就重新评估抽取或独立实现，不能因为“已经 fork 了”就继续扩大投入。</p></div>
+  </div>
+</section>
+
+<!-- 02 -->
+<section class="chapter" id="s2" data-title="当前真实架构">
+  <div class="kicker">02 · 现状</div>
+  <h2>有协作机制，但没有可以直接拿走的纯引擎包</h2>
+  <div class="answer">Multica 有可复用的引擎机制，包括统一的 Backend 适配接口。但本次阅读没有发现一个与其产品模型完全分离、可以直接安装替换的通用协作引擎交付物，本轮也未核实已有可直接使用的 Mobile Coder / MobileWork 适配器。这不妨碍整体复用，只是说明“把 engine 目录拿出来”这个计划不成立。</div>
+  <div class="grid g2">
+    <div class="card" style="border-top:4px solid var(--col)"><h4>Multica</h4>
+      <p><b>已核实：</b>工作项、Agent/Runtime、运行队列、原子领取、并发限制、条件唤醒、运行结果回执。<cite>M06</cite>–<cite>M16</cite> 执行端有统一 Backend 接口，按 runtime/协议族构建后端。<cite>M05</cite><cite>M25</cite><cite>M26</cite></p>
+      <p><b>不能由此推出：</b>已有独立发布的通用引擎；可以任意跨机无损恢复；企业知识治理已经完整；已经存在 MC/MW 的 Backend。</p></div>
+    <div class="card" style="border-top:4px solid var(--sdk)"><h4>mobile-coder-sdk（产品内部的 harness）</h4>
+      <p><b>已核实：</b>独立 engine 包和 HTTP 客户端；会话分派、工具与权限、运行内 workflow 与子 Agent、本机 Worker。<cite>S01</cite>–<cite>S12</cite></p>
+      <p><b>不能由此推出：</b>本机多进程等于跨团队、跨设备的持久编排；SDK 本身就是完整的 Mobile Coder 产品。</p></div>
+    <div class="card" style="border-top:4px solid var(--sdk)"><h4>Mobile Coder 产品</h4>
+      <p><b>已核实：</b>仓库约定产品负责身份、供模、业务插件与宿主装配，SDK 负责通用执行机制，vendor 是消费制品。<cite>C01</cite> CLI 声明了 <code>run</code>、<code>--session</code>/<code>--continue</code>、<code>--format json</code>、<code>--attach</code>、<code>--dir</code> 等参数<cite>C02</cite>，run handler 依赖 SDK 引擎<cite>C04</cite>，开发脚本从平级 SDK 仓库取打包源<cite>C03</cite>。</p>
+      <p><b>不能由此推出：</b>CLI 的取消、审批、事件与终态语义已满足团队执行；本归档与 SDK/MW 基线是已验收的配套版本。</p></div>
+    <div class="card" style="border-top:4px solid var(--mw)"><h4>MobileWork</h4>
+      <p><b>已核实：</b>个人工作区与会话入口；宿主负责启动和管理引擎；本地/远端连接；桌面 OIDC 身份与账号目录。<cite>W01</cite>–<cite>W09</cite></p>
+      <p><b>可编程执行入口：</b>orchestrator CLI 的帮助里能看到服务、工作区、文件、审批等命令<cite>W13</cite>；本轮没有核实一个可由 daemon 调用的完整办公任务执行 CLI，标为<span class="tag t-ver">待补齐/待验证</span>。</p>
+      <p><b>不能由此推出：</b>远端连接就是端云协同调度；本地账号目录就是组织权限。<code>session-message-queue</code> 是录屏 legacy 回执迁移，不是任务调度器。<cite>W08</cite></p></div>
+  </div>
+  <div class="fig">
+    <p class="figcap">耦合在哪：中间是可复用的运行机制，三根“系绳”把它拴在 Multica 产品模型上。</p>
+    <div class="scroll"><svg id="cpSvg" viewBox="0 0 1000 360" role="img" aria-label="Multica 可复用机制与三处产品耦合示意"></svg></div>
+  </div>
+  <div class="grid g3">
+    <div class="card"><h4>① 服务依赖</h4><p>TaskService 依赖工单状态、通知 inbox、归因、权益、统计、实时 Hub 和事件 Bus；这些服务在 Handler 里统一装配。<cite>M02</cite><cite>M03</cite></p></div>
+    <div class="card"><h4>② 下发的任务结构</h4><p>daemon 收到的 Task 里混着 Issue、Workspace、Project、workflow、Squad、Chat、Autopilot、QuickCreate 等字段。<cite>M04</cite></p></div>
+    <div class="card"><h4>③ Agent 的工具面</h4><p>运行提示让 Agent 执行 <code>multica issue get</code> 和 <code>multica issue comment list</code>。协作状态是 Agent 作为副作用写回去的。<cite>M22</cite></p></div>
+  </div>
+  <div class="limit"><b>MW 接 SDK 的现状 ≠ 目标升级已兼容。</b>MW 已经采用同源 SDK 执行入口，但应用服务仍然经由兼容客户端和头字段适配来访问引擎。<cite>W03</cite><cite>W04</cite> 快照中 6 个引擎依赖包都存在，校验也匹配。<cite>W10</cite><cite>W11</cite> 但抽取的 6 个文件里，<code>dispatch.ts</code> 和 <code>permission/next.ts</code> 与 SDK 基线逐字节相同，runner、server、bridge 和 package.json 不同（见 v0.1 的 <a href="../engine-design-v0.1-2026-11-05/vendor-comparison.json">vendor-comparison.json</a>）。版本对齐要作为单独的闸门处理。</div>
+</section>
+
+<!-- 03 -->
+<section class="chapter" id="s3" data-title="自有接口约定与备选路线">
+  <div class="kicker">03 · 边界</div>
+  <h2>用三类接口约定，明确复用与替换边界</h2>
+  <p class="lead">近期接受 Multica 的对象和代码结构，避免为了“架构纯粹”先改写调度和存储。但调用方只认我们自己定义的语义，Multica 待在接口约定后面，作为首期实现。</p>
+  <div class="fig">
+    <p class="figcap">左边是调用方，中间是长期稳定的自有接口约定，右边是首期实现。替换右边的实现，必须用真实场景和故障测试来证明，不能靠画图证明。</p>
+    <div class="scroll"><svg id="ctSvg" viewBox="0 0 1000 330" role="img" aria-label="调用方、自有接口约定与首期实现的对应关系"></svg></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h4>Team API · 团队应用接口</h4><p>MW 团队入口用它建立和修改工作、生效计划、请求执行、答复批准、订阅变化。每条命令都带 actor、expectedRevision 和 commandId。版本冲突时不能静默覆盖，重复命令返回原来的结果。</p></div>
+    <div class="card"><h4>协作工具 · 通用协作 API</h4><p><code>team.read_work</code>、<code>team.submit_result</code>、<code>team.propose_handoff</code>、<code>team.request_decision</code>：读工作、登记成果、提接续、请求决定。它们位于协作服务的接口边界，可以包装成 MCP 或 CLI。工具返回的是“提议结果或持久记录”，Agent 不能任意修改状态。</p></div>
+    <div class="card"><h4>Provider 适配接口（执行器接口约定）</h4><p>daemon 一侧：登记与领取（带所有权标识）、提交运行事件与结果（带 attempt/世代和 eventId）、能力声明。产品一侧：统一 Execute、事件、终态、取消、接续的<b>语义</b>，各 CLI 的协议仍然不同。接口统一不代表每种产品能力相同，不支持的能力要明确拒绝或降级。<cite>M05</cite></p></div>
+    <div class="card"><h4>上下文供给接口</h4><p>按 actor、agent、run、用途、来源版本和预算装配依据，返回有权读取的依据及出处。缺失和冲突作为结构化结果返回，不编出一段“看起来完整”的答案。</p></div>
+  </div>
+  <h3>工具按职责归位：包装方式不决定职责</h3>
+  <div class="tblwrap"><table>
+    <tr><th>类别</th><th>例子</th><th>归属</th><th>说明</th></tr>
+    <tr><td><b style="color:var(--mw)">业务专用工具</b></td><td>“提交修复并申请测试”“生成发布材料并送审”</td><td>应用层（团队应用服务）</td><td>编排业务规则，内部再调用通用协作 API；不要求以插件形式装进协作服务。人在 MW 团队入口点“提测”和 Agent 调用该工具是<b>同一个业务操作</b>：先核对补丁版本与自测依据，再调用通用协作 API</td></tr>
+    <tr><td><b style="color:var(--col)">通用协作工具 / API</b></td><td>读工作、登记成果、提接续、请求决定</td><td>协作服务接口边界</td><td>人和 Agent 的写入经过同一套校验：身份、版本、世代、关卡</td></tr>
+    <tr><td><b style="color:var(--sdk)">文件 / 命令执行工具</b></td><td>读写文件、运行测试、调用 shell</td><td>Agent 产品内部的 harness</td><td>受产品自身的权限与沙箱约束；团队授权在步骤级预置或转成持久决定</td></tr>
+  </table></div>
+  <p style="font-size:14.5px;color:var(--ink2)">执行端上报的<b>运行回执</b>（Run 结束、产物清单、会话引用）走 daemon 与协作服务之间的执行协议，不是业务工具，也不经过团队应用服务；回执不等于提测。MCP、CLI 还是 HTTP，只是把工具交给 Agent 的方式。一个工具属于哪一层，看它表达的是业务规则、通用协作机制，还是单次运行里的操作。</p>
+  <div class="boundary"><span>只提供新工具，挡不住旧路径。Multica daemon 的提示、工具注入、路由和所有写入入口都要配合调整，否则 Agent 仍可通过旧 CLI 绕开新工具。mock 实现能通过接口一致性测试，<b>只证明调用方没有直接依赖某个实现</b>，不证明另一套真实后端已经具备一致的持久性、权限和恢复能力。</span></div>
+  <details><summary>接口草案：先固定语义，路径以后可以调整（目标接口约定示意，不是现有 API）</summary><div class="body">
+    <div class="tblwrap"><table>
+      <tr><th>操作</th><th>必须提供</th><th>返回/约束</th></tr>
+      <tr><td>建立/修改工作</td><td>actor、workspace、目标、负责人、验收规则、expectedRevision、commandId</td><td>WorkItem ID 与新版本；版本冲突不能静默覆盖</td></tr>
+      <tr><td>生效计划</td><td>workItem、planRevision、步骤与依赖、执行者或能力要求、关卡、批准依据</td><td>生效版本；没有指派权限、存在循环或依赖不满足时按规则拒绝</td></tr>
+      <tr><td>请求一次执行</td><td>workItem/step、触发来源、输入版本、executor 要求、budget、commandId</td><td>Run/Attempt ID；重复命令返回原结果</td></tr>
+      <tr><td>登记/领取</td><td>runtime 身份、能力版本、可用额度；领取时带所有权标识</td><td>授权任务、输入引用、执行预算；不信任客户端自报的 workspace 权限</td></tr>
+      <tr><td>提交运行事件/结果</td><td>run、attempt/世代、eventId、状态、产物清单</td><td>幂等确认；旧尝试不得覆盖当前有效结果</td></tr>
+      <tr><td>请求/答复批准</td><td>action、证据版本、资格规则、期限；答复人身份、expectedRevision</td><td>持久决定；条件变化时按规则失效或重新确认</td></tr>
+      <tr><td>装配/读取上下文</td><td>actor/agent、run、purpose、source/version、预算</td><td>有权读取的依据及出处；缺失和冲突作为结构化结果</td></tr>
+      <tr><td>订阅变化/对账</td><td>workspace 范围、cursor 或状态版本</td><td>可补齐的事件或权威快照；订阅不是唯一事实源</td></tr>
+    </table></div>
+    <p>一个执行请求至少要包含（示例中的预算只是配置形状，不是容量或超时标准；授权凭据不写进业务 JSON）：</p>
+<pre>{
+  "commandId": "一次请求的稳定标识",
+  "workspaceId": "团队空间",
+  "workItemId": "弱网重复待办修复",
+  "stepId": "修复步骤",
+  "planRevision": 3,
+  "originator": { "userId": "发起者", "delegationId": "授权链引用" },
+  "executor": { "agentId": "研发助手", "runtimeId": "已选定执行端" },
+  "contextManifestId": "本次输入清单",
+  "artifactInputs": [ { "ref": "代码基线引用", "version": "固定版本" } ],
+  "limits": { "timeoutSeconds": 1800, "maxAttempts": 2 },
+  "resultContract": { "required": ["变更产物", "验证说明"] }
+}</pre>
+  </div></details>
+
+  <h3>四条候选路径：为什么默认第二条，什么情况下推翻</h3>
+  <div class="grid g4" id="routes">
+    <div class="card"><h4>整体部署 Multica，直接用原 UI</h4><p><b>得到：</b>最快拿到原有产品体验，可作为参考基线。</p><p><b>代价：</b>原 UI 无法验证 MW 融合和多种交互形态；还有品牌条件。</p><p><span class="tag t-keep">可作对照</span></p></div>
+    <div class="card" style="border:2px solid var(--col)"><h4>复用后端和执行端，经 Provider 接入自有产品，增加应用接口</h4><p><b>得到：</b>尽早跑通端到端，保留已有的调度、回执和 CLI 接入机制；自有产品和第三方产品走同一种接入方式。</p><p><b>代价：</b>继承工单模型、升级成本和许可条件。</p><p><span class="tag t-add">内部原型默认路线</span></p></div>
+    <div class="card"><h4>先抽出独立协作引擎包</h4><p><b>得到：</b>表面上边界更简洁。</p><p><b>代价：</b>工单、提示、权限、通知与运行之间有真实耦合，抽取范围容易越扩越大。</p><p><span class="tag t-ver">拿到原型改动证据后再评估</span></p></div>
+    <div class="card"><h4>参照机制，独立实现</h4><p><b>得到：</b>可以自主定义产品和技术边界。</p><p><b>代价：</b>持久状态、重试、CLI 差异、恢复都要重新打磨。</p><p><span class="tag t-keep">授权或耦合无法接受时的备选</span></p></div>
+  </div>
+  <div class="why"><b>出现以下情况就推翻默认路线：</b>原型显示改动持续侵入大量 Multica 产品模块，这时重新评估局部抽取；许可或授权条件无法接受，这时转向独立实现，而且不能复制受限实现来绕开许可。这不是长期供应商或商业合作的最终选型，技术原型的作用是为自研、共建或授权提供依据。</div>
+</section>
+
+<!-- 04 -->
+<section class="chapter" id="s4" data-title="分层、部署与数据权威">
+  <div class="kicker">04 · 目标架构</div>
+  <h2>产品组织工作，引擎持续执行</h2>
+  <p class="lead">三层职责：<b>交互层</b>让人表达意图、看到结果；<b>应用层</b>定义业务规则，并把意图翻译成协作命令；<b>协作层</b>提供持久运行、接续、等待、回执等通用机制。看板、对话、IM 等不同界面可以复用同一个应用服务。协作层之下，执行端经 Provider 适配层调用完整的 Agent 产品，由产品负责“这一次运行怎样做完”。逻辑边界不要求拆成多个微服务。</p>
+  <div class="tabs" role="tablist" aria-label="架构视图">
+    <button role="tab" aria-selected="true" aria-controls="tabLogic" id="tLogic">逻辑层次</button>
+    <button role="tab" aria-selected="false" aria-controls="tabDeploy" id="tDeploy" tabindex="-1">端云部署</button>
+  </div>
+  <div role="tabpanel" id="tabLogic" aria-labelledby="tLogic" class="fig">
+    <div class="scroll"><svg id="lgSvg" viewBox="0 0 1000 560" role="img" aria-label="逻辑分层图"></svg></div>
+  </div>
+  <div role="tabpanel" id="tabDeploy" aria-labelledby="tDeploy" class="fig" hidden>
+    <p class="figcap">端侧和云侧使用同一种接入模式（daemon → Provider → 产品入口），但执行环境、可用能力和权限不同，不是所有桌面能力都能在服务器上运行。所有连接都由客户端或执行端主动发起，服务器不需要入站访问员工电脑；服务端最多经已建立的连接发唤醒提示，任务由执行端领取后返回。这张图按物理机器画：员工电脑同时承担总图里的“人与客户端”和端侧“执行机”两个位置。■ 标出权威数据位置。</p>
+    <div class="scroll"><svg id="dpSvg" viewBox="0 0 1000 520" role="img" aria-label="端云部署图"></svg></div>
+  </div>
+  <h3>权威数据放在哪里</h3>
+  <div class="tblwrap"><table>
+    <tr><th>数据</th><th>权威位置</th><th>说明</th></tr>
+    <tr><td>工作项、计划生效版本、Run/Attempt、决定</td><td><b style="color:var(--col)">协作后端 · PostgreSQL</b></td><td>只有一个运行状态写入者：应用提出命令，执行端报告事实，协作服务校验后更新</td></tr>
+    <tr><td>看板、通知、统计</td><td>读模型</td><td>可以重建，不是事实源；实时 Hub 只负责提示“有变化”</td></tr>
+    <tr><td>产品内部会话与运行内现场</td><td><b style="color:var(--exe)">执行环境本地</b>（各 Agent 产品自己的存储）</td><td>局部执行的权威在本地，有自己的恢复价值，不能随意丢弃；它只是不作为团队业务状态的权威</td></tr>
+    <tr><td>Run ↔ 产品会话映射</td><td><b style="color:var(--exe)">执行端本地</b>，并随回执上报引用</td><td>启动响应丢失、重连时用它对账，不靠重新发起</td></tr>
+    <tr><td>个人会话</td><td><b style="color:var(--mw)">个人电脑</b></td><td>不自动对团队可见；团队调用 MW 时使用隔离的会话、工作目录和授权，不读取私人历史；需要共享时由用户或授权策略明确发布为团队产物</td></tr>
+    <tr><td>产物</td><td><b style="color:var(--ctx)">产物存储</b>（引用＋版本＋哈希）</td><td>本地绝对路径不是可移交的成果</td></tr>
+    <tr><td>资料正文</td><td>源系统 / 按策略决定</td><td>上下文模块登记来源、版本和授权，不强迫所有原始数据上云</td></tr>
+  </table></div>
+  <h3>首期：Agent 显式绑定 Runtime，不做自动择优</h3>
+  <div class="fig">
+    <div class="scroll"><svg id="bdSvg" viewBox="0 0 1000 170" role="img" aria-label="Agent 与 Runtime 的绑定关系"></svg></div>
+  </div>
+  <p>“测试 Agent”是一个角色和配置（含使用哪个 Provider），不等于某台主机。固定版在入队时按 Agent 当前绑定的 Runtime 记录，领取时还要求任务行上的 runtime 和 Agent 当前绑定一致，并检查在线新鲜度。<cite>M06</cite><cite>M07</cite> 所以“同一个助手既能在我电脑上跑，也能在服务器上跑”，首期只能建成两个 Agent，或者显式改绑。按能力选择 Runtime 是后续需要验证的扩展。</p>
+  <div class="limit"><b>部署克制：</b>首期是一个协作后端、一个 PostgreSQL、必要的产物存储，桌面和服务器上各一个执行端，由执行端按需拉起 Agent 产品的 CLI / 无头入口。MW 无头执行依赖哪些桌面组件、进程怎样排布，属于待验证项。云端执行节点指的是自管服务器上的执行端，仓库里的 cloud runtime client 调用的是另一个服务，本轮尚未核实托管沙箱的完整供给实现。<cite>M20</cite><cite>M21</cite> 如果要多实例部署后端，先核查跨实例通知、领导者任务和回收任务的并发安全，不能把副本数改成 3 就宣称高可用。</div>
+</section>
+
+<!-- 05 -->
+<section class="chapter" id="s5" data-title="端到端走一遍">
+  <div class="kicker">05 · 完整数据流</div>
+  <h2>用一次交付走完全程：弱网重复待办修复 → 云端测试 → 负责人批准</h2>
+  <p class="lead">负责人确认“先修复弱网场景下的重复待办，提醒功能延期”。研发电脑上由 Mobile Coder 修复，测试在服务器上执行，<b>MobileWork 办公 Agent 并行准备发布材料</b>，最后由负责人确认是否具备发布条件。三个执行者都由各自机器上的 daemon 经 Provider 适配层调用。重点看第 7–11 步：<b>产出成果、提测、运行回执、领取测试</b>是四件不同的事；人和 Agent 提测走同一个业务操作，唤醒只是提示，任务由执行端主动领取。<b>这里只模拟发布，不影响任何真实业务系统。</b></p>
+  <div class="fig stepper" id="stepper" tabindex="-1">
+    <div class="ctrl">
+      <button class="btn" type="button" id="stPrev" aria-label="上一步">← 上一步</button>
+      <div class="dots" id="stDots" role="group" aria-label="选择步骤"></div>
+      <button class="btn primary" type="button" id="stNext" aria-label="下一步">下一步 →</button>
+      <button class="btn" type="button" id="stPlay" aria-pressed="false">▶ 自动播放</button>
+      <span style="font-size:12.5px;color:var(--ink3)">也可以用键盘 ← → 切换</span>
+    </div>
+    <div class="scroll"><svg id="stSvg" viewBox="0 0 1000 480" role="img" aria-label="端到端步进图"></svg></div>
+    <div id="stInfo" aria-live="polite"></div>
+  </div>
+  <h3>三条数据通道，不要混用</h3>
+  <div class="grid g3">
+    <div class="card"><h4>命令</h4><p>创建安排、开始或取消运行、答复审批。带身份、幂等键和目标版本，由服务端授权后写入。</p></div>
+    <div class="card"><h4>状态与通知</h4><p>只告诉客户端“发生了变化”。客户端按游标补齐，或重新读取权威状态。实时连接不是可靠的状态存储。</p></div>
+    <div class="card"><h4>内容与产物</h4><p>文件、补丁、报告、依据，通过可授权读取的引用传递，不把大文件塞进事件消息。</p></div>
+  </div>
+  <div class="print-only" id="stPrint"></div>
+</section>
+
+<!-- 06 -->
+<section class="chapter" id="s6" data-title="对象与状态">
+  <div class="kicker">06 · 对象与状态</div>
+  <h2>先分清对象，才能分清状态：运行结束 ≠ 业务验收</h2>
+  <p class="lead">工作项 ≠ Run ≠ 产品内部 session。下面是目标逻辑对象，不代表原型第一天就要新增同名数据库表。点击对象，查看它的含义、权威记录位置，以及首期和 Multica 的关系。</p>
+  <div class="fig">
+    <div class="figrow">
+      <div class="scroll"><svg id="objSvg" viewBox="0 0 1000 300" role="group" aria-label="对象关系图，对象可点击"></svg></div>
+      <aside class="panel" id="objPanel" aria-live="polite"></aside>
+    </div>
+  </div>
+  <h3>同一个测试步骤，两条状态线</h3>
+  <div class="fig">
+    <div class="scroll"><svg id="laneSvg" viewBox="0 0 1000 200" role="img" aria-label="Run 状态与业务步骤状态对比"></svg></div>
+    <p class="figcap">测试 Agent 的 Run 可以“成功”，即正常跑完并交出报告，但报告显示测试不通过时，业务步骤仍然没有验收（T06）。目标状态名和 Multica 原有字段不是一一对应，映射表要在接口验证阶段固定。</p>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h4>只有一个运行状态写入者</h4><p>应用提出命令，执行端报告事实，协作服务校验后更新。个人会话和团队工作不强行统一成同一个对象，二者通过明确的引用关联。</p></div>
+    <div class="card"><h4>每次重试都保留原尝试</h4><p>界面可以显示“同一步的第 2 次执行”，但底层不能覆盖第 1 次失败时的输入、证据和结果。</p></div>
+  </div>
+</section>
+<!-- 07 -->
+<section class="chapter" id="s7" data-title="产品 CLI 接入与 Provider 适配">
+  <div class="kicker">07 · Provider 适配</div>
+  <h2>daemon 经统一 Provider 适配层，调用完整 Agent 产品的 CLI</h2>
+  <div class="answer">在 Multica 执行端统一的 Backend 接口下，为每个产品实现一个 Provider 适配器：Mobile Coder 适配器调用 Mobile Coder CLI，MobileWork 适配器调用 MW 的无头办公任务入口，第三方适配器沿用或新增对 Codex、Claude Code 等 CLI 的接入。Mobile Coder 与 MobileWork 产品内部继续使用同源的 SDK harness；第三方产品保留自己的执行内核。统一的是执行语义，不是命令行格式。</div>
+  <div class="fig">
+    <p class="figcap">目标设计示意。实线＝固定版已有或保留，虚线＝新增或待补齐。Multica 已有统一 Backend 接口与按 runtime/协议族构建后端的机制<cite>M05</cite><cite>M25</cite><cite>M26</cite>，本轮未核实已有可直接使用的 MC/MW 适配器。</p>
+    <div class="scroll"><svg id="adSvg" viewBox="0 0 1000 400" role="img" aria-label="Provider 适配层与各 Agent 产品的调用关系"></svg></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h4>统一语义，不统一协议</h4><p>Execute、进度事件、终态、取消、接续是统一的语义；各 CLI 的参数、输出格式和会话标识各不相同，不强求都用同一个 <code>--prompt</code> 或一行 stdout，翻译由适配器负责。进程退出码只说明进程结束了，不等于业务成功：终态要看结构化结果、产品会话状态和产物清单。</p></div>
+    <div class="card"><h4>端侧与云侧同一种接入</h4><p>研发电脑和测试服务器上的 daemon 加载同样的适配器。区别在执行环境：装了哪些产品和版本、有没有桌面能力、持有哪些凭据和权限。执行端声明能力，协作服务按声明放置任务；桌面专有能力不能假定在服务器上可用。</p></div>
+    <div class="card"><h4>Mobile Coder 适配器：首个落地候选</h4><p>固定版 CLI 声明了 <code>run</code>、<code>--session</code>/<code>--continue</code>、<code>--format json</code>、<code>--attach</code>、<code>--dir</code><cite>C02</cite>，run handler 经 SDK 引擎执行<cite>C04</cite>。这只说明它是接入候选：JSON 事件能否判定终态、取消是否收敛、审批能否拦截，都要在 G1 验证。不复制未审阅的配置，也不允许默认放行（YOLO）。</p></div>
+    <div class="card"><h4>MobileWork 适配器：入口待补齐</h4><p>调用的是产品的无头执行入口，不是自动化点击 GUI。入口可以复用产品现有服务，但必须保留 MW 的产品装配（办公能力、专家、插件），只套一层 SDK 壳不能冒充完整的 MW。现有 CLI 帮助只见服务、工作区、审批等命令<cite>W13</cite>，完整办公任务执行入口标为<span class="tag t-ver">待补齐/待验证</span>。</p></div>
+  </div>
+  <h3>适配器要补齐的语义</h3>
+  <div class="tblwrap"><table>
+    <tr><th>统一能力</th><th>适配设计</th><th>验证重点</th></tr>
+    <tr><td>启动</td><td>先记录 Run → 产品会话 → 请求标识的映射，再调用产品入口（例如 MC 的 <code>run</code> 加会话参数）</td><td>启动响应丢失后先按会话或请求标识对账，不能简单地重新发起（T02）</td></tr>
+    <tr><td>进度与终态</td><td>把产品输出（例如 JSON 事件）翻译成统一进度事件；按结构化结果、产品会话状态与产物清单判定终态</td><td>退出码 0、输出中断、出现一次 idle，都不能单独当作成功（T06）</td></tr>
+    <tr><td>取消</td><td>走产品自己的取消路径，等产品确认退出或收敛后，再释放本地资源</td><td>用户点了取消 ≠ 进程已经结束；产品内部的子 Agent 也要收敛（T10）</td></tr>
+    <tr><td>工具授权</td><td>首期以预置授权和步骤级批准为主；运行中遇到未授权的 ask，持久登记为决定请求，然后停止并确认收敛</td><td>不得自动批准；每个产品的权限默认值逐项核查 <cite>M23</cite><cite>M24</cite></td></tr>
+    <tr><td>会话接续</td><td>执行环境兼容时复用产品会话；恢复失败时显式降级为“新运行 + 已有产物”</td><td>不使用“任意 Agent 都能无缝顶上”这类表述</td></tr>
+    <tr><td>成果提交</td><td>收集允许提交的文件、提交记录和报告，生成可授权访问的 artifact manifest</td><td>路径、哈希、版本、密级、对应的 Run</td></tr>
+    <tr><td>能力声明</td><td>按产品和执行环境声明：补充指令、取消确认、续接、工具审批、结构化结果、桌面能力</td><td>不支持的能力要拒绝或明确降级 <cite>M05</cite></td></tr>
+  </table></div>
+  <div class="boundary"><span><b>接入一个新 Provider 不只是多写一个执行函数。</b>生产 daemon 通过 <code>ResolveBackend</code> 选择后端，runtime 身份、协议族、探测和配置相互关联。<cite>M25</cite><cite>M26</cite> 原型要接通产品身份注册、安装与版本探测、本地凭据注入、后端选择、运行提示与协作工具注入，这些都列入 G1 改动清单；新适配器不应伪装成已有 CLI 的另一个名字。固定版 OpenCode backend 的 <code>run</code> 回退路径带有跳过权限的参数<cite>M23</cite>，特定的 ACP 权限选择器会自动选择授权<cite>M24</cite>：这说明接入每个产品都要逐项核查授权行为，但不等于所有执行器都会自动批准。审批放行必须在受控的工具出口核对具体动作、范围和证据，只把批准记录拼进提示词不算执行控制。</span></div>
+  <h3>团队调用和个人使用要隔离</h3>
+  <div class="grid g2">
+    <div class="card"><h4>隔离什么</h4><p>团队调用 MW 或 MC 时，使用独立的会话、工作目录和授权，不读取个人的私人历史和目录；个人使用照常进行，不强制经过协作调度。每个进程只能有一个管理者：个人链路由 MW 宿主管理<cite>W09</cite>，团队调用由执行端拉起，MW 界面最多展示连接状态，不能两边同时去启停同一个进程。</p></div>
+    <div class="card"><h4>进程拓扑待验证</h4><p>团队执行是复用产品已有的服务，还是由 CLI 拉起独立进程，无头运行又依赖哪些桌面组件，本轮都没有验证，不预设“两个独立 SDK 进程”。隔离也不等于完整的安全隔离：仍要约束工作目录、凭据和系统权限；产品会自动加载目录里的额外配置和记忆，需要在沙箱策略中验证。</p></div>
+  </div>
+  <h3>运行中遇到 ask：转成持久决定，受控停止，再发起新尝试</h3>
+  <div class="fig">
+    <div class="scroll"><svg id="askSvg" viewBox="0 0 1000 330" role="img" aria-label="ask 转持久决定的时序"></svg></div>
+    <p class="figcap">长时间等待尽量放在业务步骤之间，不挂在某个不稳定的 CLI 进程里。在未确认停止之前，不能立即重启。跨进程持续挂起、等待实时答复可以作为后续扩展，首期不依赖它。</p>
+  </div>
+  <details id="sdkHttp"><summary>备选：daemon 直接接 SDK HTTP（协议验证路径，即 v0.1 方案）</summary><div class="body">
+    <p>在执行端实现一个 HTTP 后端，直接调用本机独立的 SDK 服务：创建 session、发 prompt、读事件、查询状态、abort。它适合验证 SDK 的会话与事件语义，或在产品入口补齐之前做对照；但它绕过了 Mobile Coder / MobileWork 的产品装配，所以不作为默认主路线。下面这些要求只针对这条路径，不能直接迁移成 CLI 路径已经具备的保证。</p>
+    <ul>
+      <li>同步 HTTP 200、异步接受 <b>204</b>、事件断开、出现一次 idle，都不能单独当作成功。<cite>S05</cite><cite>S10</cite></li>
+      <li>路由的多进程分支没有直接处理 rejection，但 bridge 另有错误发布路径，不能只凭路由里的空 catch 就判定所有异常都被吞掉。<cite>S10</cite><cite>S13</cite></li>
+      <li>取消走 session abort 入口，等本机执行收敛后再释放资源。<cite>S05</cite><cite>S11</cite></li>
+      <li>SDK 的本机 HMAC/Basic/PID 鉴权不能当作组织身份系统<cite>S04</cite>；本地服务鉴权依赖显式凭据配置，未配置密码时会放行，接入时必须固定配置。<cite>S14</cite></li>
+    </ul>
+  </div></details>
+  <p>产品运行内的子 Agent 仍由产品内部的 harness 管理。只有当它需要独立负责人、跨环境资源、单独审批或重试、产物交接时，才提升为协作服务里的一个步骤，避免同一个子任务被两层编排器同时管理。<cite>S07</cite></p>
+</section>
+
+<!-- 08 -->
+<section class="chapter" id="s8" data-title="出了问题会怎样">
+  <div class="kicker">08 · 可靠性</div>
+  <h2>什么能自动恢复，什么必须先查清</h2>
+  <p class="lead">可以借鉴 Spark 的集中协调、资源登记、任务领取和失败恢复。但 Agent 会修改外部系统、会等人决定，输出也不保证确定，所以<b>“重复计算是安全的”这一前提不能套用到“重复执行所有 Agent 动作”</b>。选一个场景，看每一层发生了什么、最后落在什么状态。</p>
+  <div class="fig">
+    <div class="tabs" role="tablist" aria-label="故障场景" id="fTabs"></div>
+    <div id="fBody" role="tabpanel" aria-live="polite"></div>
+  </div>
+  <div class="print-only" id="fPrint"></div>
+  <div class="why"><b>执行所有权：</b>建议用单调递增的执行世代或等效凭据，在领取、续约、写回和释放时都做校验。它只能约束经过平台的写入；如果旧 Agent 仍然持有外部系统的长期凭据，平台无法凭世代号阻止它继续写外部系统。高风险动作必须经过受控工具出口，或依赖下游的幂等协议。首期先验证三件事：<b>结果不丢、旧结果不推进、失败不乱重试</b>，然后再扩大自动接管的范围。</div>
+</section>
+
+<!-- 09 -->
+<section class="chapter" id="s9" data-title="可信上下文">
+  <div class="kicker">09 · 可信上下文</div>
+  <h2>先保证依据可用，再追求全面知识化</h2>
+  <p class="lead">共享资料不等于每个 Agent 都读全部资料。要回答的是：<b>这一步现在该用什么、凭什么认为它有效、谁有权读、结果能不能指回依据</b>。</p>
+  <div class="pipe" aria-label="上下文数据链">
+    <div><b>来源</b>文档、表格、会议、工作项、运行产物</div>
+    <div><b>登记</b>来源登记与权限映射</div>
+    <div><b>版本</b>解析、识别版本，标记重复和冲突</div>
+    <div><b>有效依据</b>加少量业务关系</div>
+    <div><b>装配</b>按任务和身份检索，按预算装配</div>
+    <div><b>清单</b>Context Manifest 加授权读取</div>
+    <div><b>成果</b>结果、引用与产物关系</div>
+  </div>
+  <div class="fig">
+    <p class="figcap">示例（虚构资料，用来说明装配规则）：同一件工作，三个步骤拿到的输入清单不同，权限检查贯穿每一步。</p>
+    <div class="tabs" role="tablist" aria-label="装配视角" id="mfTabs"></div>
+    <div id="mfBody" role="tabpanel" aria-live="polite"></div>
+  </div>
+  <div class="print-only" id="mfPrint"></div>
+  <div class="grid g3">
+    <div class="card"><h4>Manifest 至少包含</h4><p>来源 ID、版本或哈希、确认状态、适用的工作、读取授权、装配时间、冲突或缺失项。汇总结果不是新的无条件权威事实，摘要要能追溯到原始依据。</p></div>
+    <div class="card"><h4>读取时仍检查权限</h4><p>快照固定的是内容版本，不是永久访问权。资料撤权后，新的读取和下游派生视图仍要授权检查；已经进入模型上下文的内容无法远程抹除，需要中止或重建受影响的后续运行。</p></div>
+    <div class="card"><h4>图谱按效果再定</h4><p>关系表或已有元数据就能表达“决定替代旧要求”“报告验证哪个版本”。本体和知识图谱不能保证数据本身正确、及时或已授权。要不要引入图数据库，看关系查询带来的收益是否超过维护成本。</p></div>
+  </div>
+  <div class="limit"><b>不要低估，也不要高估现状。</b>Multica 已有项目背景、评论增量，以及在工单和评论上的具体历史背景快照（带版本和大小预算）。<cite>M04</cite><cite>M19</cite><cite>M22</cite> 这不是“只有聊天记录”，但这套快照机制也不是通用的企业多源治理层。应先适配已有的供给能力，再补跨企业来源的治理。</div>
+  <details><summary>怎样证明治理有价值：三组对照实验（待执行）</summary><div class="body">
+    <p>固定模型、任务和资料集，比较三种输入方式：①直接拼接或普通检索；②增加版本、状态和权限；③再加上明确的业务关系。比较的指标包括答案正确率、过期依据使用率、引用可核查率、权限隔离、输入 token 与耗时，以及人工整理成本。拿到对照数据之前，不承诺能提高多少比例。</p>
+  </div></details>
+</section>
+
+<!-- 10 -->
+<section class="chapter" id="s10" data-title="多 Agent 策略与公共机制">
+  <div class="kicker">10 · 编排</div>
+  <h2>多 Agent 编排是策略，分布式协作是公共运行机制</h2>
+  <div class="fig">
+    <div class="scroll"><svg id="stgSvg" viewBox="0 0 1000 300" role="img" aria-label="四种组织策略共用同一套运行机制"></svg></div>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h4>mention 不是预设的 DAG</h4><p>按固定版文档，<code>@Agent</code> 会在同一工单上拉起一次运行，但不会自动建立 A→B 依赖<cite>M11</cite>。交接给成员也不会启动 Agent；运行结束不会自动推进业务状态<cite>M12</cite>。条件接续靠持久唤醒规则实现<cite>M09</cite><cite>M10</cite>。这几种触发来源不同，但最终都进入同一套授权、记录和执行机制。</p></div>
+    <div class="card"><h4>蜂群只是其中一种策略</h4><p>队长委派是通过提示和 mention 实现的协作策略<cite>M13</cite>。中央服务不需要变成一个全知的“总 Agent”。它可以调用规划策略，但必须能拒绝越权、条件不满足或超出预算的提议。组织策略变化时，不应重写运行存储和回执协议。首期只验证人工委派和条件接续，接入的 Agent 数量多不算完成标准。</p></div>
+  </div>
+</section>
+
+<!-- 11 -->
+<section class="chapter" id="s11" data-title="MobileWork 双重身份与融合">
+  <div class="kicker">11 · 融合</div>
+  <h2>MobileWork 的双重身份：人使用的入口，也是被调用的办公 Agent</h2>
+  <p class="lead">① <b>人使用的入口</b>：个人用户照常创建会话、操作本地文件、使用专家；团队用户进入共同工作项，查看自己的任务、上下游依据、成果和待决定事项。② <b>被 daemon 调用的办公 Agent</b>：团队计划里的办公类步骤（例如准备发布材料），由执行端经 MW 适配器调用产品的无头执行入口完成。团队入口可以是看板、对话或计划视图；“按角色默认工作视图”已记录为待细化功能，后续单独讨论。</p>
+  <div class="fig">
+    <p class="figcap">两种身份共用同一个产品的装配和同源 SDK，但会话、工作目录和授权分开。进程怎样排布（共用已有服务还是独立进程）待验证。</p>
+    <div class="scroll"><svg id="mwSvg" viewBox="0 0 1000 340" role="img" aria-label="MobileWork 的两种身份与调用链"></svg></div>
+  </div>
+  <div class="tblwrap"><table>
+    <tr><th>位置</th><th>近期增量</th><th>保留与约束</th></tr>
+    <tr><td><b style="color:var(--mw)">MW 产品交互层</b></td><td>团队空间与共同工作项入口、状态与成果、批准入口、执行端连接状态；按角色默认工作视图（待细化）</td><td>个人入口继续可用；不把协作对象都伪装成会话</td></tr>
+    <tr><td><b style="color:var(--mw)">团队应用服务与业务工具</b></td><td>身份映射、工作与计划命令、业务专用工具、读模型与客户端事件适配</td><td>复用现有身份系统，但由服务端验证；不另存同义的权威状态</td></tr>
+    <tr><td><b style="color:var(--col)">Multica 协作后端</b></td><td>必要的业务关卡、输入与产物的版本关系、统一授权、通用协作工具/API 边界</td><td>尽量保持原有服务结构；所有写入入口都受约束</td></tr>
+    <tr><td><b style="color:var(--exe)">执行端与 Provider</b></td><td>MC / MW 适配器、Run 与产品会话映射、成果传递、能力声明</td><td>复用 daemon 既有的连接、领取、结果上报和后端选择机制</td></tr>
+    <tr><td><b style="color:var(--mw)">MW 作为执行者</b></td><td>可编程的无头办公任务入口（待补齐/待验证），保留产品装配；团队会话与个人会话隔离</td><td>不点 GUI；不全量共享私人历史和目录；不递归回到团队调度</td></tr>
+    <tr><td><b style="color:var(--sdk)">Mobile Coder 与 SDK</b></td><td>只补原型证明必要的 CLI 语义（事件、终态、取消、审批）和可观测性</td><td>SDK 留在产品内部；不提前塞入所有团队业务对象</td></tr>
+    <tr><td><b style="color:var(--ctx)">上下文模块</b></td><td>资料登记与治理、按任务装配、引用与读取授权</td><td>先聚焦一组实际来源</td></tr>
+  </table></div>
+  <h3>所有写入入口都必须经过同一道关卡</h3>
+  <div class="fig">
+    <div class="scroll"><svg id="gateSvg" viewBox="0 0 1000 300" role="img" aria-label="写入入口与业务关卡"></svg></div>
+    <p class="figcap">人和 Agent 的写入经过同一道校验。只隐藏 MW 上的按钮不够：Agent 可以通过 Multica CLI/API 自己修改任务状态、创建后续运行。关键的验收和授权必须落在共享服务的实际写入点上。这部分改动要计入原型工作量，不能把整个融合估算成“加一层前端”（T08）。</p>
+  </div>
+  <div class="grid g2">
+    <div class="card"><h4>禁止出现双权威的任务系统</h4><p>首期 Issue 是共同工作项的唯一权威记录。MW 只保存映射和 UI 缓存，不保存一份可写的同义任务再双向同步。个人成果要共享时，需要明确发布为团队产物。</p></div>
+    <div class="card"><h4>身份映射链</h4><div class="idchain"><span>企业用户</span><em>→</em><span>Multica user/member</span><em>→</em><span>Agent</span><em>→</em><span>Runtime · Provider</span><em>→</em><span>每次运行 · 产品会话</span></div><p>成员退出、设备被撤销、客户端换号，都要传播到后续授权。本地目录分隔不能代替这条链路。<cite>W06</cite><cite>W07</cite><cite>M17</cite><cite>M18</cite></p></div>
+  </div>
+  <h3>技术栈保持克制</h3>
+  <div class="chips"><span>Go + PostgreSQL（复用 Multica）</span><span>Agent 产品 CLI（内含同源 SDK）</span><span>MobileWork 现有栈</span><span>模块化单体</span></div>
+  <div class="chips" aria-label="暂不引入"><span class="no">Kafka</span><span class="no">Kubernetes</span><span class="no">Temporal</span><span class="no">图数据库</span></div>
+  <p>上面划掉的几项暂不引入。只有当事件吞吐与消费、隔离部署、长期工作流或关系查询出现<b>经过验证的瓶颈</b>时，再比较对应方案。审计至少要能串起 workItem、step、run、session、runtime、输入与产物版本、授权与批准；日志默认不记录完整的敏感输入。本方案没有测量过容量、时延、恢复时间或成本，因此不给出任何性能承诺。</p>
+</section>
+
+<!-- 12 -->
+<section class="chapter" id="s12" data-title="闸门、评审与证据">
+  <div class="kicker">12 · 推进</div>
+  <h2>原型闸门、待执行验证与团队评审问题</h2>
+  <div class="principle">先跑通、量出证据，再决定要不要抽取。<span>画出边界图不等于已经可以替换；mock 通过接口一致性测试只说明解耦。以下原型实施需要后续单独授权，本轮交付的只是技术设计。G0–G4 是研发内部的技术判定；第 13 章的 Demo 现场验收面向价值验证，两者并行、共用同一批运行证据。</span></div>
+  <div class="gates" id="gates" role="group" aria-label="推进闸门"></div>
+  <div class="card" id="gateInfo" aria-live="polite"></div>
+  <p style="font-size:14.5px;color:var(--ink2)">原型范围建议：一条有代表性的业务闭环、两个人类角色、Mobile Coder 与 MobileWork 两个自有产品加一种第三方 Agent CLI、桌面和服务器两种环境。使用合成资料和模拟发布接口。</p>
+  <details><summary>验收矩阵 T01–T14（全部待执行）</summary><div class="body"><div class="tblwrap"><table id="tMatrix"><tr><th>编号</th><th>验证输入</th><th>必须观察到的结果</th></tr></table></div></div></details>
+  <h3>团队评审先讨论这些取舍</h3>
+  <ol class="card" style="padding-left:38px">
+    <li>是否接受“整体复用协作后端，逐步形成引擎边界”的内部原型路线？如果不接受，问题出在许可、产品模型，还是维护成本？</li>
+    <li>是否接受首期由 Issue 作为共同工作项的唯一权威记录，个人会话和团队工作分开？</li>
+    <li>是否接受“daemon 经 Provider 适配层调用产品 CLI/无头入口”为主路线、直连 SDK HTTP 只作协议验证？MW 的无头办公任务入口由谁补齐、复用哪些现有服务？</li>
+    <li>团队调用 MW/MC 与个人使用怎样隔离会话、目录和授权？进程拓扑在原型里怎样验证？</li>
+    <li>哪些动作允许自动重试，哪些必须先核查或由人确认？原型用哪个受控出口来验证？</li>
+    <li>可信上下文首批覆盖哪些资料、事实和关系？哪一组对照能证明治理有收益？</li>
+    <li>出现哪些原型结果时，触发停止复用、申请授权、抽取模块或独立实现？</li>
+    <li>近期 Demo（第 13 章）的 MW 并行支路，是等真实无头入口，还是接受标明身份的降级先演示？测试节点用 Mobile Coder 无头运行还是第三方 CLI？</li>
+  </ol>
+  <h3>许可证：四个来源都要整理</h3>
+  <div class="grid g2">
+    <div class="card"><h4>Multica</h4><p>Apache 2.0 与 Part I 附加条件合成一份许可，冲突时 Part I 优先。商业托管与嵌入、UI 品牌、非 UI 归因要分别满足或获得授权，取得其中一项不等于取得另一项。<cite>M01</cite></p></div>
+    <div class="card"><h4>MobileWork</h4><p>根许可证区分普通目录、<code>/ee</code> 目录和第三方组件，不能把某个包的声明当作全部来源的结论。<cite>W12</cite></p></div>
+    <div class="card"><h4>mobile-coder-sdk</h4><p>各包声明 MIT，但本次归档的根目录下没有找到 LICENSE 文件，分发前要补齐完整的来源和许可义务。<cite>S01</cite></p></div>
+    <div class="card"><h4>Mobile Coder 产品</h4><p>本轮只读取了仓库职责约定和 CLI 声明，没有审查许可证；对外分发前与 SDK 一并整理。<cite>C01</cite></p></div>
+  </div>
+  <details id="evidence"><summary>证据索引：固定版本、文件与行号（点击正文中的编号会跳到这里）</summary><div class="body">
+    <p style="font-size:13.5px;color:var(--ink3)">共 57 条。M 开头的条目链接到 GitHub 固定提交。S、W、C（Mobile Coder）是私有仓库，下面只给出本地归档的相对路径和行号，不是网址；异地分享时需要另外提供同一 SHA 的源码访问权限。C01–C04 与 W13 是 v0.2 新增。完整内容见 <a href="sources.json">sources.json</a>。</p>
+    <div class="evfilter" role="group" aria-label="按仓库筛选">
+      <button class="btn" type="button" data-f="all" aria-pressed="true">全部</button>
+      <button class="btn" type="button" data-f="M" aria-pressed="false">Multica</button>
+      <button class="btn" type="button" data-f="S" aria-pressed="false">SDK</button>
+      <button class="btn" type="button" data-f="W" aria-pressed="false">MobileWork</button>
+      <button class="btn" type="button" data-f="C" aria-pressed="false">Mobile Coder</button>
+    </div>
+    <div class="tblwrap"><table class="ev" id="evTable"><tr><th>ID</th><th>判断与边界</th><th>位置</th></tr></table></div>
+  </div></details>
+</section>
+
+<!-- 13 -->
+<section class="chapter" id="s13" data-title="近期 Demo 实施方案">
+  <div class="kicker">13 · 近期 Demo</div>
+  <h2>近期 Demo：同一条真实工作，在真实服务和独立执行机上跑通协作闭环</h2>
+  <div class="answer">建议：近期可以拿出一个<b>真</b> Demo，但把它定义为“单场景真实闭环”，不是生产承诺。真实运行的部分包括：自托管的协作服务与 PostgreSQL、至少两台独立主机上的执行端、Mobile Coder 产品真实修复、测试服务器真实跑测试、版本化产物跨机交接、提测与人工批准关卡、按步骤授权的依据清单；只有“发布”是模拟的。最大的不确定不在代码量，而在 <b>MobileWork 无头办公入口</b>和<b>各执行节点的推理身份与运行授权</b>。MW 是并行支路，探针不通过时可以标明身份降级，主线照样成立。</div>
+  <div class="four">
+    <div class="card"><div class="q">领导能看到</div><div class="a">一件工作从立项、两台机器并行、提测、云端测试到人批准，全程可当场改输入、可倒查版本</div></div>
+    <div class="card"><div class="q">全程真实</div><div class="a">服务＋PG、两台以上独立主机、真实 MC 修复与测试、跨机产物与哈希、关卡校验</div></div>
+    <div class="card"><div class="q">最大不确定</div><div class="a">MW 无头入口（身份、授权、桌面依赖）；无头节点用谁的身份调用模型</div></div>
+    <div class="card"><div class="q">先跑什么</div><div class="a">先确认两台机器的网络与运行账号，同步准备 MC 的可复现小任务</div></div>
+  </div>
+  <div class="boundary"><span>本章是实施建议。没有运行任何探针或产品，下文的可行性判断、相对成本与时间盒都是<b>建议 / 待跑</b>；四个源码基线仍不是已验收的配套版本。</span></div>
+
+  <div class="why"><b>首场建议留 5–8 分钟。</b>先让领导在团队页改一条验收条件，给出一份旧补丁尝试提测，再用正确版本走通“本地修复、云端测试、人工批准”。最后打开测试报告和批准记录，查证两者引用同一份补丁。其余故障场景留在彩排。若真实 Run 超出演示时间，页面保留当前进度，可另开注明日期的彩排记录供查证。先用现有适配器跑通跨机骨架，同时验证 MC 与 MW；哪一项自有产品接入通过，就在哪一项真实运行上展示产品身份。</div>
+  <h3>领导看到什么：同一条工作的六幕</h3>
+  <p>工作取自第 5 章：负责人确认“先修复弱网场景下的重复待办，提醒功能延期”。研发电脑上的 Mobile Coder 修复，MobileWork 办公 Agent 并行准备发布说明，测试服务器测试，负责人批准模拟发布。每一幕都可以<b>当场改输入</b>，也可以<b>当场查证</b>，不靠讲解员口述。</p>
+  <div class="tblwrap"><table class="acts">
+    <tr><th>幕</th><th>领导看到</th><th>可以当场操作</th><th>当场查证</th></tr>
+    <tr><td>① 立项</td><td>负责人在团队入口建立工作，确认决定 D-2“提醒延期”</td><td>加一条验收条件，例如“弱网下连点 5 次只生成 1 条待办”，看计划修订版和受影响的步骤</td><td>工作项与决定的版本号；团队入口与数据库是同一版本</td></tr>
+    <tr><td>② 并行开工</td><td>研发电脑开始修复，MW 起草发布说明，两条 Run 各在自己的机器上</td><td>关掉全部页面再打开，进度与状态不丢</td><td>Run 记录里的主机、产品与版本、产品会话 ID；在研发电脑上能找到同一会话</td></tr>
+    <tr><td>③ 提测</td><td>Agent 调业务工具提测，或成员点“提测”，两者走同一个业务操作</td><td>用旧补丁 r1 或删掉自测记录再提测</td><td>两个入口给出同一拒绝理由，且没有产生测试 Run</td></tr>
+    <tr><td>④ 云端测试</td><td>测试服务器主动领取任务，下载补丁 r2，校验哈希后跑测试</td><td>测试中途断开测试服务器网络，几分钟后恢复</td><td>测试目录里的补丁哈希等于产物存储里的哈希；恢复后允许重复补交，服务端只采纳一次</td></tr>
+    <tr><td>⑤ 人批准</td><td>证据包：补丁 r2、测试报告 #2、发布说明草稿、依据清单、风险</td><td>批准“模拟发布”；或者批准后改一行补丁，看旧批准失效</td><td>决定记录绑定的证据版本；模拟发布服务只接受带有效批准的请求</td></tr>
+    <tr><td>⑥ 追溯与效果</td><td>从结果倒查依据、版本、机器、执行者、批准人</td><td>在任一台设备上对修复前、后的构建跑弱网复现脚本</td><td>修复前能复现重复待办，修复后不能；一键导出审计链</td></tr>
+  </table></div>
+  <p style="font-size:14.5px;color:var(--ink2)">Agent 的输出不确定，第 ③④ 幕可能要多一轮修复，这时演示的是“状态与证据如实反映”。Demo 不给提效数字；如果需要对照，可以用同一任务手工走一遍，记录交接次数和查证方式作参考，不外推。</p>
+
+  <h3>六项现场可验证的能力</h3>
+  <div class="grid g3">
+    <div class="card"><h4>交接的是带版本的成果</h4><p>不是“最新文件夹”或聊天截图。验证：两台机器上的哈希一致，报告写明测的是 r2。</p></div>
+    <div class="card"><h4>推进靠持久规则和关卡</h4><p>不靠人记得 @ 下一位。验证：关掉所有页面，提测通过后测试照样被领取。</p></div>
+    <div class="card"><h4>人和 Agent 过同一道关</h4><p>提测入口不同，校验相同。验证：用旧版本分别从两个入口提测，拒绝理由一致。</p></div>
+    <div class="card"><h4>批准绑定证据</h4><p>批准的是“这组证据对应的这个动作”。验证：改证据后旧批准不能用于新补丁。</p></div>
+    <div class="card"><h4>出问题如实显示</h4><p>断网、失联时显示“待补交 / 待核查”，不显示成功。验证：危机场景 C3、C6。</p></div>
+    <div class="card"><h4>依据按步骤授权</h4><p>测试步骤读不到含客户信息的日志，发布说明拿不到研发原始日志。验证：查看每步依据清单与被拒记录。</p></div>
+  </div>
+
+  <h3>危机场景：当场触发，看系统怎样反应</h3>
+  <div class="tblwrap"><table>
+    <tr><th>场景</th><th>怎样触发</th><th>应该看到</th><th>安排</th></tr>
+    <tr><td><b>C1</b> 旧版本或缺自测就提测</td><td>在团队入口选 r1 提测；或让 Agent 提交缺自测的请求</td><td>拒绝并列出缺项；不产生测试 Run（T14）</td><td><span class="rl r">彩排必测</span></td></tr>
+    <tr><td><b>C2</b> 测试跑完但不通过</td><td>领导新增一条弱网验收用例（测试规则 rev 3）</td><td>测试 Run 成功，业务步骤“不通过 · 未验收”；修复退回，新补丁为 r3（T06）</td><td><span class="rl r">彩排必测</span></td></tr>
+    <tr><td><b>C3</b> 回执断网</td><td>测试快结束时断开测试服务器网络，随后恢复</td><td>期间不显示完成；恢复后按同一回执标识补交，后续工作只推进一次（T03）<cite>M14</cite></td><td><span class="rl r">彩排必测</span></td></tr>
+    <tr><td><b>C4</b> 唤醒提示丢失</td><td>只丢弃一次唤醒提示，保持领取接口、服务和数据库可用</td><td>执行端主动查询仍领到任务，且只领一次（T01）<cite>M07</cite></td><td><span class="rl r">彩排必测</span></td></tr>
+    <tr><td><b>C5</b> 批准后证据被改</td><td>批准后在研发电脑改补丁并重新提测</td><td>旧批准对 r3 无效，需要重测或重批（T09）</td><td><span class="rl r">彩排必测</span></td></tr>
+    <tr><td><b>C6</b> 研发电脑失联</td><td>修复中途让研发电脑休眠或断网</td><td>标“待核查”，不自动改派；人决定后才发起新尝试（T04）</td><td><span class="rl l">加分 · 只到人工决定</span></td></tr>
+    <tr><td><b>C7</b> 越权读取</td><td>让测试步骤请求含客户信息的日志（合成资料）</td><td>依据清单标“无权”，依据与产物服务按运行令牌拒绝<cite>M17</cite></td><td><span class="rl l">加分 · 合成资料</span></td></tr>
+  </table></div>
+
+  <h3>部署与运行路径：探针不通过时怎样降级</h3>
+  <div class="fig">
+    <p class="figcap">三个位置与第 1 章总图一致；执行机至少两台独立主机，同一台机器上的两个进程只算联调。切换运行路径，看哪些节点换成什么、怎样标明身份、失去哪项证明。</p>
+    <div class="tabs" role="tablist" aria-label="Demo 运行路径" id="dmTabs"></div>
+    <div class="scroll"><svg id="dmSvg" viewBox="0 0 1000 600" role="img" aria-label="Demo 部署与运行路径"></svg></div>
+    <div id="dmInfo" role="tabpanel" aria-live="polite"></div>
+    <div class="legendrow"><span><span class="rl r">真实</span>真跑真实产品或服务</span><span><span class="rl l">待探针</span>目标为真实，取决于探针</span><span><span class="rl s">代用 · 标明身份</span>不冒充原产品</span><span><span class="rl m">模拟</span>不影响真实系统</span><span>虚线框＝需新增</span></div>
+  </div>
+  <div class="print-only" id="dmPrint"></div>
+
+  <h3>最小可落地模块与接口</h3>
+  <p>只做闭环必需的部分。<span class="tag t-up">上游已有</span>是固定版源码里的机制，<span class="tag t-add">需新增</span>是本 Demo 要写的代码，<span class="tag t-ver">需实测</span>是不跑就不知道的行为。</p>
+  <div class="tblwrap"><table>
+    <tr><th>模块</th><th>放在哪</th><th>来源</th><th>最小内容</th><th>需实测</th></tr>
+    <tr><td><b>M1</b> 协作服务＋PostgreSQL</td><td>团队服务端</td><td><span class="tag t-up">上游已有</span><cite>M21</cite></td><td>按自托管编排部署；镜像固定到与 <code>7a12304f</code> 对应的构建（编排默认取 latest 标签）</td><td><span class="tag t-ver">部署 · 跨网登记</span></td></tr>
+    <tr><td><b>M2</b> 执行端 daemon（2–3 台）</td><td>每台执行机</td><td><span class="tag t-up">上游已有</span><cite>M07</cite><cite>M14</cite></td><td>主动连接、登记、心跳、原子领取、回执先落盘</td><td><span class="tag t-ver">跨机领取 · 断网补交</span></td></tr>
+    <tr><td><b>M3</b> MC 适配器</td><td>daemon 内（Go）</td><td><span class="tag t-add">需新增</span><cite>M05</cite><cite>M25</cite><cite>M26</cite></td><td>以自己的 runtime 身份注册；调用 <code>run --format json --dir</code>，按需 <code>--session</code>；事件翻译、按结果合同判终态、取消后等收敛<cite>C02</cite></td><td><span class="tag t-ver">终态 · 取消 · 无人值守 · 审批默认值</span></td></tr>
+    <tr><td><b>M4</b> 第三方适配器</td><td>测试服务器 daemon</td><td><span class="tag t-up">上游已有</span><cite>M05</cite></td><td>选一种已接入的第三方 CLI，作为统一接口的对照和降级执行者</td><td><span class="tag t-ver">授权默认值</span><cite>M23</cite><cite>M24</cite></td></tr>
+    <tr><td><b>M5</b> MW 适配器＋MW 无头任务入口</td><td>运营电脑 daemon＋MW 产品</td><td><span class="tag t-add">需新增</span><span class="tag t-ver">入口待补齐</span><cite>W13</cite></td><td>提交办公任务 → 事件 → 结果文件 → 取消；保留 MW 产品装配，团队会话与个人会话隔离</td><td><span class="tag t-ver">见探针 P4</span></td></tr>
+    <tr><td><b>M6</b> 团队应用服务（薄）</td><td>团队服务端</td><td><span class="tag t-add">需新增</span></td><td>四个业务操作：建立工作 / 修改决定、提测、提交说明供审批、批准；读模型</td><td>Demo 涉及的旧写入点要一并收口<cite>M22</cite></td></tr>
+    <tr><td><b>M7</b> 提测业务工具</td><td>注入 Agent 运行（MCP 或 CLI）</td><td><span class="tag t-add">需新增</span></td><td><code>submit_fix_for_test</code> 只是 M6 提测操作的包装，不另写规则</td><td><span class="tag t-ver">P6</span></td></tr>
+    <tr><td><b>M8</b> 产物存储＋manifest</td><td>团队服务端</td><td><span class="tag t-add">需新增</span></td><td>引用、版本、sha256、产出它的 Run；凭运行令牌授权下载<cite>M17</cite></td><td><span class="tag t-ver">跨机下载与校验</span></td></tr>
+    <tr><td><b>M9</b> 依据清单（最小）</td><td>团队服务端</td><td><span class="tag t-add">需新增</span></td><td>每步一份 Manifest：来源 ID、版本、状态、授权；合成资料；先复用工单背景快照<cite>M19</cite></td><td>不做企业多源治理</td></tr>
+    <tr><td><b>M10</b> 批准关卡＋受控出口</td><td>团队服务端</td><td><span class="tag t-add">需新增</span></td><td>决定绑定动作与证据版本；模拟发布服务核对批准 ID、证据版本和幂等键</td><td>—</td></tr>
+    <tr><td><b>M11</b> 团队入口</td><td>人与客户端</td><td><span class="tag t-add">需新增</span></td><td>首选 MW 内的团队页；时间不够时用最小 Web 页，并在页面上标明“非 MW”</td><td>MW 前端集成代价</td></tr>
+    <tr><td><b>M12</b> 证据导出</td><td>团队服务端</td><td><span class="tag t-add">需新增</span></td><td>导出 workItem → step → run → 产品会话 → runtime → 版本 → 提测 → 批准</td><td>—</td></tr>
+  </table></div>
+  <details><summary>两个关键接口的形状（示意，路径和字段在 G1 固定）</summary><div class="body">
+<pre># 人点“提测”和 Agent 调 submit_fix_for_test，进入的是同一个操作
+POST /team/work-items/{id}/submit-for-test
+{ "commandId": "…", "actor": "成员，或 Agent＋发起人",
+  "artifact": { "ref": "patch", "version": "r2", "sha256": "…" },
+  "selfTest": { "ref": "selftest-log", "forVersion": "r2" } }
+→ 已接受 { "testRunId": "…" }
+→ 拒绝   { "reason": "不是当前版本 | 缺自测依据 | 自测对应 r1" }   # 不产生测试 Run
+
+# 批准绑定动作与证据；模拟发布服务只认带有效批准的请求
+POST /team/decisions/{id}/approve
+{ "commandId": "…", "action": "simulated_release",
+  "evidence": { "patch": "r2", "report": "#2", "notes": "v1" } }</pre>
+    <p>执行端的运行回执不经过这两个接口，仍走 daemon 与协作服务之间的执行协议<cite>M14</cite>。</p>
+  </div></details>
+
+  <h3>顺序、探针与停止条件</h3>
+  <div class="fig">
+    <p class="figcap">主线按“探针 → 骨架 → 闭环 → 危机与证据 → 彩排”推进，每段有出口标准。MW 支路与主线并行，探针不通过就降级，不拖主线。</p>
+    <div class="scroll"><svg id="pgSvg" viewBox="0 0 1000 330" role="img" aria-label="Demo 实施顺序与依赖"></svg></div>
+  </div>
+  <div class="tblwrap"><table>
+    <tr><th>探针</th><th>回答什么</th><th>通过标准</th><th>不通过怎么办</th><th>相对成本</th></tr>
+    <tr><td><b>P1</b> 跨机骨架</td><td>自托管服务能否部署；两台独立主机能否登记、领取、回执</td><td>用已接入的第三方 CLI 或空任务完成一次跨机 Run，并完成一次断网补交</td><td>先解决部署与网络；时间盒内仍不通，回第 3 章重新评估复用路线</td><td>低</td></tr>
+    <tr><td><b>P2</b> MC 无头跑一次</td><td>Mobile Coder 能否在无人值守下完成修复并给出可判定的终态</td><td>在研发电脑和测试服务器各跑一次；记录事件流、退出码、会话 ID、续接、取消后是否收敛、审批默认值</td><td>研发执行者暂用第三方 CLI 并标明，MC 接入回到 G1；测试节点走路径 C</td><td>低</td></tr>
+    <tr><td><b>P3</b> 推理身份清单</td><td>每个节点由谁、用哪个账号或凭据调用模型；条款是否允许服务器或无人值守使用</td><td>每个节点都有书面确认的身份与授权，凭据只留在该节点</td><td>该节点不上真产品，只用已获授权的替代执行者</td><td>很低（核对，不写代码）</td></tr>
+    <tr><td><b>P4</b> MW 无头可行性</td><td>不操作界面，能否把一个办公任务交给 MW 产品、取回结果并取消</td><td>时间盒内拿到“提交—事件—结果—取消”的最小路径，保留产品装配，说清身份与桌面依赖</td><td>MW 支路走路径 B</td><td>中，不确定性最高</td></tr>
+    <tr><td><b>P5</b> 适配器接通</td><td>新 runtime 能否经 ResolveBackend 选中，而不是伪装成已有 CLI<cite>M25</cite><cite>M26</cite></td><td>MC 以自己的身份出现在登记和 Run 记录里</td><td>改动扩散到产品模块时记入侵入清单，按停止条件判断</td><td>低–中</td></tr>
+    <tr><td><b>P6</b> Agent 调业务工具</td><td>MC 运行中能否调用注入的提测工具</td><td>工具调用到达团队应用服务并被校验</td><td>运行结束后由人点“提测”（同一操作）；失去“Agent 自主提测”的演示</td><td>低</td></tr>
+  </table></div>
+  <p style="font-size:14.5px;color:var(--ink2)">并行准备 P1、P2、P3。实际发起模型调用前，先确认该节点在 P3 的运行身份与授权。跨机探针需配置可从两台执行机访问的内网地址或反向代理；固定版自托管配置默认绑定回环地址。每个探针设一个短时间盒（假设为几个工作日的量级，由团队调整），超时就按降级路径走，并把原因记下来。</p>
+  <div class="limit"><b>停止条件：</b>①时间盒内跑不通跨机领取，暂停 Demo，回第 3 章复盘路线；②为了 Demo 要改动大量 Multica 产品模块（超出后端选择、提示与工具注入、少量写入点），停止扩大，记入侵入清单；③某节点拿不到推理身份或运行授权，该节点不上真产品，不拿个人订阅凑；④彩排中出现“错误地显示成功”，这个场景不上台，直到修好。</div>
+
+  <h3>什么全程真实，哪里限定，哪里模拟</h3>
+  <div class="grid g3">
+    <div class="card" style="border-top:4px solid var(--up)"><h4><span class="rl r">真实</span>必须真跑，不能预录</h4><ul><li>协作服务＋PostgreSQL</li><li>两台以上独立主机上的执行端</li><li>Mobile Coder 产品修复，测试服务器跑测试</li><li>产物跨机交接与哈希校验</li><li>提测、批准关卡的服务端校验</li><li>回执落盘与补交、审计链导出</li></ul></div>
+    <div class="card" style="border-top:4px solid var(--ver)"><h4><span class="rl l">限定</span>真实，但范围收窄</h4><ul><li>一个工作区、两个人类角色</li><li>合成资料，静态依据清单</li><li>预置授权，不做运行中实时审批</li><li>失联只演示到“待核查＋人工决定”</li><li>单实例后端；Demo 账号映射，不接企业 SSO</li><li>团队入口可能是最小 Web 页</li></ul></div>
+    <div class="card" style="border-top:4px solid var(--bad)"><h4><span class="rl m">模拟</span><span class="rl s">代用</span>必须标出</h4><ul><li>发布动作：模拟发布服务</li><li>IM 渠道：不做，只说明可复用同一应用服务</li><li>MW 降级时的替代执行者：标明产品身份</li><li>独立脚本代替测试 Agent 时标“脚本执行”；真实 Agent 调用测试脚本时保留该 Agent 的运行记录</li></ul><p><b>不算引擎跑通：</b>HTML 动画、预录视频、模拟发布本身、同机双进程，以及用裸 SDK 或通用模型冒充 MC / MW。</p></div>
+  </div>
+
+  <h3>覆盖与缺口：对照第 1 章总图</h3>
+  <div class="tblwrap"><table>
+    <tr><th>总图部件</th><th>Demo 里</th><th>来源</th><th>不在本次 Demo</th></tr>
+    <tr><td>MW 团队协作入口</td><td><span class="rl l">限定</span>MW 团队页或最小 Web 页（标明）</td><td><span class="tag t-add">需新增</span></td><td>按角色默认工作视图</td></tr>
+    <tr><td>飞书 / 企业微信等渠道</td><td><span class="rl n">不做</span></td><td>建议</td><td>渠道接入</td></tr>
+    <tr><td>MW 个人链路（入口 → 宿主 → 按工作区的 SDK 私人会话）</td><td><span class="rl r">真实</span>保持原样，只验证团队调用没有碰它</td><td><span class="tag t-up">上游已有</span><cite>W09</cite></td><td>个人链路改造</td></tr>
+    <tr><td>团队应用服务</td><td><span class="rl r">真实</span>四个业务操作</td><td><span class="tag t-add">需新增</span></td><td>完整业务规则与计划编辑</td></tr>
+    <tr><td>协作工具 / API 边界</td><td><span class="rl l">限定</span>登记成果、请求测试、请求决定；只收口 Demo 涉及的旧写入点</td><td><span class="tag t-add">需新增</span><cite>M22</cite></td><td>全部旧路径收口</td></tr>
+    <tr><td>协作后端＋PostgreSQL</td><td><span class="rl r">真实</span></td><td><span class="tag t-up">上游已有</span><cite>M07</cite><cite>M09</cite></td><td>多实例与高可用</td></tr>
+    <tr><td>可信上下文供给</td><td><span class="rl l">限定</span>每步静态清单＋授权读取</td><td><span class="tag t-add">需新增</span><cite>M19</cite></td><td>多源治理、三组对照实验</td></tr>
+    <tr><td>产物存储</td><td><span class="rl r">真实</span>版本、哈希、授权下载</td><td><span class="tag t-add">需新增</span></td><td>生命周期与密级策略</td></tr>
+    <tr><td>执行端 daemon（端侧、云侧）</td><td><span class="rl r">真实</span>至少两台独立主机</td><td><span class="tag t-up">上游已有</span></td><td>按能力自动选择 Runtime</td></tr>
+    <tr><td>Provider 统一接口</td><td><span class="rl r">真实</span></td><td><span class="tag t-up">上游已有</span><cite>M05</cite></td><td>—</td></tr>
+    <tr><td>MC 适配器 → Mobile Coder</td><td><span class="rl r">真实</span>研发电脑；测试服务器视 P2</td><td><span class="tag t-add">需新增</span><cite>C02</cite><cite>C04</cite></td><td>跨机会话续接</td></tr>
+    <tr><td>MW 适配器 → MW 办公 Agent</td><td><span class="rl l">待探针</span>P4 不通过则<span class="rl s">代用</span></td><td><span class="tag t-add">需新增</span><span class="tag t-ver">入口待补齐</span><cite>W13</cite></td><td>服务器上的 MW 无头能力</td></tr>
+    <tr><td>第三方适配器 → 第三方 Agent</td><td><span class="rl r">真实</span>一种，标明身份</td><td><span class="tag t-up">上游已有</span><cite>M23</cite><cite>M24</cite></td><td>多种第三方并存</td></tr>
+    <tr><td>外部资源 · 模型服务</td><td><span class="rl l">限定</span>每个节点用 P3 确认过的身份</td><td><span class="tag t-ver">需实测</span></td><td>统一的企业供模与计费</td></tr>
+    <tr><td>外部资源 · 业务系统</td><td><span class="rl m">模拟</span>模拟发布服务</td><td><span class="tag t-add">需新增</span></td><td>真实发布与外部副作用幂等</td></tr>
+  </table></div>
+
+  <h3>成本高在哪里</h3>
+  <div class="tblwrap"><table>
+    <tr><th>事项</th><th>相对成本</th><th>为什么</th><th>Demo 里怎样处理</th></tr>
+    <tr><td><b>MW 无头装配</b></td><td>很高 · 不确定</td><td>桌面身份走 OIDC，令牌依赖桌面安全存储，不可用时拒绝持久化<cite>W06</cite>；账号目录绑定本机<cite>W07</cite>；宿主负责拉起和管理引擎进程<cite>W09</cite>；现有 CLI 是服务与管理命令<cite>W13</cite>。入口要和 MW 产品一起设计</td><td>先验证已登录员工电脑上的受限产品入口、隔离工作区及结果回收。若须改造桌面登录或重做宿主，暂停在首演前扩展，走路径 B</td></tr>
+    <tr><td><b>推理身份与运行授权</b></td><td>核对工作量低 · 等待时间不确定</td><td>每个无头节点都要说清谁付费、用谁的身份、条款是否允许在服务器或无人值守场景使用</td><td>P3 先行；未确认的节点不上真产品</td></tr>
+    <tr><td><b>MC CLI 的团队语义</b></td><td>中</td><td>事件能否判终态、取消是否收敛、审批默认值、会话续接<cite>C02</cite><cite>C04</cite>。从参数形态看，它与 Multica 的 OpenCode run 传输相近（推断）<cite>M23</cite>，可参照其结构，但不能沿用跳过权限的参数</td><td>P2＋G1</td></tr>
+    <tr><td><b>服务端写入收口</b></td><td>中</td><td>Agent 仍可经旧 CLI / API 改状态<cite>M22</cite>，提测、批准关卡要落在实际写入点</td><td>只收口 Demo 涉及的写入点，其余列清单</td></tr>
+    <tr><td><b>团队入口</b></td><td>放进 MW 为中，最小 Web 页为低</td><td>MW 前端集成与身份打通</td><td>优先尝试嵌入 MW；若登录或打包阻塞，改用独立团队页并标注入口</td></tr>
+    <tr><td><b>生产级故障接管与副作用幂等</b></td><td>高</td><td>任意跨机恢复、旧执行端仍持外部凭据、下游无法普遍保证只执行一次（第 8 章）</td><td>只演示到“待核查＋人工决定”，不承诺</td></tr>
+    <tr><td><b>企业知识治理与权限</b></td><td>高</td><td>多源登记、撤权传播、派生视图（第 9 章）</td><td>合成资料＋静态清单</td></tr>
+    <tr><td><b>商业分发与许可</b></td><td>非工程事项</td><td>Multica 附加条件：单一组织内部使用不需要商业授权，对第三方托管或嵌入需要，品牌与归因另计<cite>M01</cite>；MW、SDK、MC 的许可另需整理<cite>W12</cite><cite>S01</cite></td><td>Demo 只在内部范围</td></tr>
+    <tr><td><b>版本跟随</b></td><td>中，长期</td><td>改动 Multica 后的升级成本；SDK 与产品批次对齐（T13）</td><td>Demo 固定在本页的源码基线</td></tr>
+  </table></div>
+  <p style="font-size:14.5px;color:var(--ink2)">相对成本是建议性的量级判断，没有经过测量。工期和人数等探针结果出来后再由团队估。</p>
+  <div class="split">
+    <div class="card"><h4><span class="tag t-up">帮得上</span>大量 AI 开发额度能加速的</h4><ul><li>MC / MW 适配器、团队应用服务、最小团队页、产物存储、证据导出</li><li>复现脚本、测试用例、样例仓库与合成资料</li><li>代码审查与彩排检查表</li></ul></div>
+    <div class="card"><h4><span class="tag t-bad">替代不了</span>开发额度不等于这些</h4><ul><li>执行节点上 MC / MW / 第三方产品调用模型时的身份与授权</li><li>某项订阅能否用于服务器或 API：本页不作判断，按该服务条款和公司授权逐项确认</li><li>MW 无头入口的产品设计决定</li><li>跨机真实运行与故障实测、许可结论</li></ul></div>
+  </div>
+
+  <h3>什么前提下短期可达</h3>
+  <div class="why"><b>建议判断：</b>同时满足四个前提时，单场景闭环的主线是近期可达的目标：①P1 通过，研发端在 P2 产出真实 MC 补丁，云端至少有一种通过探针的测试执行方式；②每个实际调用模型的节点完成 P3；③有一个能复现弱网重复待办、带自动化测试的仓库（首选真实产品的脱敏分支，否则用内部样例应用并标明）；④团队服务端与执行机之间只靠出站连接即可互通。MW 支路能否真实，取决于 P4。</div>
+  <div class="grid g2">
+    <div class="card"><h4>最能改变关键路径的依赖</h4><p><b>P2 和 P3</b>：它们挡住主线。P4 只挡 MW 支路。</p><p><b>降级的代价：</b>MW 走路径 B，失去“MW 作为被调用的办公 Agent”这一证明，它是总图相对现有产品的关键差异之一，演示时要如实说明；测试走第三方 CLI，失去“同一产品端云两用”的证明；改用确定性测试脚本，测试步骤就不再是 Agent。</p></div>
+    <div class="card"><h4>需要尽早决定</h4><ol style="margin:6px 0 0;padding-left:20px;font-size:15px;color:var(--ink2)"><li>MW 支路首演用哪条路径：路径 A 需要 MW 产品侧一起补无头入口；路径 B 可以先演示，但要标明身份。</li><li>测试节点用 Mobile Coder 无头运行，还是第三方 CLI。</li><li>演示仓库用真实产品的脱敏分支，还是样例应用。</li></ol></div>
+  </div>
+
+  <h3>单场景闭环 ≠ 生产承诺</h3>
+  <div class="split">
+    <div class="card"><h4><span class="rl r">本次 Demo</span>主要模块各真实走一遍</h4><ul><li>一条业务、两个人类角色、两到三台独立主机</li><li>真实服务、真实 MC 修复与测试、真实交接与关卡</li><li>预置授权、合成资料、模拟发布、单实例后端</li><li>彩排验证 C1–C5，首场选一个异常现场触发</li></ul></div>
+    <div class="card"><h4><span class="rl n">另行证明</span>生产承诺需要的</h4><ul><li>多团队、多工作项并发与容量</li><li>任意故障的安全接管，外部副作用幂等</li><li>企业身份、权限与撤权传播；企业知识治理</li><li>MW 无头装配的长期维护；SDK 与产品批次对齐</li><li>商业许可与分发；运维与升级</li></ul></div>
+  </div>
+
+  <h3>现场验收证据</h3>
+  <p>和第 12 章的 G0–G4 并行：闸门是研发内部的技术判定，下面是给领导看的现场验收，两者用同一批运行证据。</p>
+  <div class="tblwrap"><table>
+    <tr><th>编号</th><th>验收点</th><th>证据从哪里来</th><th>对应</th></tr>
+    <tr><td class="mono">D1</td><td>两台独立主机各自登记并领取过 Run</td><td>Runtime 记录（主机、机器标识）与 Run 记录</td><td>T01 · G2</td></tr>
+    <tr><td class="mono">D2</td><td>修复由真实 Mobile Coder 完成</td><td>Run ↔ 产品会话 ID、产品版本、研发电脑上的会话现场</td><td>G1</td></tr>
+    <tr><td class="mono">D3</td><td>补丁跨机交接无误</td><td>产物存储里的 sha256 等于测试服务器工作目录里的 sha256</td><td>T05</td></tr>
+    <tr><td class="mono">D4</td><td>提测两个入口同一校验，旧版本被拒</td><td>团队应用服务记录；被拒时没有测试 Run</td><td>T14 · T08</td></tr>
+    <tr><td class="mono">D5</td><td>测试 Run 成功与业务结论分开</td><td>测试报告（写明补丁与规则版本）、步骤状态</td><td>T06</td></tr>
+    <tr><td class="mono">D6</td><td>唤醒丢失仍能领取，重复不重复执行</td><td>服务端与执行端日志</td><td>T01</td></tr>
+    <tr><td class="mono">D7</td><td>回执断网后可补交，重复提交只生效一次</td><td>执行端本地待发回执、服务端幂等接收记录</td><td>T03</td></tr>
+    <tr><td class="mono">D8</td><td>批准绑定证据，改证据后旧批准失效</td><td>决定记录；模拟发布服务的接受与拒绝记录</td><td>T09</td></tr>
+    <tr><td class="mono">D9</td><td>依据按步骤授权</td><td>每步 Manifest；越权请求被拒的记录</td><td>T08 · T12（限定）</td></tr>
+    <tr><td class="mono">D10</td><td>MC / MW / 第三方 / 代用品身份如实标注</td><td>Agent 与 Runtime 配置导出、界面标签</td><td>—</td></tr>
+    <tr><td class="mono">D11</td><td>修复确实有效</td><td>修复前、后弱网复现脚本的输出</td><td>—</td></tr>
+    <tr><td class="mono">D12</td><td>能冷启动重复跑</td><td>从空库部署到跑完剧本的多次通过与失败记录</td><td>G2</td></tr>
+  </table></div>
+</section>
+
+<footer>
+  <p>v0.2：Claude Opus 5.5 在 v0.1 页面基础上增量修改（Provider 适配主路线、MobileWork 双重身份、工具职责、MW 并行支路、提测与运行回执分开的数据流、第 13 章近期 Demo 实施方案），浏览器 QA 与来源核查由 Codex 负责；v0.1 文件保持不变。全部内容来自固定版静态阅读；目标接口、数据归属、补足机制与闸门都是本方案的建议，尚未通过团队实施评审或运行验收。完整产品运行、故障试验、上下文效果和商业授权均未完成。页面不依赖任何网络资源。</p>
+</footer>
+</main>
+</div>
+<noscript><p style="padding:20px">交互图需要启用 JavaScript；正文与表格可直接阅读，版本说明见 README.md。</p></noscript>
+<script>
+"use strict";
+const EV=[{"id":"M01","p":"LICENSE","l":[1,118],"c":"许可：Apache 2.0 与附加条件共同组成；商业服务、品牌和归因需分别核对","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/LICENSE#L1-L118"},{"id":"M02","p":"server/internal/service/task.go","l":[1,135],"c":"TaskService 与工单、归因、通知、权益等产品对象耦合","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/service/task.go#L1-L135"},{"id":"M03","p":"server/internal/handler/handler.go","l":[443,517],"c":"Handler 装配并共享协作服务；不是独立发布的引擎包证明","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/handler/handler.go#L443-L517"},{"id":"M04","p":"server/internal/daemon/types.go","l":[77,160],"c":"下发任务带 Issue、Workspace、Project、workflow 和增量上下文","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/daemon/types.go#L77-L160"},{"id":"M05","p":"server/pkg/agent/agent.go","l":[17,230],"c":"统一 Backend/Session 及可选能力，不同 Provider 的参数支持存在差异","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/pkg/agent/agent.go#L17-L230"},{"id":"M06","p":"server/internal/service/task.go","l":[1285,1418],"c":"入队根据 Agent 绑定 Runtime，记录运行及归因","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/service/task.go#L1285-L1418"},{"id":"M07","p":"server/pkg/db/queries/agent.sql","l":[734,795],"c":"原子领取、SKIP LOCKED、在线检查与同 Agent 同工单排他","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/pkg/db/queries/agent.sql#L734-L795"},{"id":"M08","p":"server/internal/service/task.go","l":[3612,3770],"c":"领取时 Agent/Runtime 并发限制","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/service/task.go#L3612-L3770"},{"id":"M09","p":"server/internal/service/issue_wakeup.go","l":[1319,1350],"c":"持久规则触发新运行","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/service/issue_wakeup.go#L1319-L1350"},{"id":"M10","p":"server/internal/service/issue_wakeup_condition.go","l":[395,420],"c":"跨工单条件检查","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/service/issue_wakeup_condition.go#L395-L420"},{"id":"M11","p":"apps/docs/content/docs/comments.zh.mdx","l":[91,106],"c":"文档：mention 拉起同工单 Agent，不等价于自动创建任务依赖","t":"仓库文档","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/apps/docs/content/docs/comments.zh.mdx#L91-L106"},{"id":"M12","p":"apps/docs/content/docs/workflows.zh.mdx","l":[47,85],"c":"文档：交接给人和 Agent 的区别；运行完成与业务状态分离","t":"仓库文档","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/apps/docs/content/docs/workflows.zh.mdx#L47-L85"},{"id":"M13","p":"server/internal/handler/squad_briefing.go","l":[45,100],"c":"队长通过提示与 mention 委派，属于协作策略","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/handler/squad_briefing.go#L45-L100"},{"id":"M14","p":"server/internal/daemon/daemon.go","l":[6377,6436],"c":"终态回执尝试持久落盘再发送；落盘失败仍直接发送","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/daemon/daemon.go#L6377-L6436"},{"id":"M15","p":"server/internal/daemon/terminal_report_queue.go","l":[84,115],"c":"文件回执队列与格式边界","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/daemon/terminal_report_queue.go#L84-L115"},{"id":"M16","p":"server/internal/service/task.go","l":[5680,5800],"c":"失败原因、次数、原执行绑定与恢复线索影响重试","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/service/task.go#L5680-L5800"},{"id":"M17","p":"server/internal/middleware/auth.go","l":[100,146],"c":"任务令牌绑定运行身份与工作区，拒绝伪造身份头","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/middleware/auth.go#L100-L146"},{"id":"M18","p":"server/internal/handler/agent_access.go","l":[22,47],"c":"Agent 访问模式及调用链发起人权限","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/handler/agent_access.go#L22-L47"},{"id":"M19","p":"server/internal/service/source_context.go","l":[22,160],"c":"已有背景快照、大小预算、工单/评论版本；不能概括为无上下文治理","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/service/source_context.go#L22-L160"},{"id":"M20","p":"server/internal/cloudruntime/client.go","l":[1,105],"c":"托管云 Runtime 客户端连接另一个服务；不能推定供给端已包含","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/cloudruntime/client.go#L1-L105"},{"id":"M21","p":"docker-compose.selfhost.yml","l":[36,249],"c":"自托管后端/前端/Postgres；部署配置不是运行验收","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/docker-compose.selfhost.yml#L36-L249"},{"id":"M22","p":"server/internal/daemon/prompt.go","l":[346,395],"c":"运行提示注入协作背景，并指向 Multica 工单/评论工具","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/daemon/prompt.go#L346-L395"},{"id":"M23","p":"server/pkg/agent/opencode.go","l":[143,178],"c":"OpenCode run 回退路径显式跳过权限提示，不能直接沿用团队审批语义","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/pkg/agent/opencode.go#L143-L178"},{"id":"M24","p":"server/pkg/agent/hermes.go","l":[1603,1655],"c":"特定 ACP 权限选择器可自动选会话/单次授权，不推广为所有执行器行为","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/pkg/agent/hermes.go#L1603-L1655"},{"id":"M25","p":"server/internal/daemon/daemon.go","l":[8820,8875],"c":"生产执行路径通过统一 ResolveBackend 选择后端，新增SDK需接通选择与配置","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/internal/daemon/daemon.go#L8820-L8875"},{"id":"M26","p":"server/pkg/agent/builtin_runtimes.go","l":[1,190],"c":"Runtime身份描述、协议族、探测与配置关系；新HTTP后端不能只冒充同协议CLI","t":"静态源码/配置","u":"https://github.com/multica-ai/multica/blob/7a12304f1473c71e0cee970c773246eaf96abc49/server/pkg/agent/builtin_runtimes.go#L1-L190"},{"id":"S01","p":"packages/engine/package.json","l":[1,65],"c":"独立 engine 包及源码导出","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S02","p":"packages/sdk/js/src/v2/client.ts","l":[1,33],"c":"TypeScript HTTP 客户端与工作目录/工作区设置","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S03","p":"packages/engine/src/server/server.ts","l":[195,242],"c":"执行服务支持宿主配置与扩展","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S04","p":"packages/engine/src/auth/local-guard.ts","l":[65,105],"c":"本机鉴权约束，不能等同组织身份与权限系统","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S05","p":"packages/engine/src/session/dispatch.ts","l":[10,125],"c":"HTTP/进程内共用分派、子任务收敛、取消等待；remote 是本机 Worker 路径","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S06","p":"packages/engine/src/session/multi-process-bridge.ts","l":[1,110],"c":"会话 Worker 及本机 IPC/状态队列","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S07","p":"packages/engine/src/workflow/runtime.ts","l":[1,110],"c":"运行内部 workflow、子 Agent 与并发控制","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S08","p":"packages/engine/src/workflow/state.ts","l":[1,130],"c":"本地 workflow 状态与恢复缓存","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S09","p":"packages/engine/src/permission/next.ts","l":[223,280],"c":"权限询问/答复模型；需与跨人持久审批区分","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S10","p":"packages/engine/src/server/routes/session.ts","l":[837,950],"c":"同步 prompt 流与异步接受；HTTP 状态不能单独证明成功","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S11","p":"packages/engine/src/server/routes/session.ts","l":[443,480],"c":"会话取消入口","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S12","p":"packages/engine/src/storage/storage.ts","l":[1,140],"c":"JSON 文件存储边界","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S13","p":"packages/engine/src/session/multi-process-bridge.ts","l":[1000,1045],"c":"bridge 的 prompt 失败分支会发布错误；不能因路由 catch 为空断言全部静默","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"S14","p":"packages/engine/src/server/server.ts","l":[354,387],"c":"本地服务鉴权依赖显式凭据配置，未设密码时会放行；生产接入需固定配置","t":"静态源码/配置","r":".local/engine-design-2026-11-05/sdk"},{"id":"W01","p":"constants.json","l":[1,11],"c":"默认使用 mobile-coder 引擎 Provider","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"W02","p":"apps/desktop/electron/engine-runtime.mjs","l":[1,21],"c":"解析引擎入口与缺失失败","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"W03","p":"vendor/mobile-coder-runtime/serve.ts","l":[70,153],"c":"引擎启动装配、沙箱和兼容头适配","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"W04","p":"apps/server/src/server.ts","l":[1709,1735],"c":"应用服务仍经兼容客户端按工作区访问执行引擎","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"W05","p":"apps/app/src/app/lib/workspace-endpoint.ts","l":[1,60],"c":"个人入口本地/远端工作区端点类型","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"W06","p":"apps/desktop/electron/mobilework/oidc.mjs","l":[1,35],"c":"桌面 OIDC/PKCE 身份入口","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"W07","p":"packages/mobilework-paths/index.mjs","l":[1180,1315],"c":"账号本地数据目录与环境绑定","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"W08","p":"apps/server/src/session-message-queue.ts","l":[1,30],"c":"录屏 legacy 回执迁移；不是可复用的用户任务调度器","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"W09","p":"apps/server/src/managed-opencode.ts","l":[310,382],"c":"宿主管理 SDK 服务进程、本地凭据及沙箱目录","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"W10","p":"vendor/mobile-coder/SHA256SUMS.json","l":[1,8],"c":"打包引擎与依赖的完整性清单","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"W11","p":"docs/designs/mobile-coder-v2-deployment.md","l":[1,30],"c":"快照内的 SDK 批次说明，不是本轮运行证据","t":"仓库文档","r":".local/engine-design-2026-11-05/mw"},{"id":"W12","p":"LICENSE","l":[1,29],"c":"MW 许可证区分普通目录、ee 与第三方组件，不能把包声明当全部来源结论","t":"静态源码/配置","r":".local/engine-design-2026-11-05/mw"},{"id":"C01","p":"specs/development/repository-boundaries.md","l":[1,25],"c":"Mobile Coder 产品装配与 SDK 通用引擎分工；vendor 为消费制品","t":"固定源码/仓库约定，未运行验证","u":null,"r":"Mobile Coder"},{"id":"C02","p":"apps/cli/src/cli/cmd/run.ts","l":[19,83],"c":"Mobile Coder 有 run/session/JSON/attach 声明，是 CLI 接入候选，未作运行验收","t":"固定源码/仓库约定，未运行验证","u":null,"r":"Mobile Coder"},{"id":"C03","p":"script/lib/sdk-source.ts","l":[1,25],"c":"开发脚本默认从平级 mobile-coder-sdk 获取打包源输入","t":"固定源码/仓库约定，未运行验证","u":null,"r":"Mobile Coder"},{"id":"C04","p":"apps/cli/src/cli/cmd/run.handler.ts","l":[1,40],"c":"Mobile Coder run handler 依赖 SDK 和引擎；产品 CLI 不等于独立于 SDK 的另一套内核","t":"固定源码/仓库约定，未运行验证","u":null,"r":"Mobile Coder"},{"id":"W13","p":"apps/orchestrator/src/cli.ts","l":[3657,3687],"c":"现有 CLI 帮助为服务、工作区、审批等命令；本轮未核实完整办公任务执行 CLI","t":"固定源码，能力范围未穷尽","u":null,"r":"MobileWork"}];
+/* ---------- helpers ---------- */
+const NS="http://www.w3.org/2000/svg";
+const C={mw:["#6a4fd0","#f1edfc"],col:["#1f5fbf","#e8f0fc"],exe:["#c0621a","#fcefe3"],sdk:["#b4305c","#fbe8ef"],ctx:["#0d8270","#e3f3ef"],gray:["#8a909c","#f6f6f7"],bad:["#b42318","#fdecea"],add:["#6d3fd6","#f3eefe"]};
+function S(tag,a,p){const e=document.createElementNS(NS,tag);for(const k in a){if(a[k]!==undefined&&a[k]!=="")e.setAttribute(k,a[k])}if(p)p.appendChild(e);return e}
+function T(p,x,y,s,cls,anc){const t=S("text",{x,y,class:cls||"t2","text-anchor":anc||"start"},p);t.textContent=s;return t}
+function tw(s,fs){let w=0;for(const ch of s)w+=ch.charCodeAt(0)>255?fs:fs*.58;return w}
+function defs(svg){const d=S("defs",{},svg);for(const k in C){const m=S("marker",{id:svg.id+"-a-"+k,viewBox:"0 0 10 10",refX:9,refY:5,markerWidth:7,markerHeight:7,orient:"auto-start-reverse"},d);S("path",{d:"M0,0 L10,5 L0,10 z",fill:C[k][0]},m)}}
+function box(svg,o){
+  const g=S("g",{class:o.click?"node":"","data-id":o.id||""},svg);
+  if(o.click){g.setAttribute("tabindex","0");g.setAttribute("role","button");g.setAttribute("aria-label",o.title+(o.sub?"："+o.sub:""))}
+  const c=C[o.c||"gray"];
+  S("rect",{class:"b",x:o.x,y:o.y,width:o.w,height:o.h,rx:o.small?7:10,fill:o.fill||c[1],stroke:c[0],"stroke-width":1.6,"stroke-dasharray":o.dash?"6 4":""},g);
+  if(o.small){T(g,o.x+o.w/2,o.y+o.h/2+4,o.title,"elabel","middle");return g}
+  const lines=1+(o.sub?1:0)+(o.sub2?1:0);let y=o.y+o.h/2-(lines-1)*9.5+5;
+  T(g,o.x+o.w/2,y,o.title,"t1","middle");
+  if(o.sub){y+=19;T(g,o.x+o.w/2,y,o.sub,"t2","middle")}
+  if(o.sub2){y+=18;T(g,o.x+o.w/2,y,o.sub2,"t3","middle")}
+  if(svg._top)svg.appendChild(svg._top);
+  if(o.badge){const bw=tw(o.badge,11)+12;S("rect",{x:o.x+o.w-bw-6,y:o.y-9,width:bw,height:18,rx:9,fill:"#fff",stroke:c[0]},g);T(g,o.x+o.w-bw/2-6,o.y+4,o.badge,"t3","middle").setAttribute("fill",c[0])}
+  return g;
+}
+function anchor(r,tx,ty){const cx=r.x+r.w/2,cy=r.y+r.h/2,dx=tx-cx,dy=ty-cy;if(!dx&&!dy)return[cx,cy];const s=Math.min(dx?(r.w/2)/Math.abs(dx):1e9,dy?(r.h/2)/Math.abs(dy):1e9);return[cx+dx*s,cy+dy*s]}
+function svgTop(svg){if(!svg._top){svg._top=S("g",{},svg)}return svg._top}
+function arr(svg,x1,y1,x2,y2,c,o){o=o||{};const rid=(svg.ownerSVGElement||svg).id;S("line",{x1,y1,x2,y2,stroke:C[c][0],"stroke-width":o.w||1.8,"stroke-dasharray":o.dash?"6 5":"","marker-end":o.noarrow?"":"url(#"+rid+"-a-"+c+")","marker-start":o.both?"url(#"+rid+"-a-"+c+")":""},svg)}
+function pth(svg,d,c,o){o=o||{};const rid=(svg.ownerSVGElement||svg).id;S("path",{d,fill:"none",stroke:C[c][0],"stroke-width":o.w||1.8,"stroke-dasharray":o.dash?"6 5":"","marker-end":o.noarrow?"":"url(#"+rid+"-a-"+c+")"},svg)}
+function prodBox(svg,o){
+  const g=S("g",{class:o.click?"node":"","data-id":o.id||""},svg);
+  if(o.click){g.setAttribute("tabindex","0");g.setAttribute("role","button");g.setAttribute("aria-label",o.title+(o.sub?"："+o.sub:""))}
+  const c=C[o.c||"gray"];
+  S("rect",{class:"b",x:o.x,y:o.y,width:o.w,height:o.h,rx:10,fill:c[1],stroke:c[0],"stroke-width":1.6,"stroke-dasharray":o.dash?"6 4":""},g);
+  T(g,o.x+o.w/2,o.y+24,o.title,"t1","middle");if(o.sub)T(g,o.x+o.w/2,o.y+42,o.sub,"t3","middle");
+  (o.pills||[]).forEach((p,i)=>{const pc=C[p[1]||"sdk"],py=o.y+52+i*27;S("rect",{x:o.x+10,y:py,width:o.w-20,height:22,rx:6,fill:"#fff",stroke:pc[0],"stroke-width":1.1},g);T(g,o.x+o.w/2,py+15,p[0],"t3","middle").setAttribute("fill",pc[0])});
+  if(o.badge){const bw=tw(o.badge,11)+12;S("rect",{x:o.x+o.w-bw-6,y:o.y-9,width:bw,height:18,rx:9,fill:"#fff",stroke:c[0]},g);T(g,o.x+o.w-bw/2-6,o.y+4,o.badge,"t3","middle").setAttribute("fill",c[0])}
+  if(svg._top)svg.appendChild(svg._top);
+  return g;
+}
+function lbl(svg,x,y,s,c){const g=S("g",{"pointer-events":"none"},svg);const w=tw(s,12)+14;S("rect",{x:x-w/2,y:y-11,width:w,height:21,rx:6,fill:"#fff",stroke:c?C[c][0]:"#d9dce2","stroke-width":1},g);T(g,x,y+4,s,"elabel","middle");return g}
+function edge(svg,A,B,o){o=o||{};const ac=[A.x+A.w/2,A.y+A.h/2],bc=[B.x+B.w/2,B.y+B.h/2];
+  let p1=anchor(A,bc[0],bc[1]),p2=anchor(B,ac[0],ac[1]);const dx=p2[0]-p1[0],dy=p2[1]-p1[1],L=Math.hypot(dx,dy)||1,ux=dx/L,uy=dy/L,nx=-uy,ny=ux,off=o.off||0;
+  p1=[p1[0]+nx*off+ux*3,p1[1]+ny*off+uy*3];p2=[p2[0]+nx*off-ux*4,p2[1]+ny*off-uy*4];
+  const c=o.c||"gray",rid=(svg.ownerSVGElement||svg).id;
+  S("line",{x1:p1[0],y1:p1[1],x2:p2[0],y2:p2[1],stroke:C[c][0],"stroke-width":o.w||1.8,"stroke-dasharray":o.dash?"6 5":"","marker-end":o.noarrow?"":"url(#"+rid+"-a-"+c+")","marker-start":o.both?"url(#"+rid+"-a-"+c+")":""},svg);
+  if(o.label){const sh=off?Math.sign(off)*14:0;lbl(o.lp||svgTop(svg),(p1[0]+p2[0])/2+nx*sh+(o.lx||0),(p1[1]+p2[1])/2+ny*sh+(o.ly||0),o.label,c)}
+}
+function selectable(svg,fn){svg.addEventListener("click",e=>{const g=e.target.closest(".node");if(g)fn(g.dataset.id)});svg.addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" "){const g=e.target.closest(".node");if(g){e.preventDefault();fn(g.dataset.id)}}})}
+function mark(svg,id){svg.querySelectorAll(".node").forEach(g=>g.classList.toggle("sel",g.dataset.id===id))}
+const STAT={keep:'<span class="tag t-keep">保留</span>',reuse:'<span class="tag t-up">复用</span>',add:'<span class="tag t-add">新增</span>',patch:'<span class="tag t-up">复用</span><span class="tag t-add">补口</span>',mwx:'<span class="tag t-up">保留产品装配</span><span class="tag t-ver">入口待补齐</span>',cand:'<span class="tag t-up">保留产品</span><span class="tag t-ver">CLI 语义待验证</span>'};
+function cites(root){(root||document).querySelectorAll("cite").forEach(c=>{const id=c.textContent.trim();const a=document.createElement("a");a.className="cite";a.href="#ev-"+id;a.textContent=id;a.title=(EV.find(e=>e.id===id)||{}).c||"";c.replaceWith(a)})}
+function tablist(el,items,fn){el.innerHTML="";const btns=items.map((it,i)=>{const b=document.createElement("button");b.type="button";b.setAttribute("role","tab");b.textContent=it.name;b.setAttribute("aria-selected",i===0?"true":"false");b.tabIndex=i===0?0:-1;b.onclick=()=>sel(i);el.appendChild(b);return b});
+  function sel(i,focus){btns.forEach((b,j)=>{b.setAttribute("aria-selected",j===i?"true":"false");b.tabIndex=j===i?0:-1});if(focus)btns[i].focus();fn(i)}
+  el.addEventListener("keydown",e=>{const i=btns.indexOf(document.activeElement);if(i<0)return;let n=null;if(e.key==="ArrowRight")n=(i+1)%btns.length;if(e.key==="ArrowLeft")n=(i-1+btns.length)%btns.length;if(e.key==="Home")n=0;if(e.key==="End")n=btns.length-1;if(n!==null){e.preventDefault();sel(n,true)}});
+  sel(0);return sel}
+
+/* ---------- 01 overview ---------- */
+let OVENV=0,ovSel="c-mc";
+const ENVN=["研发电脑（端侧）","测试服务器（云侧）"];
+const OV={
+ "p-personal":{t:"MW 个人办公入口",s:"keep",d:"个人用户照常创建会话、操作本地文件、使用专家。个人使用不经过 daemon 和协作调度。",a:"个人会话保存在本机，不自动对团队可见。",w:"员工电脑（MW 桌面）",n:"个人成果需要共享时，由用户或授权策略明确发布为团队产物。",c:"W05"},
+ "p-team":{t:"MW 团队协作入口",s:"add",d:"交互层：人表达意图、查看结果。呈现共同工作项、上下游依据、成果、待决定事项和执行端连接状态。“按角色默认工作视图”已记录为待细化功能，本版不展开。",a:"不保存可写的任务状态，只有读模型和 ID 映射。",w:"MW 桌面 / Web",n:"只隐藏按钮不等于授权；关键检查落在服务端的写入点。"},
+ "p-other":{t:"飞书 / 企业微信等渠道",s:"add",d:"建议接入的其他界面：在 IM 里发起、查看和批准，与 MW 团队入口共用同一个团队应用服务，不必各写一套业务规则。",a:"无；只持有读模型与界面状态。",w:"各渠道自身（经团队应用服务接入）",n:"这是建议的接入方式，不是已上线事实；接入哪些渠道由产品团队决定。"},
+ "a-host":{t:"MW 个人宿主（MW 应用服务）",s:"keep",d:"管理工作区和配置，启动和管理产品内的 SDK 引擎服务进程，管理本地凭据，完成 MW 的产品装配。",a:"个人工作区配置与本地账号目录。",w:"员工电脑",n:"应用服务目前仍经由兼容客户端访问引擎；SDK 版本对齐是一个独立闸门。个人链路不接入拟新增的 MW 无头入口。",c:"W04 W07 W09"},
+ "a-sdk":{t:"SDK 引擎服务（个人会话）",s:"keep",d:"个人宿主启动的本机 SDK 服务进程，承载个人会话的运行循环、上下文和工具。",a:"个人会话与本地现场。",w:"员工电脑（由 MW 个人宿主管理）",n:"团队执行和它共用产品能力与同源 SDK，但不是同一个实例：团队调用经 daemon / Provider 另起会话，不读取这里的私人历史和目录。",c:"W03 W09"},
+ "a-api":{t:"团队应用服务（Team API）",s:"add",d:"应用层，负责业务翻译：定义业务含义（目标、验收规则、角色、可批准范围、计划策略），把用户或规划 Agent 的提案翻译成授权后的协作命令；负责身份映射。MW 团队入口和建议接入的飞书、企业微信等渠道共用这一层。",a:"不另存同义的权威状态；持久记录与推进交给协作后端。",w:"团队服务器，与协作后端部署在一起（模块化，不要求拆微服务）",n:"它不能成为唯一的检查位置：协作 API、Agent 工具和后台唤醒也必须经过同一道关卡。"},
+ "c-tools":{t:"协作工具 / API 边界",s:"add",d:"通用协作能力：读工作、登记成果、提接续、请求决定。人和 Agent 的写入都经过同一套校验：身份、版本、执行世代、业务关卡。第一版适配 Multica API。",a:"写入结果落在协作后端。",w:"协作服务的接口边界；以 MCP、CLI 或 HTTP 提供",n:"现有提示会引导 Agent 使用 multica CLI，旧 CLI/API 的写入同样必须校验。普通文件和命令工具不在这里，归产品 harness。",c:"M22"},
+ "c-mc":{t:"协作后端（Multica server + PostgreSQL）",s:"patch",d:"持久记录并推进工作安排：运行、依赖、等待、并发、回执和受控恢复；把“这一步已经具备条件”变成一次可追踪的执行，或一条交给人的待办。执行端来领取时返回任务及其上下文；需要提速时只经执行端已建立的连接发唤醒提示，不直接推送执行。",a:"工作项（首期映射 Issue）、Run（首期沿用 AgentTaskQueue）、Runtime 登记、决定记录。",w:"团队服务器（私有云或内网）",n:"需要补口的部分：业务关卡、输入与产物的版本关系、执行世代、统一授权。",c:"M02 M04 M06 M07 M09 M14"},
+ "c-ctx":{t:"可信上下文供给",s:"add",d:"供给当前获准使用、来源和版本清楚的依据；登记产物及其关系；缺失和冲突要显式返回。",a:"来源登记、版本、Context Manifest；正文按策略留在源系统。",w:"团队服务器（模块）",n:"先适配 Multica 已有的项目背景与历史快照，再补跨来源治理。",c:"M19"},
+ "c-art":{t:"产物存储",s:"add",d:"保存可以授权读取的补丁、报告、发布材料等成果，附带版本与哈希；执行端上传后回报产物引用。",a:"可移交成果的权威副本。",w:"团队服务器或对象存储",n:"本地绝对路径不是可移交成果；对象存储链接应短时有效，并绑定用途。"},
+ "e-daemon":{t:"执行端（Multica daemon）",s:"reuse",env:1,d:["研发电脑上的执行端：主动连接服务端，登记 Runtime、心跳、原子领取、准备工作目录，经 Provider 调用本机已安装的 Agent 产品，上报进度与终态。终态回执先尝试落盘再发送。","测试服务器 / 云虚机上的执行端：和端侧同一套机制与同一种接入模式，主动连接协作后端，适合跑共享仓库、长任务和无人值守任务。"],a:"本机的 Run 与产品会话映射、待发送的回执。",w:["员工电脑；主动出站连接，不需要对外开放入口","自管服务器 / 云虚机；主动连接协作后端"],n:["心跳说明近期联系过，不证明任务没有卡住；落盘失败时会退化为直接发送。","它不等于已经复用了完整的托管沙箱平台：cloud runtime client 调用的是另一个服务。"],c:["M07 M14 M15","M07 M14 M20"]},
+ "e-prov":{t:"Provider / Backend 适配层",s:"patch",d:"执行端内统一的调用适配接口：把一次执行请求翻译成具体产品的调用，再把产品输出翻译回统一的进度事件、终态、取消与接续语义。Provider 是调用适配代码，不是 Agent 本体，也不是模型厂商意义上的 provider。",a:"没有业务权威；维护 Run → 产品会话映射。",w:"执行端进程内（Go）；端侧和云侧相同",n:"统一的是语义，各 CLI 协议仍然不同；进程退出码不等于业务成功。复用的是 Backend 接口与 ResolveBackend 机制，本轮未核实已有可直接使用的 MC/MW Backend。",c:"M05 M25 M26"},
+ "e-mw":{t:"MobileWork 适配器（代码）",s:"add",d:"daemon 进程内的调用代码：调用 MW 的无头办公任务执行入口，传入隔离的工作目录、团队授权和输入引用，翻译输出与终态。",a:"Run → MW 团队执行会话映射。",w:"执行端进程内",n:"适配器不是产品。不自动化点击 GUI；完整的办公任务执行入口待补齐/待验证。",c:"W13"},
+ "e-mc":{t:"Mobile Coder 适配器（代码）",s:"add",d:"daemon 进程内的调用代码：调用 Mobile Coder CLI（run、会话参数、JSON 事件、工作目录），翻译事件与终态，取消后等待收敛。",a:"Run → MC 产品会话映射。",w:"执行端进程内",n:"适配器不是产品。CLI 参数存在只说明是接入候选；取消、审批、事件语义待 G1 验证。不复制未审阅配置，不允许默认放行。",c:"C02 C04"},
+ "e-3p":{t:"第三方适配器（代码）",s:"reuse",d:"沿用 Multica 已有的第三方 CLI 后端，或按同一接口新增，例如 Codex、Claude Code。",a:"由各产品自己管理会话。",w:"执行端进程内",n:"授权行为要逐项核查：例如 OpenCode 的 run 回退路径、特定的 ACP 选择器。",c:"M05 M23 M24"},
+ "k-mw":{t:"MobileWork 办公 Agent（被调用的产品）",s:"mwx",env:1,d:"同一个 MobileWork 产品作为执行者：经无头任务入口接收团队任务，使用产品装配（办公能力、专家、插件）和内部 SDK harness 完成。入口可以调用产品现有服务。",a:"团队执行会话与现场在执行环境本地，与个人会话、目录、授权隔离。",w:["员工电脑：可以使用桌面办公能力","服务器：只能运行不依赖桌面的无头能力，范围待验证"],n:"个人链路不经过这个入口。不读取个人私人历史和目录；不递归回到团队调度；不能只套 SDK 壳冒充完整 MW；进程拓扑与无头依赖待验证。",c:"W09 W13"},
+ "k-mc":{t:"Mobile Coder 产品",s:"cand",env:1,d:"对标 Codex、Claude Code 的完整 Agent 产品：产品身份、供模、业务插件与宿主装配在产品内，运行循环、会话、上下文、工具由内部 SDK harness 提供。",a:"产品会话与运行现场（执行环境本地）。",w:["研发电脑：daemon 经 MC 适配器调用已安装的产品","测试服务器：同一入口无头运行，范围待验证"],n:"run/session/JSON 入口是接入候选，语义待 G1 验证。固定归档与 SDK/MW 基线不是已验收的配套版本。",c:"C01 C02 C03 C04"},
+ "k-3p":{t:"第三方 Agent 产品",s:"reuse",d:"现成的 Agent 产品 CLI 或可编程入口，Multica 执行端已支持多种。接口统一不等于能力相同。",a:"由产品自己管理会话。",w:"执行端所在机器，按已安装的产品、协议与授权",n:"授权默认值逐项核查，不复制未审阅的放行配置。",c:"M05 M23 M24"},
+ "r-res":{t:"模型、工具与数据资源",s:"keep",d:"模型服务、MCP 与业务系统、文档表格、仓库与制品。",a:"各自的源系统。",w:"企业内外的现有系统",n:"凭据留在执行环境；由服务端签发必要的短期访问权限，执行端再映射到本地权限。"}
+};
+function pk(v){return Array.isArray(v)?v[OVENV]:v}
+function ovPanel(id){const d=OV[id];if(!d||!d.t)return;ovSel=id;const p=document.getElementById("ovPanel"),c=pk(d.c);
+  p.innerHTML=`<div class="meta">${STAT[d.s]||""}${d.env?` <span style="font-size:12px">当前视图：${ENVN[OVENV]}</span>`:""}</div><h4>${d.t}</h4><dl><dt>负责什么</dt><dd>${pk(d.d)}</dd><dt>权威数据</dt><dd>${pk(d.a)}</dd><dt>部署在哪</dt><dd>${pk(d.w)}</dd>${d.n?`<dt>要注意</dt><dd>${pk(d.n)}</dd>`:""}${c?`<dt>证据</dt><dd>${c.split(" ").map(x=>"<cite>"+x+"</cite>").join("")}</dd>`:""}</dl>`;cites(p);mark(document.getElementById("ovSvg"),id)}
+function ovTxt(svg,x,y,s,c,o){o=o||{};const t=T(svg,x,y,s,o.cls||"t3",o.anc);if(c)t.setAttribute("fill",C[c][0]);if(o.b)t.setAttribute("font-weight",700);return t}
+function drawOverview(){const svg=document.getElementById("ovSvg");svg.innerHTML="";svg._top=null;defs(svg);const sv=OVENV===1;
+  /* 三个地点区域：人在哪操作 · 团队服务部署在哪 · 执行机在哪跑 */
+  [["人与客户端","员工电脑 · Web · IM",8,10,272,702,"#f5f2fd","mw"],["团队服务端","团队服务器 · 私有云 / 内网",316,10,676,292,"#eef3fb","col"],["执行机","员工电脑 / 云虚机",316,326,676,388,"#fdf4ec","exe"]].forEach(z=>{
+    S("rect",{x:z[2],y:z[3],width:z[4],height:z[5],rx:14,fill:z[6]},svg);ovTxt(svg,z[2]+12,z[3]+22,z[0],z[7],{cls:"band"});
+    const two=z[0]==="执行机";ovTxt(svg,two?z[2]+12:z[2]+20+tw(z[0],12)*1.05,z[3]+(two?38:22),z[1],z[7])});
+  S("rect",{x:16,y:240,width:256,height:282,rx:10,fill:"none",stroke:C.mw[0],"stroke-width":1.1,"stroke-dasharray":"5 4"},svg);
+  ovTxt(svg,28,259,"个人链路 · 员工电脑本机 · 不经协作调度","mw",{b:1});
+  S("rect",{x:332,y:372,width:644,height:164,rx:12,fill:"#fffaf5",stroke:C.exe[0],"stroke-width":1.2,"stroke-dasharray":"5 4"},svg);
+  const W="#fff",R={
+   "p-team":{x:20,y:40,w:248,h:56,c:"mw",dash:1,fill:W,title:"MW 团队协作入口",sub:"工作项 · 成果 · 待决定 · 连接状态"},
+   "p-other":{x:44,y:108,w:224,h:46,c:"gray",dash:1,fill:W,title:"飞书 / 企业微信等",sub:"建议接入 · 共用团队应用服务"},
+   "p-personal":{x:30,y:270,w:228,h:50,c:"mw",fill:W,title:"MW 个人办公入口",sub:"会话 · 本地文件 · 专家"},
+   "a-host":{x:30,y:344,w:228,h:50,c:"mw",fill:W,title:"MW 个人宿主",sub:"应用服务 · 产品装配 · 本地凭据"},
+   "a-sdk":{x:30,y:418,w:228,h:54,c:"sdk",fill:W,title:"SDK 引擎服务",sub:"个人会话 · 运行循环 · 工具"},
+   "a-api":{x:332,y:40,w:420,h:96,c:"mw",dash:1,fill:W,title:"团队应用服务（Team API）",sub:"业务翻译：用户或规划 Agent 的提案 → 授权后的协作命令",sub2:"目标 · 验收规则 · 角色 · 批准范围 · 身份映射"},
+   "c-tools":{x:332,y:172,w:420,h:28,c:"col",dash:1,small:1,fill:W,title:"协作工具 / API 边界 · 人与 Agent 同一写入校验"},
+   "c-mc":{x:332,y:216,w:420,h:72,c:"col",fill:W,title:"协作后端 · 持久记录与推进",sub:"Multica server + PostgreSQL",sub2:"工作项 · 运行队列 · 原子领取 · 唤醒 · 回执",badge:"复用＋补口"},
+   "c-ctx":{x:768,y:216,w:208,h:32,c:"ctx",dash:1,small:1,fill:W,title:"可信上下文供给"},
+   "c-art":{x:768,y:256,w:208,h:32,c:"ctx",dash:1,small:1,fill:W,title:"产物存储"},
+   "e-daemon":{x:344,y:382,w:620,h:66,c:"exe",fill:W,title:"执行端 daemon · "+(sv?"测试服务器 / 云虚机":"研发电脑"),sub:"登记 · 心跳 · 原子领取 · 准备工作目录 · 回执先落盘再发送",sub2:sv?"自管云虚机 · 共享仓库 · 长任务 · 无人值守":"装在员工电脑 · 仓库、凭据、产品会话留在本机"},
+   "e-prov":{x:344,y:458,w:620,h:28,c:"exe",small:1,fill:W,title:"Provider / Backend 统一接口：执行 · 事件 · 终态 · 取消 · 接续（端云相同）"},
+   "e-mw":{x:344,y:496,w:196,h:28,c:"add",dash:1,small:1,fill:W,title:"＋ MW 适配器"},
+   "e-mc":{x:556,y:496,w:196,h:28,c:"add",dash:1,small:1,fill:W,title:"＋ MC 适配器"},
+   "e-3p":{x:768,y:496,w:196,h:28,c:"exe",small:1,fill:W,title:"第三方适配器"},
+   "r-res":{x:8,y:724,w:984,h:32,c:"gray",small:1,title:"外部资源（企业内外现有系统）：模型服务 · MCP 与业务系统 · 文档表格 · 仓库与制品"}
+  };
+  const P={
+   "k-mw":{x:344,y:562,w:196,h:138,c:"mw",dash:1,title:"MW 办公 Agent",sub:"团队执行会话 · 与个人隔离",pills:[["入口：无头入口 · 待补齐/验证","exe"],["产品装配 · 办公能力 · 专家","mw"],["SDK harness（同源）","sdk"]],badge:sv?"仅无头部分 · 待验证":"含桌面办公能力"},
+   "k-mc":{x:556,y:562,w:196,h:138,c:"sdk",title:"Mobile Coder",sub:"完整编码 Agent 产品",pills:[["入口：CLI run · 候选待验证","exe"],["产品装配 · 身份 · 插件","sdk"],["SDK harness（同源）","sdk"]]},
+   "k-3p":{x:768,y:562,w:196,h:138,c:"gray",title:"第三方 Agent 产品",sub:"Codex · Claude Code 等",pills:[["入口：按已装协议与权限","exe"],["产品自身装配","gray"],["自有内核","gray"]]}
+  };
+  /* 人 → 入口 → 团队应用服务 */
+  box(svg,{x:20,y:172,w:248,h:48,c:"gray",fill:W,title:"成员 / 负责人",sub:"在 MW 桌面 · Web · IM 里操作"});
+  arr(svg,32,172,32,96,"mw");arr(svg,156,172,156,154,"gray");arr(svg,244,220,244,270,"mw");
+  arr(svg,268,60,332,60,"mw");arr(svg,332,82,268,82,"mw");arr(svg,268,128,332,128,"gray",{dash:1});
+  ovTxt(svg,300,55,"意图",0,{cls:"elabel",anc:"middle"});ovTxt(svg,300,97,"结果",0,{cls:"elabel",anc:"middle"});
+  /* 个人链路：入口 → 宿主 → SDK 引擎服务 */
+  arr(svg,144,320,144,344,"mw");arr(svg,144,394,144,418,"mw");
+  ovTxt(svg,28,494,"不经 daemon，不接入团队无头入口","mw");ovTxt(svg,28,511,"团队调用另起隔离的会话、授权与目录","mw");
+  /* 服务端内部 */
+  arr(svg,542,156,542,172,"col");arr(svg,542,200,542,216,"col");arr(svg,752,232,768,232,"ctx");arr(svg,752,272,768,272,"ctx");
+  ovTxt(svg,776,48,"部署与分工",0,{cls:"t2",b:1});
+  ["应用服务与协作后端同在团队服务器，","模块化部署，不要求拆微服务。","应用服务做业务翻译；","协作后端持久记录与推进。","执行机主动连接、登记、领单；","服务端只经已建连接发唤醒提示。"].forEach((s,i)=>ovTxt(svg,776,70+i*21,s));
+  /* 服务端 ↔ 执行机：执行端主动（橙，向上）· 服务端返回 / 唤醒（蓝，向下） */
+  arr(svg,490,382,490,288,"exe");arr(svg,570,288,570,382,"col");arr(svg,650,288,650,382,"col",{dash:1});arr(svg,730,382,730,288,"exe");arr(svg,880,372,880,288,"exe");
+  const top=svgTop(svg);
+  lbl(top,490,314,"① 登记·领单","exe");lbl(top,650,314,"唤醒提示","col");lbl(top,880,314,"④ 产物引用","exe");
+  lbl(top,570,344,"② 返回任务","col");lbl(top,730,344,"③ 进度·回执","exe");
+  /* daemon → Provider → 各产品适配 → 产品入口 */
+  arr(svg,654,448,654,458,"exe");[344,556,768].forEach(x=>{arr(svg,x+98,486,x+98,496,"exe");arr(svg,x+50,524,x+50,562,"exe")});
+  /* 同源 ≠ 同实例：仅表示关系，不是调用 */
+  pth(svg,"M 258 445 H 298 V 679 H 344","gray",{dash:1,noarrow:1,w:1.4});
+  lbl(top,288,662,"同源 ≠ 同实例","gray");lbl(top,712,536,"daemon 进程内 · 适配器是代码","exe");
+  for(const k in R){const g=box(svg,Object.assign({id:k,click:1},R[k]));
+    if(k==="a-api"){g.querySelector("rect.b").setAttribute("height",116);T(g,542,134,"MW 团队入口与各渠道共用同一套业务规则","t3","middle")}}
+  for(const k in P)prodBox(svg,Object.assign({id:k,click:1},P[k]));
+  ["同一个 MobileWork 的两种用法","个人：个人入口 → 宿主 → SDK 个人会话","团队：daemon → MW 适配器 → 无头入口","共用产品能力与同源 SDK，","不共享实例、私人历史、目录与授权"].forEach((s,i)=>ovTxt(svg,24,560+i*20,s,i?0:"mw",{cls:i?"t3":"t2",b:!i}));
+  mark(svg,ovSel);
+}
+function initOverview(){selectable(document.getElementById("ovSvg"),ovPanel);
+  tablist(document.getElementById("ovEnv"),ENVN.map(n=>({name:"执行环境："+n})),i=>{OVENV=i;drawOverview();ovPanel(ovSel)})}
+
+/* ---------- 02 coupling ---------- */
+function drawCoupling(){const svg=document.getElementById("cpSvg");defs(svg);
+  const mid={x:350,y:120,w:300,h:120},L={x:30,y:40,w:270,h:110},Rr={x:700,y:40,w:270,h:110},B={x:320,y:278,w:360,h:70};
+  [L,Rr,B].forEach(r=>edge(svg,mid,r,{c:"gray",dash:1,noarrow:1,w:2.2}));
+  box(svg,Object.assign({c:"col",title:"可复用的运行机制",sub:"队列 · 原子领取 · 并发 · 唤醒",sub2:"回执 outbox · 重试线索 · 任务令牌"},mid));
+  box(svg,Object.assign({c:"gray",fill:"#fff",title:"① 服务依赖",sub:"工单状态 · 通知 inbox · 归因",sub2:"权益 · 统计 · 实时 Hub · 事件 Bus"},L));
+  box(svg,Object.assign({c:"gray",fill:"#fff",title:"② 下发 Task 结构",sub:"Issue · Workspace · Project · workflow",sub2:"Squad · Chat · Autopilot · QuickCreate"},Rr));
+  box(svg,Object.assign({c:"bad",fill:"#fff",title:"③ Agent 的工具面",sub:"提示：multica issue get / comment list"},B));
+  T(svg,500,105,"整体复用可行 ≠ 能把 engine 目录拿走","t3","middle");
+}
+
+/* ---------- 03 contracts ---------- */
+function drawContracts(){const svg=document.getElementById("ctSvg");defs(svg);
+  T(svg,120,22,"调用方","band","middle");T(svg,500,22,"自有接口约定（长期稳定）","band","middle");T(svg,880,22,"首期实现","band","middle");
+  const rows=[[40,["mw","MW 团队入口"],"Team API",["col","Multica server（适配）"]],[120,["sdk","Agent（运行中）"],"协作工具 team.*",["col","Multica API（适配）"]],[215,["exe","执行端（daemon）"],"Provider 适配接口",["sdk","各产品 CLI 适配器"]],[275,["col","协作服务 · 执行端"],"上下文供给接口",["ctx","上下文模块（新建）"]]];
+  const pth=S("path",{d:"M 220 160 C 380 210, 620 210, 780 160",fill:"none",stroke:C.bad[0],"stroke-width":2,"stroke-dasharray":"6 5","marker-end":"url(#ctSvg-a-bad)"},svg);
+  lbl(svg,500,198,"旧 multica CLI 旁路：必须同时收口","bad");
+  rows.forEach(r=>{const a={x:20,y:r[0],w:200,h:46},b={x:380,y:r[0],w:240,h:46},c={x:780,y:r[0],w:200,h:46};
+    edge(svg,a,b,{c:r[1][0]});edge(svg,b,c,{c:"add"});
+    box(svg,Object.assign({c:r[1][0],title:r[1][1]},a));box(svg,Object.assign({c:"add",title:r[2]},b));box(svg,Object.assign({c:r[3][0],dash:r[3][0]==="ctx"?1:0,title:r[3][1]},c))});
+}
+
+/* ---------- 04 logic / deploy / binding ---------- */
+function drawLogic(){const svg=document.getElementById("lgSvg");defs(svg);
+  box(svg,{x:20,y:10,w:960,h:56,c:"mw",title:"交互层：表达意图、看结果",sub:"MW 个人办公入口 ｜ MW 团队协作入口 ｜ IM · Web 看板等其他界面"});
+  box(svg,{x:20,y:76,w:960,h:56,c:"mw",title:"应用层：业务规则与翻译",sub:"个人宿主：工作区、配置、产品装配 ｜ 团队应用服务：Team API、业务专用工具、身份映射"});
+  box(svg,{x:20,y:142,w:960,h:56,c:"col",title:"协作层：通用协作机制",sub:"协作工具 / API 边界 · 运行记录 · 接续 · 等待 · 回执 · 业务关卡（人与 Agent 同一写入校验）"});
+  S("rect",{x:20,y:208,width:960,height:196,rx:12,fill:"#fafafa",stroke:"#c9ccd3","stroke-dasharray":"4 4"},svg);
+  T(svg,500,226,"执行端与 Agent 产品：端云同一种接入模式，执行环境与能力不同","band","middle");
+  arr(svg,260,198,260,238,"col",{both:1});arr(svg,740,198,740,238,"col",{both:1});
+  box(svg,{x:40,y:238,w:440,h:46,c:"exe",title:"本地执行端 daemon",sub:"研发电脑 · 领取 · 上报"});
+  box(svg,{x:520,y:238,w:440,h:46,c:"exe",title:"云端执行端 daemon",sub:"自管服务器 · 领取 · 上报"});
+  box(svg,{x:40,y:292,w:920,h:28,c:"exe",small:1,title:"Provider 适配层（两端相同）：统一 Execute · 事件 · 终态 · 取消 · 接续 · 能力声明"});
+  box(svg,{x:40,y:330,w:290,h:62,c:"sdk",title:"Mobile Coder 产品",sub:"产品装配 → SDK harness"});
+  box(svg,{x:355,y:330,w:290,h:62,c:"mw",dash:1,title:"MobileWork 办公 Agent",sub:"无头入口（待补齐）· 产品装配 → SDK"});
+  box(svg,{x:670,y:330,w:290,h:62,c:"gray",title:"第三方 Agent 产品",sub:"Codex · Claude Code 等 CLI"});
+  box(svg,{x:20,y:414,w:960,h:56,c:"ctx",title:"可信上下文供给与治理",sub:"来源 · 版本 · 有效性 · 权限 · 按任务装配 · 成果引用"});
+  box(svg,{x:20,y:480,w:960,h:56,c:"gray",title:"模型、工具与数据资源",sub:"模型服务 · MCP 与业务系统 · 文档与表格 · 仓库与制品"});
+}
+function drawDeploy(){const svg=document.getElementById("dpSvg");defs(svg);
+  [[20,"员工电脑（研发）",330],[375,"内网团队服务器",310],[710,"服务器执行节点（测试）",270]].forEach(z=>{S("rect",{x:z[0],y:30,width:z[2],height:440,rx:14,fill:"#fbfbfa",stroke:"#c9ccd3","stroke-dasharray":"5 4"},svg);T(svg,z[0]+14,52,z[1],"band")});
+  const N={ui:{x:36,y:72,w:142,h:50,c:"mw",title:"个人 MW",sub:"会话 · 文件"},host:{x:36,y:152,w:142,h:50,c:"mw",title:"MW 宿主",sub:"个人产品装配"},ps:{x:36,y:232,w:142,h:66,c:"sdk",title:"私人会话",sub:"按工作区的 SDK 引擎",sub2:"■ 个人历史 · 本机权威"},
+   team:{x:196,y:72,w:140,h:50,c:"mw",dash:1,title:"团队入口",sub:"读模型 · 命令"},ex1:{x:196,y:152,w:140,h:56,c:"exe",title:"本地执行端",sub:"daemon · Provider"},mc1:{x:196,y:236,w:140,h:60,c:"sdk",title:"Mobile Coder",sub:"■ 团队执行会话"},mw1:{x:196,y:316,w:140,h:66,c:"mw",dash:1,title:"MW 办公 Agent",sub:"无头 · 隔离目录",sub2:"■ 团队执行会话"},
+   api:{x:392,y:72,w:276,h:50,c:"mw",dash:1,title:"团队应用服务 · 协作工具边界",sub:"身份映射 · 写入校验"},mc:{x:392,y:150,w:276,h:64,c:"col",title:"Multica 协作后端",sub:"Go · 实时 Hub 只提示变化"},
+   pg:{x:392,y:240,w:130,h:70,c:"col",title:"PostgreSQL",sub:"■ 工作项 · Run",sub2:"决定 · Runtime"},art:{x:538,y:240,w:130,h:70,c:"ctx",dash:1,title:"产物存储",sub:"■ 成果副本",sub2:"版本 · 哈希"},
+   cx:{x:392,y:336,w:276,h:60,c:"ctx",dash:1,title:"上下文模块",sub:"■ 来源登记 · 版本 · Manifest"},
+   ex2:{x:728,y:150,w:224,h:56,c:"exe",title:"云端执行端",sub:"daemon + Provider（同一接入）"},mc2:{x:728,y:230,w:224,h:56,c:"sdk",title:"Mobile Coder（无头）",sub:"■ 执行会话现场（本地）"},ot:{x:728,y:302,w:224,h:50,c:"gray",title:"第三方 Agent CLI",sub:"按安装与授权"},mw2:{x:728,y:368,w:224,h:56,c:"mw",dash:1,title:"MW 无头办公能力",sub:"不依赖桌面的部分 · 待验证"}};
+  [["ui","host","mw"],["host","ps","mw"],["team","api","mw",{label:"HTTPS 主动连接"}],["api","mc","col"],["mc","pg","col"],["mc","art","ctx"],["ex1","mc1","sdk"],["ex2","mc2","sdk"]].forEach(e=>edge(svg,N[e[0]],N[e[1]],Object.assign({c:e[2]},e[3]||{})));
+  pth(svg,"M 336 196 H 345 V 349 H 339","mw");pth(svg,"M 952 192 H 966 V 396 H 955","mw");pth(svg,"M 966 327 H 955","gray");
+  edge(svg,N.ex1,N.mc,{c:"exe",label:"领取 · 回执"});edge(svg,N.ex2,N.mc,{c:"exe",label:"领取 · 回执"});
+  S("path",{d:"M 668 196 L 684 196 L 684 366 L 672 366",fill:"none",stroke:C.ctx[0],"stroke-width":1.8,"marker-end":"url(#dpSvg-a-ctx)"},svg);
+  for(const k in N)box(svg,N[k]);
+  lbl(svg,186,432,"个人 ↔ 团队：会话 · 目录 · 授权隔离","mw");
+  T(svg,500,494,"■ 标出权威数据位置；跨端连接由客户端/执行端主动发起；端云接入相同，可用能力按执行环境声明","t3","middle");
+}
+function drawBinding(){const svg=document.getElementById("bdSvg");defs(svg);
+  const a1={x:30,y:18,w:230,h:56},a2={x:30,y:96,w:230,h:56},r1={x:430,y:18,w:230,h:56},r2={x:430,y:96,w:230,h:56},f={x:760,y:50,w:210,h:66};
+  edge(svg,a1,r1,{c:"col",label:"显式绑定"});edge(svg,a2,r2,{c:"col",label:"显式绑定"});
+  S("path",{d:"M 660 85 L 760 83",stroke:"#9aa0ab","stroke-width":1.6,"stroke-dasharray":"4 5",fill:"none"},svg);
+  box(svg,Object.assign({c:"mw",title:"研发 Agent",sub:"角色 · 配置 · Provider"},a1));
+  box(svg,Object.assign({c:"mw",title:"测试 Agent",sub:"角色 · 配置 · Provider"},a2));
+  box(svg,Object.assign({c:"exe",title:"研发电脑 Runtime",sub:"在线新鲜度检查"},r1));
+  box(svg,Object.assign({c:"exe",title:"测试服务器 Runtime",sub:"在线新鲜度检查"},r2));
+  box(svg,Object.assign({c:"gray",dash:1,fill:"#fff",title:"按能力选择 Runtime",sub:"后续验证 · 非现有能力"},f));
+}
+
+/* ---------- 05 stepper ---------- */
+const SN={human:{x:30,y:28,w:190,h:64,c:"mw",title:"负责人 / 成员",sub:"提目标 · 提测 · 批准"},
+ app:{x:270,y:28,w:270,h:64,c:"mw",title:"团队应用服务 · 业务操作",sub:"MW 团队入口 / 建议渠道共用"},
+ ctx:{x:770,y:28,w:200,h:64,c:"ctx",title:"可信上下文模块",sub:"来源 · 版本 · 授权"},
+ collab:{x:330,y:186,w:340,h:100,c:"col",title:"协作服务 · 通用协作 API",sub:"Multica 后端 + PostgreSQL",sub2:"工作项 · 计划 · Run · 决定"},
+ art:{x:770,y:206,w:200,h:64,c:"ctx",title:"产物存储",sub:"补丁 · 报告 · 发布材料"},
+ local:{x:20,y:370,w:300,h:80,c:"exe",title:"研发电脑 · 本地执行端",sub:"Provider → Mobile Coder CLI（修复）"},
+ mwx:{x:340,y:370,w:300,h:80,c:"mw",title:"运营电脑 · 本地执行端",sub:"Provider → MW 办公 Agent（发布材料）"},
+ cloud:{x:660,y:370,w:320,h:80,c:"exe",title:"测试服务器 · 云端执行端",sub:"Provider → 测试 Agent 产品 CLI"}};
+const STEPS=[
+ {t:"登记执行资源",who:"三台机器的执行端（主动出站连接）→ 协作服务",pass:"执行端身份、可用的 Provider（Mobile Coder / MobileWork / 第三方）及版本、并发额度、能力声明，之后周期性发送心跳",rec:"协作后端：Runtime 记录。凭据留在各自的执行环境",why:"之后放置任务时，要先知道哪台机器能调用哪个产品、具备什么能力、还剩多少额度。设备代表谁执行、谁能指派该 Agent、任务能读什么，要分别校验。",guard:"连接都由执行端发起，服务端不入站访问员工电脑。心跳只说明近期联系过，不能证明任务没有卡住。首期 Agent 显式绑定 Runtime，不做自动择优；服务器不声明它没有的桌面能力。",tag:'<span class="tag t-up">上游已有：Runtime 登记、在线检查</span><span class="tag t-add">补：Provider 能力声明</span>',c:"M06 M07",e:[["local","collab","exe","登记 · 心跳"],["mwx","collab","mw","登记 · 心跳"],["cloud","collab","exe","登记 · 心跳"]],hl:["local","mwx","cloud","collab"],db:["collab"]},
+ {t:"明确工作",who:"负责人（MW 团队入口或建议渠道）→ 团队应用服务 → 协作服务",pass:"目标“修复弱网场景下的重复待办”、责任人、交付条件，以及已确认的决定“提醒功能延期”",rec:"协作后端：共同工作项（首期映射 Multica Issue）和决定版本",why:"整件事有了稳定的身份和版本，而不只是一条聊天消息；页面刷新或有人新加入都能接续。从 MW 团队入口还是从 IM 渠道发起，都经同一个团队应用服务翻译成协作命令。",guard:"团队应用不另存可写的任务状态；修改要带 expectedRevision，版本冲突不能静默覆盖。",tag:'<span class="tag t-up">上游已有：工作项</span><span class="tag t-add">补：决定版本</span>',e:[["human","app","mw","目标 · 已确认决定"],["app","collab","mw","建立工作 r1"]],hl:["human","app","collab"],db:["collab"]},
+ {t:"确认推进安排",who:"负责人 / 规划 Agent → 团队应用服务 → 协作服务",pass:"三个步骤：修复 →〔提测关卡：补丁版本＋自测依据〕→ 测试串行；发布材料与修复并行，由 MobileWork 办公 Agent 承担。另含执行者、所需 Provider 和批准规则",rec:"协作后端：计划修订版（示例为 r3）；提案和生效安排分开保存",why:"规划 Agent 可以提议，但只有经过授权的生效版本才能驱动执行。“提测通过后才创建测试运行”作为持久规则写进计划，不靠某个 Agent 记得去 @ 下一位。",guard:"没有指派权限、存在循环依赖或条件不满足的提议，按规则拒绝。执行者是一个 Agent 角色，不是某个人的私有会话。",tag:'<span class="tag t-add">补：计划版本与关卡属性（优先复用工作项关系、工作流和唤醒）</span>',e:[["human","app","mw","计划提议"],["app","collab","mw","生效计划 r3"]],hl:["human","app","collab"],db:["collab"]},
+ {t:"装配依据",who:"协作服务 ↔ 可信上下文模块",pass:"每个步骤、代表的用户、Agent、授权范围、计划版本；分别返回 Context Manifest",rec:"上下文模块：每个步骤的输入清单（来源 ID、版本或哈希、确认状态、读取授权）",why:"旧需求“提醒本期上线”已经被新决定替代，要在输入里显式标出来，而不是让 Agent 自己去猜。发布材料步骤拿到的是已确认的决定和对外口径，不是研发的原始日志。",guard:"缺失和冲突作为结构化结果返回。Manifest 固定内容版本，但不固定永久访问权。",tag:'<span class="tag t-add">目标补足：上下文供给接口</span>',e:[["collab","ctx","ctx","步骤 · 身份 · 授权",12],["ctx","collab","ctx","Manifest",12]],hl:["collab","ctx"],db:["ctx"]},
+ {t:"创建运行",who:"协作服务内部",pass:"修复 Run（研发 Agent → 研发电脑 Runtime · Mobile Coder Provider）和发布材料 Run（办公 Agent → 运营电脑 Runtime · MobileWork Provider），各自带输入版本与触发原因",rec:"协作后端：两条 Run 记录（首期沿用 AgentTaskQueue 行）",why:"先持久化，再经执行端已建立的连接发一个唤醒提示。提示只是“有新活了”，丢了也不要紧：执行端下次主动查询时仍能发现这项工作。",guard:"同一个启动命令提交两次，只产生一次逻辑执行（commandId 幂等，T01 待验证）。",tag:'<span class="tag t-up">上游已有：按绑定 Runtime 入队</span>',c:"M06",e:[],self:"collab",hl:["collab"],db:["collab"]},
+ {t:"唤醒提示、领取与启动",who:"协作服务 ⇢ 执行端（仅提示）；执行端 → 协作服务（领取）→ 返回任务；执行端 → Provider → 产品入口",pass:"唤醒提示不带任务内容。执行端领取后，服务端返回运行 ID、指令、上下文引用、授权、执行预算；适配器据此拼出产品调用（例如 MC 的 run、会话参数和工作目录）",rec:"协作后端：queued → dispatched（原子领取）；执行端本地：Run → 产品会话映射",why:"几个执行端同时来领，只有一个能领到。先记下映射，再启动产品；启动响应丢失时才能对账，而不是再发一次。",guard:"收到提示 ≠ 领到任务 ≠ 开始执行。启动响应丢失时，先按会话或请求标识查询，不直接重新发起（T02）。MC CLI 的参数已存在，但语义待 G1 验证；MW 的无头执行入口待补齐。",tag:'<span class="tag t-up">上游已有：原子领取、并发限制</span><span class="tag t-add">补：Provider 适配与会话映射</span>',c:"M07 M08 C02 W13",e:[["collab","local","col","唤醒提示",-26,0,0,1],["local","collab","exe","主动领取",0],["collab","local","col","返回任务 · 引用",26],["mwx","collab","mw","主动领取",14,20,0],["collab","mwx","mw","返回任务",14,-20,0]],hl:["local","mwx","collab"],db:["collab","local","mwx"]},
+ {t:"执行与进度",who:"产品 → Provider 适配器 → 执行端 → 协作服务",pass:"Mobile Coder 在隔离工作目录里修复并运行自测；MW 办公 Agent 起草发布说明。适配器把产品输出翻译成统一进度事件、必要日志、工具请求、产物线索",rec:"执行端本地：产品内部会话与运行现场（局部权威）；协作后端：进度只供观察",why:"团队成员关掉页面，服务器上的工作记录也不变；看板是读模型，可以重建。",guard:"进度事件不是终态。各 CLI 输出格式不同，由适配器翻译；事件断流时先重连或查询，进程退出码 0 或一次 idle 都不能判定成功。",tag:'<span class="tag t-ver">待验证：事件翻译与终态对账</span>',c:"M05 C02",e:[["local","collab","exe","进度事件"],["mwx","collab","mw","进度事件"]],hl:["local","mwx","collab"],db:["local","mwx"]},
+ {t:"产出版本化成果",who:"执行端 → 产物存储",pass:"修复支路：补丁 r2（提交版本、内容哈希）和自测记录（对应 r2）；MW 支路：发布说明草稿 v1。产物存储返回可授权读取的引用",rec:"产物存储：成果副本、版本、哈希、产出它的 Run",why:"先保证成果别人读得到、能指明是哪一版，后面的提测和测试才有确定的对象。",guard:"这一步只说明“成果已存在”，既不是提测，也不是 Run 结束。本地绝对路径不是可移交的成果。",tag:'<span class="tag t-add">补：产物 manifest（引用 · 版本 · 哈希）</span>',e:[["local","art","ctx","补丁 r2 · 自测记录",0,0,-22],["mwx","art","mw","说明草稿 v1"]],hl:["local","mwx","art"],db:["art"]},
+ {t:"提测：人或 Agent 走同一个业务操作",who:"Agent（经业务工具）或成员（在 MW 团队入口点“提测”）→ 团队应用服务 → 通用协作 API",pass:"业务操作“提交修复并申请测试”：工作项、补丁引用 r2、自测记录引用、commandId",rec:"协作后端：修复步骤登记成果 r2，进入“已提测”；按计划 r3 的持久规则创建测试 Run",why:"人和 Agent 只是入口不同，校验完全相同：团队应用服务先核对补丁 r2 是当前版本、哈希与产物存储一致、自测记录确实对应 r2，然后再调用通用协作 API 登记成果、请求测试。",guard:"补丁不是最新版、缺自测依据或依据对应旧版本时拒绝，并说明缺什么；不产生测试 Run（T14）。重复提测按 commandId 返回原结果。Agent 也不能绕过这一步直接用旧 CLI 改状态（T08）。",tag:'<span class="tag t-add">目标补足：业务专用工具（应用层）＋ 通用协作 API</span><span class="tag t-up">上游已有：持久唤醒与条件</span>',c:"M09 M10",e:[["local","app","sdk","Agent：提交修复并申请测试",0,-40,30],["human","app","mw","或成员点“提测”"],["app","collab","col","核对通过 → 登记 r2 · 请求测试"]],hl:["local","human","app","collab"],db:["collab"]},
+ {t:"运行回执：另一条通道",who:"执行端 → 协作服务（执行协议，不经团队应用服务）",pass:"修复 Run 与说明 Run 的终态、产物清单、产品会话引用、attempt 与 eventId",rec:"协作后端：两条 Run 的终态回执",why:"回执回答的是“这次运行怎样结束、留下了什么”，提测回答的是“这份成果是否交给下一步”。两者分开，才能区分 Run 成功和业务推进。",guard:"Run 已结束但没人提测：团队入口显示“待提测”，不自动推进。重复回执不得产生重复结果；回执先落盘再发送，断网后补交（T03）。",tag:'<span class="tag t-up">上游已有：回执先落盘再发送</span>',c:"M14 M15",e:[["local","collab","exe","修复 Run 回执"],["mwx","collab","mw","说明 Run 回执"]],hl:["local","mwx","collab"],db:["collab"]},
+ {t:"云端测试：唤醒、领取、读取固定版本",who:"协作服务 ⇢ 云端执行端（仅提示）；云端执行端 → 协作服务（领取）→ 返回任务；产物存储 → 云端执行端",pass:"测试任务：补丁 r2 的引用与哈希、测试规则 rev 2、输入清单",rec:"协作后端：测试 Run queued → dispatched，绑定补丁 r2",why:"测试读的是明确的版本，不是“最新的文件夹”；云端执行端下载后先校验哈希，再交给测试 Agent。",guard:"服务端不推送任务，只提示；云端执行端主动领取。哈希不一致时不开始测试，标记输入异常（T05）。",tag:'<span class="tag t-up">上游已有：原子领取</span><span class="tag t-add">补：输入版本绑定</span>',c:"M07",e:[["collab","cloud","col","唤醒提示",26,0,0,1],["cloud","collab","exe","主动领取",0],["collab","cloud","col","测试任务 · r2 引用",-26],["art","cloud","ctx","读取 r2 · 校验哈希"]],hl:["collab","cloud","art"],db:["collab","cloud"]},
+ {t:"测试结果与回执",who:"云端执行端 → 产物存储；云端执行端 → 协作服务",pass:"测试报告 #2（对应补丁 r2、测试规则 rev 2）、测试 Run 终态回执",rec:"产物存储：测试报告；协作后端：测试 Run 结果与业务步骤结论分开记录",why:"测试报告能指回它测的是哪次修复、按哪版规则。测试 Run 成功只表示测试跑完并交了报告。",guard:"Run 成功 ≠ 测试通过 ≠ 业务验收（T06）。报告不通过时，修复步骤退回，新的修复会成为 r3，旧报告留作历史。",tag:'<span class="tag t-up">上游已有：回执先落盘再发送</span><span class="tag t-add">补：结果合同与步骤结论</span>',c:"M14",e:[["cloud","art","ctx","测试报告 #2"],["cloud","collab","exe","测试 Run 回执",14]],hl:["cloud","art","collab"],db:["art","collab"]},
+ {t:"人作决定",who:"协作服务 → 团队应用服务 → 负责人 → 团队应用服务 → 协作服务",pass:"补丁 r2、测试报告 #2、MW 准备的发布说明草稿（经同类业务操作“提交说明供审批”）、风险，以及待批准的动作（模拟发布）",rec:"协作后端：决定记录，绑定动作与证据版本",why:"两条支路在这里汇合：测试通过、发布说明就绪都是关卡条件。批准的是“这组证据对应的这个动作”，不是给 Agent 发一张永久通行证。",guard:"批准后关键证据被修改，旧批准不能用于新产物（T09）。等待期间重启服务或关掉页面，等待状态都不丢失（T07）。",tag:'<span class="tag t-add">目标补足：批准绑定证据（需核查/扩展）</span>',e:[["collab","app","col","待决定：模拟发布"],["app","human","mw","证据 · 风险",14],["human","app","mw","批准（绑定证据）",14]],hl:["collab","app","human"],db:["collab"]},
+ {t:"完成交付",who:"协作服务 / 团队应用服务 → 参与者",pass:"结果、决定、产物、版本、必要的通知",rec:"协作后端：工作项完成；审计链串起 workItem → step → run → 产品会话 → runtime → 输入与产物版本 → 提测 → 批准",why:"业务验收规则满足后，工作才算完成。下次工作可以按需引用这次的成果和决定。",guard:"只模拟发布，不影响真实业务系统。",tag:'<span class="tag t-add">目标补足：业务验收规则</span>',e:[["collab","app","col","完成 · 结果"],["app","human","mw","交付与通知"]],hl:["collab","app","human"],db:["collab"]}
+];
+let cur=0,timer=null;
+function stepHTML(s,i){return `<div class="stephead"><span class="no">步骤 ${i} / ${STEPS.length-1}</span><h4>${s.t}</h4></div><div style="margin:6px 0">${s.tag}</div>
+ <div class="stepinfo"><div><div class="k">谁 → 谁</div><div class="v">${s.who}</div></div><div><div class="k">传什么</div><div class="v">${s.pass}</div></div>
+ <div><div class="k">谁落库</div><div class="v">${s.rec}</div></div><div><div class="k">为什么这样做</div><div class="v">${s.why}</div></div>
+ <div class="full"><div class="k">边界与失败时</div><div class="v">${s.guard}${s.c?" "+s.c.split(" ").map(x=>"<cite>"+x+"</cite>").join(""):""}</div></div></div>`}
+function drawStep(i){cur=i;const s=STEPS[i],svg=document.getElementById("stSvg");svg.innerHTML="";defs(svg);
+  const lay=S("g",{},svg),nodes=S("g",{},svg),labs=S("g",{},svg);
+  s.e.forEach(e=>edge(lay,SN[e[0]],SN[e[1]],{c:e[2],label:e[3],off:e[4]||0,lx:e[5]||0,ly:e[6]||0,w:2.6,lp:labs,dash:e[7]}));
+  for(const k in SN){const g=box(nodes,Object.assign({},SN[k]));if(!s.hl.includes(k))g.classList.add("dim");
+    if(s.db.includes(k)){const r=SN[k];S("rect",{x:r.x+r.w-58,y:r.y-10,width:52,height:20,rx:10,fill:"#1b2230"},g);T(g,r.x+r.w-32,r.y+4,"● 落库","t3","middle").setAttribute("fill","#fff")}}
+  if(s.self){const r=SN[s.self];S("rect",{x:r.x-8,y:r.y-8,width:r.w+16,height:r.h+16,rx:14,fill:"none",stroke:C.col[0],"stroke-width":2,"stroke-dasharray":"5 5"},lay);lbl(labs,r.x+r.w/2,r.y+r.h+24,"创建 Run（先提交事务，再发唤醒提示）","col")}
+  const info=document.getElementById("stInfo");info.innerHTML=stepHTML(s,i);cites(info);
+  document.querySelectorAll("#stDots button").forEach((b,j)=>{b.classList.toggle("done",j<i);if(j===i)b.setAttribute("aria-current","step");else b.removeAttribute("aria-current")});
+  document.getElementById("stPrev").disabled=i===0;document.getElementById("stNext").disabled=i===STEPS.length-1;
+  svg.setAttribute("aria-label","端到端步进图，当前步骤 "+i+"："+s.t+"。"+s.who);
+}
+function stopPlay(){if(timer){clearInterval(timer);timer=null}const b=document.getElementById("stPlay");b.setAttribute("aria-pressed","false");b.textContent="▶ 自动播放"}
+function initStepper(){const dots=document.getElementById("stDots");
+  STEPS.forEach((s,i)=>{const b=document.createElement("button");b.type="button";b.textContent=i;b.title=s.t;b.setAttribute("aria-label","步骤 "+i+"："+s.t);b.onclick=()=>{stopPlay();drawStep(i)};dots.appendChild(b)});
+  document.getElementById("stPrev").onclick=()=>{stopPlay();if(cur>0)drawStep(cur-1)};
+  document.getElementById("stNext").onclick=()=>{stopPlay();if(cur<STEPS.length-1)drawStep(cur+1)};
+  document.getElementById("stPlay").onclick=function(){if(timer){stopPlay();return}this.setAttribute("aria-pressed","true");this.textContent="❚❚ 暂停";if(cur===STEPS.length-1)drawStep(0);timer=setInterval(()=>{if(cur<STEPS.length-1)drawStep(cur+1);else stopPlay()},4800)};
+  document.getElementById("stepper").addEventListener("keydown",e=>{if(e.target.closest(".tabs"))return;if(e.key==="ArrowRight"&&cur<STEPS.length-1){stopPlay();drawStep(cur+1);e.preventDefault()}if(e.key==="ArrowLeft"&&cur>0){stopPlay();drawStep(cur-1);e.preventDefault()}});
+  drawStep(0);
+  const pr=document.getElementById("stPrint");pr.innerHTML="<h3>全部步骤（打印版）</h3>"+STEPS.map((s,i)=>'<div class="card" style="margin:8px 0">'+stepHTML(s,i)+"</div>").join("");cites(pr);
+}
+
+/* ---------- 06 objects ---------- */
+const OB={wi:{x:20,y:30,w:210,h:70,c:"col",title:"工作项 WorkItem",sub:"弱网重复待办修复"},st:{x:260,y:30,w:210,h:70,c:"col",title:"计划/步骤 Plan·Step",sub:"r3：修复→测试，发布材料并行"},
+ run:{x:500,y:30,w:210,h:70,c:"col",title:"运行 Run/Attempt",sub:"测试步骤 · 第 1 次"},ses:{x:760,y:30,w:220,h:70,c:"exe",title:"产品会话 Session",sub:"MC / MW / 第三方内部现场"},
+ dec:{x:20,y:190,w:210,h:70,c:"col",title:"决定/批准 Decision",sub:"模拟发布 ← 报告#2 + 补丁 r2"},cx:{x:260,y:190,w:210,h:70,c:"ctx",title:"依据 Context",sub:"Manifest：来源 · 版本 · 授权"},
+ art:{x:500,y:190,w:210,h:70,c:"ctx",title:"成果 Artifact",sub:"补丁 r2 · 测试报告 #2"},rt:{x:760,y:190,w:220,h:70,c:"col",title:"执行资源 Runtime",sub:"测试服务器 · 可用 Provider"}};
+const OBI={wi:["最终需要完成什么、谁负责、怎样验收","团队应用定义语义，协作后端持久保存","映射到 Issue；MW 不另存一份可写的任务状态"],
+ st:["怎样分工、依赖关系、什么时候接续","协作后端保存生效版本，应用定义业务规则","优先复用工作项关系、工作流和唤醒；缺少的版本与关卡属性做明确扩展"],
+ run:["某一步的一次具体执行尝试","协作后端","原型先沿用 AgentTaskQueue 及其重试关联，不另建第二个调度队列；每次重试都保留原尝试"],
+ ses:["Agent 产品内部（Mobile Coder / MobileWork 的 SDK harness，或第三方 CLI）的一段执行历史与现场","产品和执行端本地。它是局部执行的权威，有自己的恢复价值，但不是团队业务状态的权威","Run 记录引用 session；session 不能当作团队工作项"],
+ dec:["谁基于哪份证据允许了什么动作","协作后端持久记录，应用定义批准资格与规则","需要核查和扩展，不等同于本地工具的 ask"],
+ cx:["资料、版本、有效性和读取授权","上下文模块；正文按策略留在源系统","复用已有的项目资料与历史快照，补充跨来源治理"],
+ art:["可移交的结果及其与依据、运行的关系","产物存储与上下文模块","本地绝对路径不是可移交的成果"],
+ rt:["工作在哪里、由哪个执行端承担、能调用哪些 Provider","协作后端登记，执行端报告","沿用 Runtime/Agent 绑定，Provider 与能力声明逐项扩展"]};
+function objPanel(id){const o=OB[id],d=OBI[id],p=document.getElementById("objPanel");p.innerHTML=`<h4>${o.title}</h4><div class="meta">示例：${o.sub}</div><dl><dt>含义</dt><dd>${d[0]}</dd><dt>权威记录</dt><dd>${d[1]}</dd><dt>首期与 Multica 的关系</dt><dd>${d[2]}</dd></dl>`;mark(document.getElementById("objSvg"),id)}
+function drawObjects(){const svg=document.getElementById("objSvg");defs(svg);
+  [["wi","st","包含"],["st","run","每次尝试"],["run","ses","引用"],["run","rt","在哪执行"],["run","art","产出"],["st","cx","输入清单"],["dec","wi","推进关卡"]].forEach(e=>edge(svg,OB[e[0]],OB[e[1]],{c:"gray",label:e[2]}));
+  S("path",{d:"M125 262 V282 H605 V263",fill:"none",stroke:C.gray[0],"stroke-width":1.8,"marker-end":"url(#objSvg-a-gray)"},svg);
+  lbl(svg,365,282,"批准绑定成果版本","gray");
+  for(const k in OB)box(svg,Object.assign({id:k,click:1},OB[k]));
+  svg.setAttribute("viewBox","0 0 1000 330");
+  T(svg,20,320,"颜色＝权威位置：蓝＝协作后端　橙＝执行端本地　青＝上下文与产物模块","t3");
+  selectable(svg,objPanel);objPanel("run");}
+function drawLanes(){const svg=document.getElementById("laneSvg");defs(svg);
+  T(svg,20,52,"Run 状态","t1");T(svg,20,70,"测试 Agent 第 1 次","t3");T(svg,20,142,"业务步骤状态","t1");T(svg,20,160,"测试步骤","t3");
+  const a=["排队","已领取","执行中","成功"],b=["待执行","执行中","等待成果验证","报告不通过 · 未验收"];
+  const ra=a.map((s,i)=>({x:200+i*170,y:36,w:140,h:38,c:i===3?"ctx":"col",title:s})),rb=b.map((s,i)=>({x:200+i*170,y:126,w:i===3?200:140,h:38,c:i===3?"bad":"col",title:s}));
+  for(let i=0;i<3;i++){edge(svg,ra[i],ra[i+1],{c:"col"});edge(svg,rb[i],rb[i+1],{c:"col"})}
+  S("line",{x1:780,y1:76,x2:780,y2:124,stroke:C.bad[0],"stroke-width":1.6,"stroke-dasharray":"4 4"},svg);
+  ra.forEach(r=>box(svg,r));rb.forEach(r=>box(svg,r));lbl(svg,880,100,"Run 成功 ≠ 业务验收","bad");
+  T(svg,200,190,"若报告通过：等待人批准 → 已验收。重试时保留第 1 次尝试的输入、证据和结果。","t3");}
+
+/* ---------- 07 adapter & ask ---------- */
+function drawAdapter(){const svg=document.getElementById("adSvg");defs(svg);
+  S("rect",{x:230,y:14,width:750,height:178,rx:12,fill:"#fff8f1",stroke:C.exe[0],"stroke-width":1.2,"stroke-dasharray":"5 4"},svg);
+  T(svg,246,36,"执行端 daemon（端侧与云侧相同）","band");
+  const col={x:20,y:46,w:180,h:60,c:"col",title:"协作服务",sub:"Run 已持久化"};
+  const pv={x:250,y:48,w:710,h:54,c:"exe",title:"Provider 适配接口",sub:"统一语义：Execute · 事件 · 终态 · 取消 · 接续 · 能力声明",badge:"复用 Backend 接口"};
+  const A=[{x:250,y:124,w:220,h:50,c:"add",dash:1,title:"MW 适配器",sub:"调用无头执行入口"},{x:495,y:124,w:220,h:50,c:"add",dash:1,title:"MC 适配器",sub:"调用 run · session · JSON"},{x:740,y:124,w:220,h:50,c:"exe",title:"第三方适配器",sub:"沿用或新增"}];
+  const P=[{x:250,y:222,w:220,h:108,c:"mw",dash:1,title:"MobileWork 办公 Agent",sub:"无头执行入口 · 待补齐",pills:[["产品装配：办公能力 · 专家 · 插件","mw"],["SDK harness（同源）","sdk"]]},
+   {x:495,y:222,w:220,h:108,c:"sdk",title:"Mobile Coder 产品",sub:"CLI 入口 · 接入候选",pills:[["产品装配：身份 · 供模 · 插件","sdk"],["SDK harness（同源）","sdk"]]},
+   {x:740,y:222,w:220,h:108,c:"gray",title:"第三方 Agent 产品",sub:"Codex · Claude Code 等",pills:[["产品自身装配","gray"],["自有内核","gray"]]}];
+  const bk={x:20,y:236,w:180,h:80,c:"gray",dash:1,fill:"#fff",title:"备选：直连 SDK HTTP",sub:"协议验证 · 对照",sub2:"绕过产品装配"};
+  edge(svg,col,pv,{c:"exe",both:1});
+  A.forEach((a,i)=>{const x=a.x+a.w/2;arr(svg,x,102,x,124,"exe");arr(svg,x,174,x,222,["mw","sdk","gray"][i])});
+  pth(svg,"M 230 150 H 110 V 234","gray",{dash:1});
+  box(svg,col);box(svg,pv);A.forEach(a=>box(svg,a));P.forEach(p=>prodBox(svg,p));box(svg,bk);
+  T(svg,605,360,"Provider 是执行端里的调用适配代码，不是 Agent 本体，也不是模型厂商 provider；MC 和 MW 内部继续消费同一来源的 SDK","t3","middle");
+  T(svg,605,382,"统一的是语义；各 CLI 的参数、输出格式与会话标识不同，进程退出码 ≠ 业务成功","t3","middle");
+}
+function drawAsk(){const svg=document.getElementById("askSvg");defs(svg);
+  const X={sdk:110,ad:310,col:520,hum:720,att:900},H=[["sdk","产品会话","sdk"],["ad","Provider 适配器","add"],["col","协作服务","col"],["hum","负责人","mw"],["att","新 Attempt","exe"]];
+  H.forEach(h=>{S("line",{x1:X[h[0]],y1:46,x2:X[h[0]],y2:322,stroke:"#c9ccd3","stroke-dasharray":"4 4"},svg);box(svg,{x:X[h[0]]-70,y:8,w:140,h:36,c:h[2],title:h[1]})});
+  const M=[["sdk","ad","sdk","① ask：执行一个未预授权的工具"],["ad","sdk","add","② 拒绝或取消这次工具调用"],["ad","col","add","③ 登记决定请求（动作＋证据版本）"],["sdk","ad","sdk","④ 确认产品运行已收敛（未确认 → 待核查）"],["col","hum","col","⑤ 待决定：带证据"],["hum","col","mw","⑥ 批准：绑定动作与证据版本"],["col","att","col","⑦ 新尝试携带批准引用，受控出口核对"]];
+  M.forEach((m,i)=>{const y=74+i*36,x1=X[m[0]],x2=X[m[1]],d=x2>x1?1:-1;S("line",{x1:x1+d*4,y1:y,x2:x2-d*6,y2:y,stroke:C[m[2]][0],"stroke-width":2,"marker-end":"url(#askSvg-a-"+m[2]+")"},svg);
+    const lx=(x1+x2)/2;T(svg,Math.min(Math.max(lx,150),850),y-6,m[3],"elabel","middle");});}
+
+/* ---------- 11 MobileWork dual identity ---------- */
+function drawMW(){const svg=document.getElementById("mwSvg");defs(svg);
+  T(svg,20,24,"身份 ①：人使用的入口（个人 / 团队）","band");
+  const r1=[{x:20,y:36,w:120,h:48,c:"gray",title:"员工"},{x:170,y:36,w:190,h:48,c:"mw",title:"MW 个人办公入口"},{x:390,y:36,w:210,h:48,c:"mw",title:"个人宿主 · 产品装配"},{x:630,y:36,w:180,h:48,c:"sdk",title:"SDK 引擎 · 私人会话",sub:"按工作区"}];
+  const r2=[{x:20,y:100,w:120,h:48,c:"gray",title:"团队成员"},{x:170,y:100,w:190,h:48,c:"mw",dash:1,title:"MW 团队入口",sub:"或建议渠道"},{x:390,y:100,w:210,h:48,c:"mw",dash:1,title:"团队应用服务"},{x:630,y:100,w:350,h:48,c:"col",title:"协作服务",sub:"工作项 · Run · 决定"}];
+  T(svg,826,58,"个人使用","t3");T(svg,826,74,"不经协作调度","t3");
+  T(svg,20,194,"身份 ②：被 daemon 调用的办公 Agent 执行能力","band");
+  const r3=[{x:780,y:206,w:200,h:56,c:"exe",title:"执行端 daemon",sub:"MW 适配器"},{x:540,y:206,w:210,h:56,c:"mw",dash:1,title:"MW 无头执行入口",sub:"待补齐 / 待验证"},{x:300,y:206,w:210,h:56,c:"mw",title:"产品装配 → SDK harness",sub:"同一个 MW 产品"},{x:20,y:206,w:250,h:56,c:"mw",title:"团队执行会话",sub:"隔离的工作目录与授权"}];
+  [r1,r2,r3].forEach(r=>{for(let i=0;i<r.length-1;i++)edge(svg,r[i],r[i+1],{c:"mw"})});
+  arr(svg,880,206,880,148,"exe");lbl(svg,880,177,"主动领取 → 返回任务","exe");
+  [r1,r2,r3].forEach(r=>r.forEach(b=>box(svg,b)));
+  [["× 不自动化点击 GUI",20,250],["× 不全量共享个人历史和目录",300,300],["× 不递归返回团队调度",630,350]].forEach(n=>box(svg,{x:n[1],y:290,w:n[2],h:30,c:"bad",fill:"#fff",small:1,title:n[0]}));
+}
+
+/* ---------- 08 faults ---------- */
+const LANE={exec:"执行端 / Agent 产品",collab:"协作服务",world:"网络 / 人 / 外部系统"};
+const FAULTS=[
+ {name:"正常",d:"修复成功，提测通过，测试自动接续。",b:[["exec","ok","原子领取 Run，登记产品会话映射"],["exec","ok","产品修复并自测，上传版本化补丁 r2"],["collab","ok","提测：核对补丁版本与自测依据后登记"],["exec","ok","另一通道：发送修复 Run 终态回执"],["collab","ok","按持久规则创建测试 Run，发唤醒提示"]],out:"修复步骤进入“等待测试验证”，测试 Run 已入队，等云端执行端主动领取。",up:["原子领取 <cite>M07</cite>","回执先落盘再发送 <cite>M14</cite>","持久唤醒 <cite>M09</cite>"],add:["提测业务操作（人与 Agent 同一校验）","产物与输入版本绑定","执行世代校验"],no:["Run 成功不等于业务验收"],t:"T01 T05 T06"},
+ {name:"CLI 退出 ≠ 成功",d:"产品 CLI 以退出码 0 结束，但没有交出约定的结构化结果。",b:[["exec","ok","适配器调用产品 CLI，持续翻译事件"],["exec","warn","退出码 0，但缺少结构化结果或产物清单"],["exec","hold","按会话标识查询产品状态，收集可用证据"],["collab","hold","标记为“结果缺失 / 待核查”，不推进后续关卡"],["world","hold","由负责人决定补跑、改派或人工补交"]],out:"不会因为进程正常结束就把步骤当作完成。",up:["统一 Backend 接口及能力差异 <cite>M05</cite>"],add:["按 resultContract 判定终态","产品会话状态查询"],no:["退出码 0 不等于业务成功","不同 CLI 的输出格式不保证一致"],t:"T02 T06"},
+ {name:"唤醒提示丢失 / 重复",d:"协作服务经已建连接发出的唤醒提示没到，或者到了两次。",b:[["collab","ok","Run 已持久化，发出唤醒提示"],["world","warn","提示丢失或重复到达"],["exec","ok","执行端定期主动查询可领取的任务"],["collab","ok","原子领取：只有一个能成功"],["exec","ok","按服务端返回的任务启动，忽略重复提示"]],out:"工作不丢，也不会被重复领取。",up:["原子领取、SKIP LOCKED <cite>M07</cite>","并发限制 <cite>M08</cite>"],add:["按唯一命令键或触发键入队"],no:["唤醒提示与补偿的覆盖范围还要验证"],t:"T01"},
+ {name:"回执断网",d:"执行已经完成，但回执发不出去。",b:[["exec","ok","执行完成，产物已上传"],["exec","hold","回执写入本地 outbox"],["world","bad","网络中断"],["exec","ok","连接恢复后重放同一条回执"],["collab","ok","按 Run 和结果标识幂等接收"]],out:"产物和回执成功持久化后，可在恢复连接时补交；重复回执不应重复推进（待验证）。",up:["终态回执先尝试落盘再发送 <cite>M14</cite><cite>M15</cite>"],add:["服务端按结果标识幂等接收"],no:["落盘失败时会退化为直接发送，这种退化要在界面上可见"],t:"T03"},
+ {name:"执行端失联",d:"研发电脑断网或休眠，不知道任务是否还在跑。",b:[["exec","ok","正在执行修复"],["world","bad","研发电脑断网或休眠"],["collab","warn","心跳超时 → 标记为“待核查”，而不是“失败”"],["collab","hold","阻止启动有副作用的替代执行"],["world","hold","核查执行器和外部结果；确认已停止且产物可移交后，才发起新 Attempt"]],out:"保持待核查；未经确认不发起替代执行。安全改派仍依赖旧执行确认与副作用核对。",up:["在线新鲜度检查 <cite>M07</cite>","重试线索 <cite>M16</cite>","清理未确认时禁止自动继续 <cite>M05</cite>"],add:["“待核查”状态","执行世代"],no:["心跳超时不能证明进程已经死亡","不承诺任意跨机 resume，也不承诺迁移 CLI 的私有历史"],t:"T04 T10"},
+ {name:"旧结果迟到",d:"已经改派之后，旧执行端恢复并交回了结果。",b:[["collab","hold","Attempt #1 失联；核查后由人决定改派"],["collab","ok","Attempt #2 以新世代执行并交付"],["exec","warn","旧端恢复，回报 #1 的迟到结果"],["collab","ok","世代不符：保存为旧尝试的证据"],["collab","ok","不覆盖当前结果，也不推进后续关卡"]],out:"当前有效结果保持不变，旧结果留作审计证据。",up:[],add:["执行世代或所有权检查（目标补足，不能声称上游已完整实现）"],no:["世代只能约束经过平台的写入；旧 Agent 如果还持有外部系统凭据，平台无法拦住它"],t:"T04"},
+ {name:"外部动作可能已生效",d:"调用模拟发布时超时，不知道发布有没有生效。",b:[["exec","ok","调用模拟发布接口"],["world","warn","响应超时：不知道是否已生效"],["collab","hold","不自动重试，标记为待核查"],["world","hold","查询动作结果，或由有权限的人核查"],["collab","ok","按核查结果决定补偿、重试或确认"]],out:"不会盲目重复执行外部动作。",up:[],add:["受控工具出口","下游幂等协议"],no:["幂等键只有在实际写入端执行时才有用","不宣称任意外部动作都能做到 exactly-once"],t:"T02 T08"},
+ {name:"批准后证据被改",d:"负责人批准后，补丁又被修改了。",b:[["world","ok","负责人批准：模拟发布 ← 补丁 r2 + 报告 #2"],["exec","warn","之后补丁被改成 r3"],["collab","hold","比对批准绑定的动作和证据版本：不一致"],["world","hold","按关卡规则重新确认（重新测试或重新批准）"],["collab","ok","无关资料的更新不会触发全局重审"]],out:"旧批准不能用在新产物上。",up:[],add:["批准绑定动作和证据版本（需要核查和扩展）","在受控工具出口核对"],no:["只把批准记录拼进提示词不算执行控制"],t:"T09"}
+];
+function faultHTML(f){let g='<div class="lanes"><div></div>'+[1,2,3,4,5].map(i=>'<div class="beat">t'+i+"</div>").join("");
+  for(const ln of ["exec","collab","world"]){g+='<div class="ln">'+LANE[ln]+"</div>";for(let i=0;i<5;i++){const b=f.b[i];g+=b&&b[0]===ln?'<div class="cell '+b[1]+'">'+b[2]+"</div>":'<div class="cell empty"></div>'}}g+="</div>";
+  const li=a=>a.length?"<ul>"+a.map(x=>"<li>"+x+"</li>").join("")+"</ul>":"<p style='font-size:14px;color:var(--ink3);margin:0'>本轮未核实对应的完整上游机制</p>";
+  return `<p style="margin:4px 0 0"><b>${f.name}：</b>${f.d}</p>${g}<p style="margin:12px 0 0"><b>最终状态：</b>${f.out} <span style="font-size:13px;color:var(--ink3)">对应验收：${f.t}</span></p>
+  <div class="faultout"><div class="card"><h4><span class="tag t-up">上游已有</span></h4>${li(f.up)}</div><div class="card"><h4><span class="tag t-add">目标补足</span></h4>${li(f.add)}</div><div class="card"><h4><span class="tag t-bad">不能宣称</span></h4>${li(f.no)}</div></div>`}
+function initFaults(){const body=document.getElementById("fBody");tablist(document.getElementById("fTabs"),FAULTS,i=>{body.innerHTML=faultHTML(FAULTS[i]);cites(body)});
+  const pr=document.getElementById("fPrint");pr.innerHTML="<h3>全部故障场景（打印版）</h3>"+FAULTS.map(f=>'<div class="card" style="margin:8px 0">'+faultHTML(f)+"</div>").join("");cites(pr);}
+
+/* ---------- 09 manifest ---------- */
+const ST={"有效":"t-up","已替代":"t-keep","过期":"t-keep","受限":"t-bad","无权":"t-bad","冲突":"t-ver","缺失":"t-ver"};
+const MF=[
+ {name:"修复步骤 · 研发 Agent",r:[["需求文档：提醒功能本期上线","v1","已替代","不作为有效依据；清单中标注“已被决定 D-2 替代”"],["决定 D-2：先修复弱网重复待办，提醒延期","已确认","有效","装配"],["缺陷记录与弱网复现说明","rev 4","有效","装配"],["代码基线","固定提交","有效","按版本引用装配，不用“最新目录”"],["含客户信息的原始日志","—","受限","只登记受控引用，只能在允许的执行环境内读取"]]},
+ {name:"测试步骤 · 测试 Agent",r:[["修复补丁","r2 · 哈希","有效","作为测试输入，绑定版本"],["修复补丁","r1","已替代","不作为测试对象"],["测试规则","rev 2","有效","装配"],["决定 D-2","已确认","有效","装配：测试范围不含提醒功能"],["含客户信息的原始日志","—","无权","不装配；测试 Agent 不在授权范围内"]]},
+ {name:"批准 · 负责人",r:[["测试报告 #2","对应补丁 r2","有效","作为批准依据"],["测试报告 #1","对应补丁 r1","过期","保留为历史，不作为批准依据"],["发布说明草稿 A / B","两份","冲突","返回冲突项，交给人确认，不自动合并"],["风险说明","—","缺失","返回“缺数据”，不生成貌似完整的结论"]]}];
+function mfHTML(m){return '<div class="tblwrap"><table class="mf"><tr><th>资料（示例）</th><th>版本</th><th>状态</th><th>装配处理</th></tr>'+m.r.map(r=>`<tr><td>${r[0]}</td><td>${r[1]}</td><td class="st"><span class="tag ${ST[r[2]]}">${r[2]}</span></td><td>${r[3]}</td></tr>`).join("")+"</table></div>"}
+function initManifest(){const b=document.getElementById("mfBody");tablist(document.getElementById("mfTabs"),MF,i=>{b.innerHTML=mfHTML(MF[i])});
+  document.getElementById("mfPrint").innerHTML="<h3>三个装配视角（打印版）</h3>"+MF.map(m=>"<h4>"+m.name+"</h4>"+mfHTML(m)).join("");}
+
+/* ---------- 10 strategies / 11 gate ---------- */
+function drawStrategies(){const svg=document.getElementById("stgSvg");defs(svg);
+  const s=[["人直接委派","人选执行者，说明交付物"],["条件接续 / 流水线","前置结果满足条件后接续"],["并行分工","满足汇合条件后继续"],["队长或网状协商","Agent 提议，在授权范围内执行"]];
+  const bar={x:20,y:170,w:960,h:66,c:"col",title:"公共运行机制（不随策略重写）",sub:"授权 → 入队 → 原子领取 → 执行 → 回执 → 产物 → 业务关卡 → 记录"};
+  const R=s.map((x,i)=>({x:20+i*245,y:20,w:225,h:80,c:"add",title:x[0],sub:x[1],sub2:i===3?"蜂群属于这一类策略":(i===0?"首期验证":(i===1?"首期验证":""))}));
+  R.forEach(r=>edge(svg,r,{x:r.x,y:bar.y,w:r.w,h:bar.h},{c:"add",label:"提议 / 请求"}));
+  R.forEach(r=>box(svg,r));box(svg,bar);
+  T(svg,500,272,"产品运行内的子 Agent 仍由产品内部 harness 管理；只有需要独立负责人、跨环境资源、单独审批与重试或产物交接时，才提升为协作步骤","t3","middle");}
+function drawGate(){const svg=document.getElementById("gateSvg");defs(svg);
+  const en=[["mw","MW 团队入口 → 团队应用服务",0],["sdk","Agent → 协作工具 / 业务工具",0],["bad","Agent → 旧 multica CLI / API",1],["col","后台唤醒 / 条件接续",0],["gray","Multica 原有 API / 其他客户端",0]];
+  const g={x:420,y:60,w:220,h:180,c:"col",title:"协作后端实际写入点",sub:"业务关卡 + 统一授权",sub2:"版本校验 · 世代校验"},rec={x:720,y:100,w:260,h:100,c:"col",title:"唯一权威记录",sub:"工作项 · Run · 决定",sub2:"PostgreSQL"};
+  const R=en.map((e,i)=>({x:20,y:16+i*54,w:290,h:42,c:e[0],dash:e[2],title:e[1]}));
+  R.forEach((r,i)=>edge(svg,r,g,{c:en[i][0],dash:en[i][2],label:en[i][2]?"需配合收口":""}));
+  edge(svg,g,rec,{c:"col",w:2.6});R.forEach(r=>box(svg,r));box(svg,g);box(svg,rec);}
+
+/* ---------- 12 gates, matrix, evidence ---------- */
+const GATES=[["G0","基线与复用条件","固定内部原型范围、许可证评估项、Mobile Coder / MW vendor 与 SDK 的版本关系、Provider 接口与身份映射。","可重现的版本清单（MC、MW、SDK 配套批次）；明确哪些授权还没解决、哪些能力需要补齐。本轮只完成了其中的静态基线部分。不以先迁移个人客户端为前提。"],
+ ["G1","单次真实执行","Multica 执行端经 Provider 适配层接入 Mobile Coder CLI；使用隔离的工作目录；覆盖创建、事件翻译、取消、审批拦截、成果提交。直连 SDK HTTP 可作协议对照（可选）。","一次真实的 Run 对应一个可追踪的产品会话；失败、取消、重连、退出码 0 但缺结果都不会误报成功；接入改动清单可复用于 MW 适配器。"],
+ ["G2","完整协作闭环","本地修复 → 提测（人与 Agent 同一业务操作）→ 云端验证 → 负责人确认；MW 办公 Agent 经无头入口并行准备发布材料；另外接入一种第三方 Agent CLI。","上下游消费的是正确的产物；角色和任务在同一份权威记录中衔接；MW 个人模式仍然可用，团队调用与个人会话、目录、授权隔离。"],
+ ["G3","可解释的异常","丢回执、断网、执行中崩溃、旧结果回报、授权撤销、批准后修改关键输入。","状态可以说明、可以核查；没有盲目重复外部动作；缺少某项能力时明确停止或转人工。"],
+ ["G4","边界与上下文验证","更换入口、组织方式和 Provider；比较三种上下文供给方式；统计侵入式改动。","哪些模块可复用有了实际证据，据此形成架构修订和“是否抽取”的决定。"]];
+function initGates(){const w=document.getElementById("gates"),info=document.getElementById("gateInfo");
+  GATES.forEach((g,i)=>{const b=document.createElement("button");b.type="button";b.setAttribute("aria-pressed",i===0?"true":"false");b.innerHTML=`<span class="g"><span class="gid">${g[0]}</span><span class="gt">${g[1]}</span><span class="gs">${i===0?"静态基线部分已完成":"待执行"}</span></span>`;b.onclick=()=>show(i);w.appendChild(b)});
+  function show(i){w.querySelectorAll("button").forEach((b,j)=>b.setAttribute("aria-pressed",j===i?"true":"false"));const g=GATES[i];info.innerHTML=`<h4>${g[0]} · ${g[1]}</h4><p><b>做什么：</b>${g[2]}</p><p><b>拿到什么才能进入下一步：</b>${g[3]}</p>`}
+  show(0);
+  const pr=document.createElement("div");pr.className="print-only";pr.innerHTML=GATES.map(g=>`<p><b>${g[0]} ${g[1]}：</b>${g[2]} → ${g[3]}</p>`).join("");info.after(pr);}
+const TM=[["T01","同一个启动命令发送两次","只创建一次逻辑执行请求；两次响应都能关联到同一个 Run"],["T02","启动请求已发出，但响应丢失","先按产品会话或请求标识查询，不直接启动第二次有副作用的执行"],["T03","执行成功后断网","回执和产物能补交，重复投递不会重复推进；磁盘不可用时的退化明确可见"],["T04","执行端失联，之后旧端回报","未确认停止之前不盲目迁移；旧尝试不能覆盖当前有效结果"],["T05","云端读取本地产物","使用授权引用和固定版本，不依赖另一台机器上的绝对路径"],["T06","CLI 正常退出、输出成功，但测试不通过或缺结构化结果","Run 可以成功，业务步骤仍然没有验收；退出码不等于业务成功；不能越过关卡"],["T07","等待批准时重启服务或关闭页面","等待状态和后续答复仍关联到正确的工作；不靠前台内存保存"],["T08","越权成员、Agent 直接用 CLI 改状态、资料被撤权、团队调用 MW 时触及个人历史","每个入口都执行实际的授权和关卡检查；团队执行读不到个人会话与目录；源文档、摘要和派生视图按策略处理"],["T09","批准之后修改关键产物","旧批准不能用于新产物；无关信息更新不会造成全局重审"],["T10","产品 CLI 已取消，但内部子 Agent 没有收敛","未确认退出前，不把运行释放为可复用状态；记录真实的失败或待核查状态"],["T11","看板换成对话；人工指派换成条件接续；更换 Provider","应用和策略的变化有记录，核心调度与结果语义不需要另写一套"],["T12","旧需求、冲突草案、受限资料、多份报告","回答的依据正确且可追溯；同时量化耗时、token 和治理维护成本"],["T13","新的 SDK 候选版本进入 Mobile Coder / MW","MC CLI、MW 个人链路与团队无头执行都验证同一个包批次；不能用 SDK 单测代替产品集成验收"],["T14","成员在 MW 团队入口提测与 Agent 调业务工具提测；其中一次用旧补丁 r1 或缺自测记录","两个入口得到同一校验结果；不符合时拒绝并说明缺什么，不产生测试 Run；运行回执单独到达也不会代替提测"]];
+function initMatrix(){const t=document.getElementById("tMatrix");TM.forEach(r=>{const tr=document.createElement("tr");tr.innerHTML=`<td class="mono">${r[0]}</td><td>${r[1]}</td><td>${r[2]}</td>`;t.appendChild(tr)})}
+const ARCH={S:".local/engine-design-2026-11-05/sdk",W:".local/engine-design-2026-11-05/mw",C:".local/engine-design-v0.2-2026-11-05/mc"};
+function initEvidence(){const t=document.getElementById("evTable");
+  EV.forEach(e=>{const tr=document.createElement("tr");tr.id="ev-"+e.id;tr.dataset.r=e.id[0];const loc=e.p+":"+e.l[0]+"–"+e.l[1];
+    const ar=e.r&&e.r.startsWith(".local")?e.r:(ARCH[e.id[0]]||e.r);
+    tr.innerHTML=`<td>${e.id}</td><td>${e.c}<br><span style="font-size:12px;color:var(--ink3)">${e.t}</span></td><td>${e.u?`<a class="loc" href="${e.u}" target="_blank" rel="noopener">${loc}</a>`:`<span class="loc">私有固定归档 · ${ar}/${loc}</span>`}</td>`;t.appendChild(tr)});
+  document.querySelectorAll(".evfilter .btn").forEach(b=>b.onclick=()=>filt(b.dataset.f));
+  function filt(f){document.querySelectorAll(".evfilter .btn").forEach(x=>x.setAttribute("aria-pressed",x.dataset.f===f?"true":"false"));t.querySelectorAll("tr[data-r]").forEach(r=>r.hidden=!(f==="all"||r.dataset.r===f))}
+  document.addEventListener("click",e=>{const a=e.target.closest("a.cite");if(!a)return;const id=a.getAttribute("href").slice(1);const row=document.getElementById(id);if(!row)return;e.preventDefault();
+    document.getElementById("evidence").open=true;filt("all");row.scrollIntoView({block:"center"});row.classList.add("flash");setTimeout(()=>row.classList.remove("flash"),1800);history.replaceState(null,"","#"+id)});
+  window.__evfilt=filt;}
+
+/* ---------- 13 demo plan ---------- */
+const RLC={r:"#16794a",l:"#a66a0c",s:"#6d3fd6",m:"#b42318",n:"#8a909c"};
+function rlPill(svg,x,y,s,k){const w=tw(s,11)+14,g=S("g",{},svg);S("rect",{x:x-w,y,width:w,height:18,rx:5,fill:RLC[k]},g);const t=T(g,x-w/2,y+13,s,"t3","middle");t.setAttribute("fill","#fff");t.setAttribute("font-weight",700);return g}
+function mbox(svg,x,y,w,h,c,title,lines,o){o=o||{};const g=S("g",{},svg);S("rect",{x,y,width:w,height:h,rx:10,fill:o.fill||"#fff",stroke:C[c][0],"stroke-width":1.6,"stroke-dasharray":o.dash?"6 4":""},g);
+  const n=lines.length;let ty=y+h/2-n*8.5+4;T(g,x+w/2,ty,title,"t1","middle");lines.forEach((s,i)=>T(g,x+w/2,ty+19+i*17,s,"t3","middle"));return g}
+const DMP=[
+ {name:"路径 A · 目标",hosts:[0,0,0],keep:"目标路径实际调用 Mobile Coder 与 MW 两种产品，验证 MC 端云两用。要展示三类产品统一接入，再让第三方 CLI 独立领取同一测试用例，留下自己的 Run 和报告。",lose:"路径 A 单次运行只证明参与本次任务的产品；第三方接入以独立的对照 Run 为证。",pre:"P2、P3、P4 都通过；MW 产品侧一起补齐无头任务入口。"},
+ {name:"路径 B · MW 入口未就绪",hosts:[0,1,0],keep:"协作服务、两台以上独立主机、版本化交接、提测与批准关卡、真实 Mobile Coder 修复与测试、Provider 统一接口接入第三方产品。",lose:"“MW 作为被调用的办公 Agent”这一证明。它是总图相对现有产品的关键差异之一，演示时要如实说明。",pre:"运营电脑上显示“第三方 · 代写”；或者由人在 MW 中准备后，经同一业务操作“提交说明供审批”，标“人工经 MW 提交，非调度”。"},
+ {name:"路径 C · 保底",hosts:[0,1,1],keep:"协作机制、两台以上独立主机、版本化交接、提测与批准关卡、真实 Mobile Coder 修复。",lose:"MW 被调用的证明；“同一产品端云两用”的证明。若测试改用确定性脚本，测试步骤不再是 Agent。",pre:"测试服务器显示“第三方 CLI”或“测试脚本 · 非 Agent”。若连研发电脑上的 Mobile Coder 也没通过 P2，Demo 降为“引擎＋第三方产品”，不再称为 MC 接入演示。"}];
+const DMH=[
+ {name:"主机 A · 研发电脑",v:[{ad:["MC 适配器",1],t:"Mobile Coder 产品",l:["修复弱网重复待办 · 自测","调用提测工具（P6）"],c:"sdk",dash:0,st:["真实","r"],id:"推理身份：MC 供模账号（P3）"}]},
+ {name:"主机 B · 运营电脑",v:[{ad:["MW 适配器",1],t:"MW 办公 Agent",l:["起草发布说明","无头任务入口（P4）"],c:"mw",dash:1,st:["待探针 P4","l"],id:"推理身份：MW 账号 · 桌面 OIDC"},
+   {ad:["第三方适配器",0],t:"第三方 Agent",l:["代写发布说明","或：人在 MW 中准备后提交"],c:"gray",dash:0,st:["代用 · 标明身份","s"],id:"推理身份：该产品的授权（P3）"}]},
+ {name:"主机 C · 测试服务器",v:[{ad:["MC 适配器 · 第三方适配器",1],t:"Mobile Coder（无头）",l:["下载 r2 · 校验哈希","跑测试 · 出报告 #2"],c:"sdk",dash:0,st:["待探针 P2","l"],id:"推理身份：服务账号（P3）"},
+   {ad:["第三方适配器 · 脚本执行器",0],t:"第三方 CLI 或测试脚本",l:["下载 r2 · 校验哈希","脚本须标“非 Agent”"],c:"gray",dash:0,st:["代用 · 标明身份","s"],id:"推理身份：该产品的授权（P3）"}]}];
+function drawDemo(pi){const svg=document.getElementById("dmSvg");svg.innerHTML="";svg._top=null;defs(svg);const P=DMP[pi];
+  [["人与客户端",10,10,230,580,"#f5f2fd","mw"],["团队服务端 · 一台内网服务器或云虚机",260,10,730,236,"#eef3fb","col"],["执行机 · 至少两台独立主机",260,262,730,328,"#fdf4ec","exe"]].forEach(z=>{S("rect",{x:z[1],y:z[2],width:z[3],height:z[4],rx:14,fill:z[5]},svg);const t=T(svg,z[1]+12,z[2]+22,z[0],"band");t.setAttribute("fill",C[z[6]][0])});
+  /* 人与客户端 */
+  mbox(svg,24,44,202,56,"gray","负责人",["建立工作 · 改决定 · 批准"]);
+  mbox(svg,24,114,202,56,"gray","研发 / 运营成员",["提测 · 查看 · 补交说明"]);
+  mbox(svg,24,190,202,74,"mw","团队入口",["MW 团队页（首选）","或最小 Web 页，标明“非 MW”"],{dash:1});
+  mbox(svg,24,284,202,56,"gray","现场查证",["审计导出 · 哈希 · 日志"]);
+  mbox(svg,24,360,202,44,"gray","IM 渠道",["不在本次 Demo"],{dash:1});
+  mbox(svg,24,430,202,86,"mw","MW 个人链路",["个人入口 → 宿主","→ 按工作区的 SDK 私人会话","保持原样，不接团队调用"],{fill:"#faf8ff"});
+  arr(svg,125,170,125,190,"mw");pth(svg,"M 24 72 H 16 V 227 H 24","mw");
+  /* 团队服务端 */
+  mbox(svg,276,44,250,74,"mw","团队应用服务",["建工作 · 提测 · 说明送审 · 批准","人与 Agent 的业务操作同一处"],{dash:1});
+  mbox(svg,546,44,230,74,"col","Multica 协作服务",["工作项 · Run · 原子领取","持久唤醒 · 回执接收"]);
+  mbox(svg,796,44,180,74,"col","PostgreSQL",["唯一权威记录"]);
+  mbox(svg,276,136,160,64,"ctx","产物存储",["版本 · sha256","凭运行令牌下载"],{dash:1});
+  mbox(svg,446,136,160,64,"ctx","依据清单",["每步 Manifest","合成资料 · 授权"],{dash:1});
+  mbox(svg,690,136,130,64,"col","批准关卡",["绑定动作与","证据版本"],{dash:1});
+  mbox(svg,830,136,146,64,"bad","模拟发布服务",["只认有效批准","按幂等键记录"]);
+  rlPill(svg,976,128,"模拟","m");
+  pth(svg,"M 226 227 H 248 V 81 H 276","mw");lbl(svg,248,150,"HTTPS","mw");
+  arr(svg,526,72,546,72,"col");arr(svg,776,72,796,72,"col");arr(svg,820,168,830,168,"bad");
+  /* 服务端 ↔ 执行机：执行端主动出站，服务端只发提示 */
+  S("line",{x1:386,y1:226,x2:870,y2:226,stroke:C.exe[0],"stroke-width":2},svg);
+  arr(svg,652,226,652,118,"exe");arr(svg,356,226,356,200,"ctx");arr(svg,676,118,676,224,"col",{dash:1});
+  /* 执行机 */
+  const HX=[276,516,756];
+  DMH.forEach((h,i)=>{const v=h.v[Math.min(P.hosts[i],h.v.length-1)],x=HX[i],w=i===2?220:224;
+    S("rect",{x,y:296,width:w,height:282,rx:12,fill:"#fffaf5",stroke:C.exe[0],"stroke-width":1.2,"stroke-dasharray":"5 4"},svg);
+    T(svg,x+12,316,h.name,"t2").setAttribute("font-weight",700);
+    arr(svg,x+w/2,326,x+w/2,226,"exe",{noarrow:1});
+    mbox(svg,x+12,326,w-24,42,"exe","执行端 daemon",[]);
+    const ad=S("rect",{x:x+12,y:378,width:w-24,height:26,rx:7,fill:"#fff",stroke:C[v.ad[1]?"add":"exe"][0],"stroke-width":1.4,"stroke-dasharray":v.ad[1]?"6 4":""},svg);T(svg,x+w/2,395,v.ad[0],"elabel","middle");
+    arr(svg,x+w/2,368,x+w/2,378,"exe");arr(svg,x+w/2,404,x+w/2,418,"exe");
+    mbox(svg,x+12,418,w-24,96,v.c,v.t,v.l,{dash:v.dash});
+    rlPill(svg,x+w/2+(tw(v.st[0],11)+14)/2,518,v.st[0],v.st[1]);
+    T(svg,x+w/2,552,v.id,"t3","middle");T(svg,x+w/2,569,"开发额度 ≠ 本节点推理身份","t3","middle").setAttribute("fill",C.bad[0]);});
+  const top=svgTop(svg);
+  lbl(top,510,226,"↑ 主动出站：登记 · 领取 · 回执 · 产物","exe");lbl(top,772,226,"↓ 仅唤醒提示；领取后返回任务","col");
+  svg.setAttribute("aria-label","Demo 部署与运行路径："+P.name);}
+function dmInfoHTML(P){return `<div class="grid g3" style="margin-top:12px"><div class="card"><h4>${P.name}：仍能证明</h4><p>${P.keep}</p></div><div class="card"><h4>失去的证明</h4><p>${P.lose}</p></div><div class="card"><h4>前提与现场标注</h4><p>${P.pre}</p></div></div>`}
+function initDemo(){const info=document.getElementById("dmInfo");tablist(document.getElementById("dmTabs"),DMP,i=>{drawDemo(i);info.innerHTML=dmInfoHTML(DMP[i])});
+  document.getElementById("dmPrint").innerHTML="<h4>三条运行路径（打印版）</h4>"+DMP.map(dmInfoHTML).join("");drawPlan();}
+function drawPlan(){const svg=document.getElementById("pgSvg");defs(svg);
+  const X=[20,212,404,596,788],W=176,H=["0 探针","1 骨架","2 闭环","3 危机与证据","4 彩排与现场"];
+  H.forEach((h,i)=>T(svg,X[i]+W/2,20,h,"band","middle"));
+  S("rect",{x:8,y:30,width:984,height:170,rx:12,fill:"#f7f9fd"},svg);S("rect",{x:8,y:212,width:984,height:110,rx:12,fill:"#f8f6fe"},svg);
+  T(svg,16,196,"主线（关键路径）","t3");T(svg,16,316,"MW 并行支路","t3");
+  [["P1 跨机骨架","exe"],["P2 MC 无头跑一次","sdk"],["P3 推理身份清单","bad"],["P5 适配器接通","exe"],["P6 Agent 调业务工具","mw"]].forEach((p,i)=>{S("rect",{x:X[0],y:38+i*30,width:W,height:24,rx:6,fill:"#fff",stroke:C[p[1]][0],"stroke-width":1.3},svg);T(svg,X[0]+W/2,54+i*30,p[0],"elabel","middle")});
+  const M=[["骨架",["服务＋PG（M1）","两台主机 daemon（M2）","MC 适配器（M3）· 产物（M8）","出口：一条 MC Run","跨机交出 r2"]],["闭环",["应用服务 · 提测（M6 M7）","测试节点 · 批准（M10）","依据清单 · 团队入口","出口：第 ①–⑥ 幕","无故障跑通"]],["危机与证据",["C1–C5 必做","C6–C7 加分","证据导出（M12）","出口：D1–D11","可当场查证"]],["彩排与现场",["从空库冷启动","重复跑剧本","记录每次失败","出口：失败如实显示","再上台"]]];
+  M.forEach((m,i)=>{mbox(svg,X[i+1],38,W,148,i===2?"bad":"col",m[0],m[1]);arr(svg,X[i]+W+2,112,X[i+1]-2,112,"col")});
+  mbox(svg,X[0],224,W,60,"mw","P4 MW 无头",["单独时间盒"]);
+  S("path",{d:`M ${X[1]+W/2} 228 L ${X[1]+W/2+44} 254 L ${X[1]+W/2} 280 L ${X[1]+W/2-44} 254 Z`,fill:"#fff",stroke:C.mw[0],"stroke-width":1.6},svg);T(svg,X[1]+W/2,259,"通过？","elabel","middle");
+  arr(svg,X[0]+W,254,X[1]+W/2-46,254,"mw");
+  pth(svg,`M ${X[1]+W/2+44} 254 H ${X[2]-2}`,"mw");mbox(svg,X[2],226,W,56,"mw","是：M5 MW 适配器",["并入闭环（路径 A）"],{dash:1});
+  pth(svg,`M ${X[1]+W/2} 280 V 302 H ${X[2]-2}`,"gray",{dash:1});T(svg,X[2]+4,306,"否：路径 B，标明身份；主线不等待","t3");
+  arr(svg,X[2]+W/2,226,X[2]+W/2,188,"mw",{dash:1});}
+
+/* ---------- nav ---------- */
+function initNav(){const secs=[...document.querySelectorAll("section.chapter")],links=[...document.querySelectorAll("nav.toc a")],cur=document.getElementById("curTitle"),prog=document.getElementById("progress"),toc=document.getElementById("toc"),menu=document.querySelector("button.menu");
+  const io=new IntersectionObserver(es=>{es.forEach(e=>{if(e.isIntersecting){links.forEach(a=>a.classList.toggle("on",a.getAttribute("href")==="#"+e.target.id));cur.textContent=e.target.dataset.title}})},{rootMargin:"-30% 0px -60% 0px"});
+  secs.forEach(s=>io.observe(s));
+  addEventListener("scroll",()=>{const h=document.documentElement;prog.style.width=(h.scrollTop/(h.scrollHeight-h.clientHeight)*100)+"%"},{passive:true});
+  menu.onclick=()=>{const o=toc.classList.toggle("open");menu.setAttribute("aria-expanded",o)};
+  links.forEach(a=>a.addEventListener("click",()=>{toc.classList.remove("open");menu.setAttribute("aria-expanded","false")}));
+  const tl=document.querySelector('#s4 [role=tablist]');const tabs=[...tl.querySelectorAll("[role=tab]")];
+  function sel(i,f){tabs.forEach((t,j)=>{t.setAttribute("aria-selected",j===i?"true":"false");t.tabIndex=j===i?0:-1;document.getElementById(t.getAttribute("aria-controls")).hidden=j!==i});if(f)tabs[i].focus()}
+  tabs.forEach((t,i)=>t.onclick=()=>sel(i));tl.addEventListener("keydown",e=>{const i=tabs.indexOf(document.activeElement);if(i<0)return;if(e.key==="ArrowRight"||e.key==="ArrowLeft"){e.preventDefault();sel((i+1)%2,true)}});
+  let printSnapshot=null;
+  addEventListener("beforeprint",()=>{
+    stopPlay();
+    printSnapshot={panels:[...document.querySelectorAll("#s4 [role=tabpanel]")].map(p=>[p,p.hidden]),details:[...document.querySelectorAll("details")].map(d=>[d,d.open]),filter:document.querySelector(".evfilter [aria-pressed=true]")?.dataset.f||"all"};
+    printSnapshot.panels.forEach(([p])=>p.hidden=false);
+    printSnapshot.details.forEach(([d])=>d.open=true);
+    window.__evfilt("all");
+  });
+  addEventListener("afterprint",()=>{
+    if(!printSnapshot)return;
+    printSnapshot.panels.forEach(([p,hidden])=>p.hidden=hidden);
+    printSnapshot.details.forEach(([d,open])=>d.open=open);
+    window.__evfilt(printSnapshot.filter);printSnapshot=null;
+  });
+}
+
+initOverview();drawCoupling();drawContracts();drawLogic();drawDeploy();drawBinding();initStepper();drawObjects();drawLanes();drawAdapter();drawAsk();initFaults();initManifest();drawStrategies();drawMW();drawGate();initGates();initMatrix();initDemo();initEvidence();cites(document);initNav();
+if(location.hash.startsWith("#ev-")){document.getElementById("evidence").open=true}
+</script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="0 0 200 170" fill="none">
+  <defs>
+    <linearGradient id="orange-leaf" x1="127.173" y1="63.721" x2="141.276" y2="42.503" gradientUnits="userSpaceOnUse">
+      <stop offset=".09" stop-color="#FFD995" />
+      <stop offset=".88" stop-color="#FF9D6B" />
+    </linearGradient>
+  </defs>
+  <path d="M134.309 47.939c-7.383 4.114-5.772 8.024-5.925 11.355-.105 2.221-.55 3.733-1.33 4.537 9.926-3.839 14.332-8.333 13.218-13.486-.595-2.764-1.045-4.104-1.551-4.602-.058-.054.312-2.815.253-2.849.012-.327-.321-.39-.442-.08-.309.706-.912 2.942-.953 2.964-.899.458-1.626 1.32-3.269 2.161Z" fill="url(#orange-leaf)" fill-rule="evenodd" />
+</svg>

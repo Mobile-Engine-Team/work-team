@@ -1,0 +1,142 @@
+{
+  "date": "2026-11-09",
+  "page": "group-chat.html",
+  "kind": "static, in-memory demo",
+  "build": "node design-v2/build.mjs — passed",
+  "browser": "Tabbit browser via tabbit-cli",
+  "checks": {
+    "task_sidebar_entry_and_group_badge": "passed",
+    "edit_group_name_and_sidebar_sync": "passed",
+    "edit_description": "passed",
+    "member_search": "passed",
+    "invite_member": "passed",
+    "set_member_administrator": "passed",
+    "remove_and_readd_member": "passed",
+    "send_text_and_mention": "passed",
+    "emoji_insertion": "passed",
+    "empty_send_disabled": "passed",
+    "local_file_attachment_and_send": "passed",
+    "local_image_attachment_and_send": "passed",
+    "image_lightbox": "passed",
+    "history_keyword_and_empty_state": "passed",
+    "history_message_type": "passed",
+    "history_sender_and_date": "passed",
+    "history_jump_to_message": "passed",
+    "offline_file_url": "passed"
+  },
+  "layouts": [
+    {
+      "width": 1470,
+      "height": 900,
+      "horizontal_overflow": false,
+      "broken_images": 0
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "horizontal_overflow": false,
+      "broken_images": 0,
+      "composer_within_viewport": true
+    },
+    {
+      "width": 1024,
+      "height": 768,
+      "horizontal_overflow": false,
+      "broken_images": 0,
+      "composer_within_viewport": true
+    },
+    {
+      "width": 390,
+      "height": 844,
+      "horizontal_overflow": false,
+      "broken_images": 0,
+      "composer_within_viewport": true
+    }
+  ],
+  "screenshots": [
+    "previews/group-chat.png",
+    "previews/group-info.png",
+    "previews/group-members.png",
+    "previews/group-history.png",
+    "previews/group-chat-wide.png"
+  ],
+  "browser_note": "A StorageArea Illegal invocation warning was traced to chrome-extension://pcpkfgepcjdmdfelbabogmgoadgmiocg/js/contentScript.bundle.js. No application-origin JavaScript errors were observed.",
+  "limitations": [
+    "No backend; state resets on reload.",
+    "Seed attachment files have a detail dialog only.",
+    "Invitations and roles are local demonstrations."
+  ],
+  "refinement": {
+    "request": "Remove redundant toolbar actions; use settings icon; overlay drawers over full conversation; unify Work palette.",
+    "checks": {
+      "exactly_three_icon_only_header_actions": "passed: Search, UserPlus, Settings",
+      "member_management_via_group_info": "passed",
+      "drawer_top_equals_conversation_top": "passed: y=32 at 1470 × 900",
+      "drawer_covers_header_buttons": "passed: hit testing resolves to drawer",
+      "drawer_does_not_resize_conversation": "passed: before/after 1212 × 796",
+      "search_drawer_focus": "passed",
+      "search_jump_closes_drawer_and_locates_message": "passed",
+      "outside_click_close": "passed",
+      "escape_close_and_nested_modal": "passed",
+      "member_search_and_return_to_info": "passed",
+      "text_send_and_emoji": "passed",
+      "application_script_errors": "none observed; browser extension warning excluded"
+    },
+    "sizes": [
+      {
+        "width": 1280,
+        "height": 800,
+        "drawer_matches_top_and_bottom": true,
+        "fits": true,
+        "overflow": false,
+        "broken_images": 0
+      },
+      {
+        "width": 390,
+        "height": 844,
+        "drawer_matches_top_and_bottom": true,
+        "fits": true,
+        "overflow": false,
+        "broken_images": 0
+      }
+    ],
+    "palette": {
+      "body": "var(--mw-gray-2) = #383c40",
+      "heading": "var(--mw-gray-1) = #121314",
+      "secondary": "var(--mw-gray-3) = #7c8085",
+      "brand": "var(--mw-brand) = #1890ff",
+      "surfaces": "Work home-pane, home-page, gray-8/9/10, brand-bg",
+      "avatars": "Work neutral and brand circles, original AI avatar"
+    }
+  },
+  "wide_layout": {
+    "request": "Reduce empty margins and give chat content greater visual weight.",
+    "changes": {
+      "desktop_body_px": 16,
+      "message_avatar_px": 40,
+      "image_preview_px": 420,
+      "file_card_px": 360,
+      "composer_height_px": 148,
+      "desktop_side_inset": "clamp(28px, 2.8vw, 56px)",
+      "content_width_at_1920": 1554.48,
+      "content_width_at_1470": 1129.69,
+      "previous_message_max_width": 820,
+      "desktop_composer_and_message_area_aligned": true,
+      "seed": "Added an example self reply to show both sides of the conversation."
+    },
+    "checks": {
+      "build": "passed",
+      "settings_overlay_preserved": "passed",
+      "overlay_does_not_resize_chat": "passed",
+      "history_keyword_search": "passed: 4 matching records",
+      "desktop_no_horizontal_overflow": "passed at 1920, 1470, 1280",
+      "mobile_no_horizontal_overflow": "passed at 390",
+      "broken_images": 0,
+      "composer_within_viewport": true
+    },
+    "screenshots": [
+      "previews/group-chat.png",
+      "previews/group-chat-wide.png"
+    ]
+  }
+}

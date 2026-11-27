@@ -1,0 +1,80 @@
+/* 收件箱内容区：沿用 Multica 的列表、详情和本地交互，外观改成 MobileWork。
+   带 ?frame=multica 的原窗口对照不套这层。 */
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox.mc-inbox-single-pane .mc-main{flex:1;min-width:0;width:100%}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox{
+  --mc-canvas:var(--mw-home-pane);
+  --mc-surface:#fff;
+  --mc-muted:var(--mw-gray-3);
+  --mc-ink:var(--mw-gray-1);
+  --mc-line:var(--mw-gray-7);
+  --mc-selected:var(--mw-brand-bg);
+  --mc-subtle:var(--mw-hover);
+  font-family:var(--mw-font-family-cn);
+  color:var(--mw-gray-1);
+  background:var(--mw-home-pane);
+}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox-sidebar{background:var(--mw-home-page);border-right-color:var(--mw-divider)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox-sidebar>header>h2{color:var(--mw-gray-1);font-weight:600}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox-entry{color:var(--mw-gray-3);border-radius:6px}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox-entry:hover{background:var(--mw-hover)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox-entry.mc-inbox-entry-selected{background:var(--mw-brand-bg);box-shadow:inset 2px 0 0 var(--mw-brand)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox-entry-text>span{color:var(--mw-gray-1);font-weight:500}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox-entry.mc-inbox-entry-selected .mc-inbox-entry-text>span{color:var(--mw-brand)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-unread-dot{background:var(--mw-brand)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-avatar-photo{background:transparent}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-avatar-photo>img,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-person-avatar>img{width:100%;height:100%;object-fit:cover;border-radius:50%;display:block}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-person-avatar{overflow:hidden;padding:0}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-status-glyph{display:block;flex:none}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-icon-button{color:var(--mw-gray-3)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-icon-button:hover,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-icon-button.is-active{background:var(--mw-hover);color:var(--mw-brand)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-toolbar{background:var(--mw-home-pane);border-bottom-color:var(--mw-divider)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox-breadcrumb>a,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox-breadcrumb>svg{color:var(--mw-gray-3)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox-breadcrumb strong{color:var(--mw-gray-1);font-weight:600}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-issue>h1{color:var(--mw-gray-1);letter-spacing:0}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-issue-title-input{color:var(--mw-gray-1);letter-spacing:0}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-issue-description{color:var(--mw-gray-2)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-issue-description:hover{background:var(--mw-hover)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-comment-card,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-posted-comment,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-rich-composer{border-color:var(--mw-gray-7);border-radius:8px;background:#fff}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-comment-card .mc-posted-comment.mc-thread-reply{margin-top:10px;padding-top:10px;border:0;border-radius:0;border-top:1px solid var(--mw-divider);background:transparent;box-shadow:none}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-comment-card .mc-reply-composer{margin-top:8px;border-color:var(--mw-gray-7)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-rich-composer:focus-within{border-color:var(--mw-brand)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-rich-composer.mc-dragging{border-color:var(--mw-brand);background:var(--mw-brand-bg)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-send{background:var(--mw-brand)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-send:disabled{background:var(--mw-gray-5)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-activity{border-top-color:var(--mw-divider)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-activity-header h2{color:var(--mw-gray-1)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-comment-head>strong,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-comment-body{color:var(--mw-gray-2)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-issue-chip{border-color:var(--mw-gray-7);background:var(--mw-gray-9);color:var(--mw-gray-2);border-radius:4px}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-reaction-chip{border-color:var(--mw-brand-200);background:var(--mw-brand-bg);color:var(--mw-brand)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-issue-inspector{background:var(--mw-home-pane);border-left-color:var(--mw-divider)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-chat-launcher{border-color:var(--mw-gray-7);color:var(--mw-brand);box-shadow:0 3px 12px #0000000d}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-button{border-color:var(--mw-gray-6);border-radius:4px;background:#fff;color:var(--mw-gray-2)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-button:hover{background:var(--mw-hover)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-primary{background:var(--mw-brand);border-color:var(--mw-brand);color:#fff}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-primary:hover{background:var(--mw-brand-dark)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-rich-content a{color:var(--mw-brand)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-add-subtask{color:var(--mw-brand)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-person-avatar{background:var(--mw-brand-bg);color:var(--mw-brand)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox button:focus-visible,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-inbox a:focus-visible{outline-color:var(--mw-brand)}
+
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-popup,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-overlay{font-family:var(--mw-font-family-cn);color:var(--mw-gray-1)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-popup{border-color:var(--mw-gray-7);border-radius:8px;box-shadow:0 0 10px #0002}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-menu-content>[role=menuitem]:hover,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-menu-content>[role=menuitem]:focus,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-picker-option:hover,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-picker-option[data-active=true],
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-emoji-options>button:hover{background:var(--mw-hover)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-form-dialog,
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-small-dialog{border-color:var(--mw-gray-7);border-radius:8px}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-overlay .mc-primary{background:var(--mw-brand);border-color:var(--mw-brand);color:#fff}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-overlay .mc-primary:hover{background:var(--mw-brand-dark)}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-calendar-grid>button.mc-calendar-selected{background:var(--mw-brand);color:#fff}
+body[data-page="inbox"]:not(:has(.mc-native-frame)) .mc-calendar-grid>button:hover{background:var(--mw-hover)}

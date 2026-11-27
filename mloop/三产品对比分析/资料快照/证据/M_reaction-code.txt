@@ -1,0 +1,165 @@
+源文件：/Users/xymtop/Desktop/multica/server/internal/handler/reaction.go
+版本：3c5c8b245359b9b8e913a47f97211f2a3426f149
+SHA-256：9f307371bed85b12c921d2bbda6a580ef46070b11b6b62f5bde4032d1dde4b3e
+以下是带原行号的节选，不是完整文件。
+
+00001  package handler
+00002  
+00003  import (
+00004  	"encoding/json"
+00005  	"errors"
+00006  	"log/slog"
+00007  	"net/http"
+00008  
+00009  	"github.com/go-chi/chi/v5"
+00010  	"github.com/jackc/pgx/v5"
+00011  	"github.com/jackc/pgx/v5/pgtype"
+00012  	"github.com/multica-ai/multica/server/internal/logger"
+00013  	db "github.com/multica-ai/multica/server/pkg/db/generated"
+00014  	"github.com/multica-ai/multica/server/pkg/protocol"
+00015  )
+00016  
+00017  type ReactionResponse struct {
+00018  	ID              string `json:"id"`
+00019  	CommentID       string `json:"comment_id"`
+00020  	ActorType       string `json:"actor_type"`
+00038  func addedReactionToResponse(r db.AddReactionRow) ReactionResponse {
+00039  	response := ReactionResponse{
+00040  		ID:        uuidToString(r.ID),
+00041  		CommentID: uuidToString(r.CommentID),
+00042  		ActorType: r.ActorType,
+00043  		ActorID:   uuidToString(r.ActorID),
+00044  		Emoji:     r.Emoji,
+00045  		CreatedAt: timestampToString(r.CreatedAt),
+00046  	}
+00047  	if r.CommentRevision > 0 {
+00048  		response.CommentRevision = &r.CommentRevision
+00049  	}
+00050  	return response
+00051  }
+00052  
+00053  func (h *Handler) AddReaction(w http.ResponseWriter, r *http.Request) {
+00054  	r = h.withWakeupActor(r)
+00055  	commentId := chi.URLParam(r, "commentId")
+00056  
+00057  	userID, ok := requireUserID(w, r)
+00058  	if !ok {
+00059  		return
+00060  	}
+00061  
+00062  	workspaceID := h.resolveWorkspaceID(r)
+00063  	commentUUID, ok := parseUUIDOrBadRequest(w, commentId, "comment id")
+00064  	if !ok {
+00065  		return
+00066  	}
+00067  	wsUUID, ok := parseUUIDOrBadRequest(w, workspaceID, "workspace id")
+00068  	if !ok {
+00069  		return
+00070  	}
+00071  	comment, err := h.Queries.GetCommentInWorkspace(r.Context(), db.GetCommentInWorkspaceParams{
+00072  		ID:          commentUUID,
+00073  		WorkspaceID: wsUUID,
+00074  	})
+00075  	// A deleted comment's tombstone takes no reactions.
+00076  	if err != nil || comment.DeletedAt.Valid {
+00077  		writeError(w, http.StatusNotFound, "comment not found")
+00078  		return
+00079  	}
+00080  
+00081  	var req struct {
+00082  		Emoji string `json:"emoji"`
+00083  	}
+00084  	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+00085  		writeError(w, http.StatusBadRequest, "invalid request body")
+00086  		return
+00087  	}
+00088  	if req.Emoji == "" {
+00089  		writeError(w, http.StatusBadRequest, "emoji is required")
+00090  		return
+00091  	}
+00092  
+00093  	actorType, actorID := h.resolveActor(r, userID, workspaceID)
+00094  
+00095  	var reaction db.AddReactionRow
+00096  	err = h.withLiveCommentLock(r.Context(), comment.ID, wsUUID, func(qtx *db.Queries) error {
+00097  		var addErr error
+00098  		reaction, addErr = qtx.AddReaction(r.Context(), db.AddReactionParams{
+00099  			CommentID:   comment.ID,
+00100  			WorkspaceID: wsUUID,
+00101  			ActorType:   actorType,
+00102  			ActorID:     parseUUID(actorID),
+00103  			Emoji:       req.Emoji,
+00104  		})
+00105  		return addErr
+00106  	})
+00107  	if errors.Is(err, pgx.ErrNoRows) {
+00108  		// Deleted after the check above.
+00109  		writeError(w, http.StatusNotFound, "comment not found")
+00110  		return
+00111  	}
+00112  	if err != nil {
+00113  		slog.Warn("add reaction failed", append(logger.RequestAttrs(r), "error", err, "comment_id", commentId)...)
+00114  		writeError(w, http.StatusInternalServerError, "failed to add reaction")
+00115  		return
+00116  	}
+00117  
+00118  	resp := addedReactionToResponse(reaction)
+00119  
+00120  	// Look up issue title for inbox notifications.
+00121  	issueID := uuidToString(comment.IssueID)
+00122  	var issueTitle, issueStatus string
+00123  	if issue, err := h.Queries.GetIssue(r.Context(), comment.IssueID); err == nil {
+00124  		issueTitle = issue.Title
+00125  		issueStatus = issue.Status
+00126  	}
+00127  
+00128  	if reaction.CommentRevision > 0 {
+00129  		h.publish(protocol.EventReactionAdded, workspaceID, actorType, actorID, map[string]any{
+00130  			"reaction":            resp,
+00131  			"issue_id":            issueID,
+00132  			"issue_title":         issueTitle,
+00133  			"issue_status":        issueStatus,
+00134  			"comment_id":          uuidToString(comment.ID),
+00135  			"comment_author_type": comment.AuthorType,
+00136  			"comment_author_id":   uuidToString(comment.AuthorID),
+00137  			"comment_revision":    reaction.CommentRevision,
+00138  		})
+00139  	}
+00140  	writeJSON(w, http.StatusCreated, resp)
+00141  }
+00142  
+00143  func (h *Handler) RemoveReaction(w http.ResponseWriter, r *http.Request) {
+00144  	r = h.withWakeupActor(r)
+00145  	commentId := chi.URLParam(r, "commentId")
+00146  
+00147  	userID, ok := requireUserID(w, r)
+00148  	if !ok {
+00149  		return
+00150  	}
+00151  
+00152  	workspaceID := h.resolveWorkspaceID(r)
+00153  	commentUUID, ok := parseUUIDOrBadRequest(w, commentId, "comment id")
+00154  	if !ok {
+00155  		return
+00156  	}
+00157  	wsUUID, ok := parseUUIDOrBadRequest(w, workspaceID, "workspace id")
+00158  	if !ok {
+00159  		return
+00160  	}
+00161  	comment, err := h.Queries.GetCommentInWorkspace(r.Context(), db.GetCommentInWorkspaceParams{
+00162  		ID:          commentUUID,
+00163  		WorkspaceID: wsUUID,
+00164  	})
+00165  	// A deleted comment's tombstone has no reactions left to remove.
+00166  	if err != nil || comment.DeletedAt.Valid {
+00167  		writeError(w, http.StatusNotFound, "comment not found")
+00168  		return
+00169  	}
+00170  
+00171  	var req struct {
+00172  		Emoji string `json:"emoji"`
+00173  	}
+00174  	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+00175  		writeError(w, http.StatusBadRequest, "invalid request body")
+00176  		return
+00177  	}

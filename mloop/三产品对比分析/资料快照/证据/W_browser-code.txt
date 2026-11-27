@@ -1,0 +1,165 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/browser/NavigationBar.tsx
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：62ad58f9d8c88d72dd1f4c444c1438a279ff1de2933dab27170ea56c3b3c8fe8
+以下是带原行号的节选，不是完整文件。
+
+00001  import { memo, useCallback, useEffect, useId, useRef, useState, type RefObject } from 'react';
+00002  import type { BrowserCertificateState } from '@openwork/types/inner-browser-display';
+00003  import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+00004  import { t } from '../../../i18n';
+00005  import {isBlankUrl, type BrowserDownload, type BrowserLoadError} from './utils/types';
+00006  import leftIcon from './assets/search/left-icon.svg';
+00007  import leftActiveIcon from './assets/search/left-active-icon.svg';
+00008  import moreIcon from './assets/search/more-icon.svg';
+00009  import refreshIcon from './assets/search/refresh-icon.svg';
+00010  import refreshStopIcon from './assets/search/refresh-stop-icon.svg';
+00011  import rightIcon from './assets/search/right-icon.svg';
+00012  import rightActiveIcon from './assets/search/right-active-icon.svg';
+00013  import searchIcon from './assets/search/serch-icon.svg';
+00014  import searchLockIcon from './assets/search/search-lock-icon.svg';
+00015  import unsafeIcon from './assets/browserStatus/unsafe-icon.svg';
+00016  import accessNoIcon from './assets/browserStatus/access-no-icon.svg';
+00017  import noTrustCertificateIcon from './assets/browserStatus/no-trust-certificate.svg';
+00018  import trustCertificateIcon from './assets/browserStatus/trust-certificate-icon.svg';
+00019  import zoomInIcon from './assets/search/zoom-in-icon.svg';
+00020  import zoomOutIcon from './assets/search/zoom-out-icon.svg';
+00058      onRemoveDownload: (download: BrowserDownload) => Promise<boolean>;
+00059      /** 活动 guest 的加载状态。 */
+00060      isLoading: boolean;
+00061      /** 最近下载任务的状态投影。 */
+00062      downloads: BrowserDownload[];
+00063  }
+00064  
+00065  const SECURITY_PRESENTATION = {
+00066      unverified: {labelKey: 'browser.security_unverified', tone: 'neutral', icon: searchIcon},
+00067      https: {labelKey: 'browser.security_https', tone: 'success', icon: searchLockIcon},
+00068      http: {labelKey: 'browser.not_secure', tone: 'warning', icon: unsafeIcon},
+00069      'certificate-exception': {labelKey: 'browser.security_certificate_exception', tone: 'warning', icon: trustCertificateIcon},
+00070      'certificate-error': {labelKey: 'browser.security_certificate_error', tone: 'danger', icon: noTrustCertificateIcon},
+00071  } satisfies Record<BrowserCertificateState['kind'], {labelKey: string; tone: string; icon: string}>;
+00072  
+00073  export const NavigationBar: React.FC<NavigationBarProps> = memo(({
+00074                                                                       navigationEnabled = true,
+00075                                                                       canGoBack = false,
+00076                                                                       canGoForward = false,
+00077                                                                       inputRef,
+00078                                                                       onAddressSelection,
+00079                                                                       onAddressComposition,
+00080                                                                       inputUrl,
+00081                                                                       zoomFactor = 1,
+00082                                                                       showZoomTooltip = false,
+00083                                                                       onInputChange,
+00084                                                                       onNavigate,
+00085                                                                       onGoBack,
+00086                                                                       onGoForward,
+00087                                                                       onReload,
+00088                                                                       onStopLoading,
+00089                                                                       onOpenSettings,
+00090                                                                       settingsActive = false,
+00091                                                                       onRemoveDownload,
+00092                                                                       isLoading,
+00093                                                                       downloads,
+00094                                                                       certificateState,
+00095                                                                       loadError,
+00096                                                                       onTrustCertificate,
+00097                                                                   }) => {
+00098      // 菜单与下载面板互斥，避免两个浮层同时打开。
+00099      const [openPopup, setOpenPopup] = useState<'menu' | 'downloads' | null>(null);
+00100      // 仅用于完成动画，不代表真实下载状态。
+00101      const [showDownloadNotice, setShowDownloadNotice] = useState(false);
+00102      const [zoomTooltipOpen, setZoomTooltipOpen] = useState(false);
+00103      const zoomTriggerId = useId();
+00104      // 保存上一批状态，用于识别新增任务和首次完成事件。
+00105      const previousDownloadsRef = useRef<BrowserDownload[]>([]);
+00106      const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
+00107          if (e.key === 'Enter') onNavigate();
+00108      }, [onNavigate]);
+00109  
+00110      const securityKind = certificateState?.kind ?? 'unverified';
+00111      const {labelKey: securityLabelKey, tone: securityTone, icon: securityIcon} = SECURITY_PRESENTATION[securityKind];
+00112      const securityLabel = t(securityLabelKey);
+00113      const hasAccessError = Boolean(loadError) && securityKind !== 'certificate-error';
+00114      const securityActionLabel = hasAccessError ? t('browser.error_title')
+00115          : securityKind === 'certificate-error' ? t('browser.trust_certificate') : securityLabel;
+00116      // 空地址判断用于输入框展示，安全提示统一依据页面连接状态。
+00117      const addressIsBlank = isBlankUrl(inputUrl);
+00118      const addressIsUnsafe = !hasAccessError && securityKind === 'http';
+00119      const addressIcon = hasAccessError ? accessNoIcon : securityIcon;
+00120      const zoomPercent = Math.round(zoomFactor * 100);
+00121      const zoomLabel = t('browser.zoom_level', {percent: `${zoomPercent}%`});
+00122      const zoomIcon = zoomFactor < 1 ? zoomInIcon : zoomFactor > 1 ? zoomOutIcon : null;
+00123      const activeDownload = downloads.find(download => download.state === 'progressing');
+00124      const isDownloading = Boolean(activeDownload);
+00125      const activeDownloadProgress = activeDownload && activeDownload.totalBytes > 0
+00126          ? Math.max(0, Math.min(1, activeDownload.receivedBytes / activeDownload.totalBytes))
+00127          : null;
+00128      const activeDownloadProgressDegrees = Math.round((activeDownloadProgress ?? 0.35) * 360);
+00129  
+00130      useEffect(() => {
+00131          // 对比前后快照，只在新增下载或状态首次变为 completed 时触发提示动画。
+00132          const downloadCompleted = downloads.some(download =>
+00133              download.state === 'completed'
+00134              && previousDownloadsRef.current.find(previous => previous.id === download.id)?.state !== 'completed'
+00135          );
+00136          const downloadStarted = downloads[0]?.id !== previousDownloadsRef.current[0]?.id;
+00137          previousDownloadsRef.current = downloads;
+00138  
+00139          if (downloadCompleted || downloadStarted) {
+00140              // 新任务会清除旧完成动画，只有首次 completed 才将提示置为 true。
+00141              setShowDownloadNotice(downloadCompleted);
+00142          }
+00143      }, [downloads]);
+00144  
+00145      return (
+00146          <div className="browser-toolbar">
+00147              <div className="nav-buttons">
+00148                  <Tooltip disableHoverablePopup>
+00149                      <TooltipTrigger render={(
+00150                          <span className="inline-flex">
+00151                              <button className="nav-btn nav-history-btn" type="button" onClick={onGoBack} disabled={!navigationEnabled || !canGoBack} aria-label={t('workbench.browser_back')}>
+00152                                  <img src={navigationEnabled && canGoBack ? leftActiveIcon : leftIcon} alt="" aria-hidden="true" />
+00153                              </button>
+00154                          </span>
+00155                      )} />
+00156                      <TooltipContent side="bottom" sideOffset={6} showArrow>
+00157                          {t('workbench.browser_back')}
+00158                      </TooltipContent>
+00159                  </Tooltip>
+00160                  <Tooltip disableHoverablePopup>
+00161                      <TooltipTrigger render={(
+00162                          <span className="inline-flex">
+00163                              <button className="nav-btn nav-history-btn" type="button" onClick={onGoForward} disabled={!navigationEnabled || !canGoForward} aria-label={t('workbench.browser_forward')}>
+00164                                  <img src={navigationEnabled && canGoForward ? rightActiveIcon : rightIcon} alt="" aria-hidden="true" />
+00165                              </button>
+00166                          </span>
+00167                      )} />
+00168                      <TooltipContent side="bottom" sideOffset={6} showArrow>
+00169                          {t('workbench.browser_forward')}
+00170                      </TooltipContent>
+00171                  </Tooltip>
+00172                  <Tooltip disableHoverablePopup>
+00173                      <TooltipTrigger render={(
+00174                          <span className="inline-flex">
+00175                              <button
+00176                                  className="nav-btn"
+00177                                  type="button"
+00178                                  onClick={isLoading ? onStopLoading : onReload}
+00179                                  aria-label={isLoading ? t('workbench.browser_stop_reload') : t('workbench.browser_reload')}
+00180                              >
+00181                                  <img src={isLoading ? refreshStopIcon : refreshIcon} alt="" aria-hidden="true" />
+00182                              </button>
+00183                          </span>
+00184                      )} />
+00185                      <TooltipContent side="bottom" sideOffset={6} showArrow>
+00186                          {t(isLoading ? 'workbench.browser_stop_reload' : 'workbench.browser_reload')}
+00187                      </TooltipContent>
+00188                  </Tooltip>
+00189              </div>
+00190  
+00191              <div className="address-bar">
+00192                  <div className="url-input-wrapper">
+00193                      <button
+00194                          className="nav-btn url-icon browser-status-icon"
+00195                          type="button"
+00196                          title={securityActionLabel}
+00197                          aria-label={securityActionLabel}

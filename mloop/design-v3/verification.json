@@ -1,0 +1,223 @@
+{
+  "date": "2026-11-08",
+  "viewportCssPixels": {
+    "width": 1280,
+    "height": 771
+  },
+  "pages": [
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "index",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "task",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "skills",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "skills-installed",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "skill-detail",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "experts",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "my-experts",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "tools",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "my-tools",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "automation",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "automation-empty",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "automation-runs",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "automation-create",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "files",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "settings-account",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "settings-system",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "settings-memory",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "settings-models",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "settings-personalization",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "settings-software",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "settings-security",
+      "brokenImages": []
+    },
+    {
+      "untranslated": false,
+      "overflow": false,
+      "name": "settings-help",
+      "brokenImages": []
+    }
+  ],
+  "scriptErrors": [],
+  "failedRequestsAfterFix": [],
+  "resourceFix": {
+    "path": "expert-img/img6.png",
+    "resolvedTo": "expert-img/img-6.png",
+    "retestedPages": [
+      "experts",
+      "my-experts"
+    ]
+  },
+  "interactions": [
+    "首页场景切换及快捷任务填入",
+    "技能名称与说明搜索",
+    "技能详情",
+    "技能启停",
+    "自动化表单新增",
+    "自动化周期/间隔/单次切换",
+    "深色/浅色主题切换"
+  ],
+  "pixelComparisonWithLoggedInApp": false,
+  "screenshotCalibration": {
+    "reference": "用户提供的 macOS 实机截图",
+    "sourcePixels": {
+      "width": 2940,
+      "height": 1654
+    },
+    "comparisonViewport": {
+      "width": 1960,
+      "height": 1103
+    },
+    "renderedGeometry": {
+      "sidebar": {
+        "x": 0,
+        "width": 258
+      },
+      "newTaskButton": {
+        "y": 82
+      },
+      "transcriptColumn": {
+        "x": 670,
+        "y": 128,
+        "width": 862
+      },
+      "composer": {
+        "x": 678,
+        "y": 883,
+        "width": 862,
+        "height": 180
+      },
+      "accountFooter": {
+        "y": 1035,
+        "height": 68
+      }
+    },
+    "comparisonPage": "comparison.html",
+    "scope": [
+      "task.html",
+      "共用侧栏",
+      "任务输入框"
+    ],
+    "remainingDifferences": [
+      "静态对话长度导致滚动条长度不同",
+      "字体边缘受截图缩放与运行环境影响",
+      "其余页面尚未逐页与实机截图比对"
+    ]
+  },
+  "correctedVersionChecks": {
+    "all22Pages": true,
+    "scriptErrors": [],
+    "failedRequests": [],
+    "brokenImages": [],
+    "documentOverflow": false,
+    "interactions": [
+      "任务查看更多与收起",
+      "账户菜单与设置入口",
+      "深度思考展开",
+      "模式切换",
+      "模型选择",
+      "历史提问",
+      "右侧成果栏"
+    ]
+  }
+}

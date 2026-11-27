@@ -1,0 +1,139 @@
+{
+  "date": "2026-11-09",
+  "method": "Tabbit semantic clicks and assertions on isolated http://127.0.0.1:8766; source and read-only live Multica comparison",
+  "reference": [
+    "Multica agent detail and grouped settings",
+    "Multica squad detail and member actions",
+    "Multica direct chat",
+    "packages/views/agents/components/tabs/mcp-server-dialog.tsx"
+  ],
+  "fixes": [
+    "Nested scheduled creation rendered in body portal so detail modal cannot intercept buttons",
+    "Copied schedule and webhook editor values update primary trigger while preserving other triggers",
+    "Valid assignee clears required error",
+    "Agent detail property popovers and six settings sections",
+    "Settings dirty-section discard dialog and nested Escape",
+    "MCP transport, env, headers, JSON round trip and unknown properties preserved",
+    "Agent duplicates preserve full advanced configuration through creation wizard",
+    "Inline identity edit, avatar, menus, inspector toggle and member links",
+    "Single shared task form for expert assignment and board",
+    "Shared seed survives visiting agent before board; rename retains assignments; deletion is not undone on agent revisit",
+    "Archived agents removed from shared choices",
+    "Squads included in all board assignee views and grouping",
+    "Comment cancellation does not leak stale edit text",
+    "Resource URL and direct task date ordering validation"
+  ],
+  "passedBrowserFlows": {
+    "settings": [
+      "Deep-link reload",
+      "General autosave",
+      "Duplicate and empty name validation",
+      "Concurrency 1–50 validation",
+      "Runtime/model selection and search empty result",
+      "Access scope and member validation",
+      "Env unlock, invalid key, save, discard and continue",
+      "Ordered args and save",
+      "Skills nested add validation, selection, enable toggle",
+      "MCP nested creation/edit, transport, env, headers, invalid JSON, form/JSON and extra field round trip",
+      "Escape child leaves settings open"
+    ],
+    "agentAndSquad": [
+      "Inspector toggle",
+      "More menu copy ID feedback",
+      "All work search empty result",
+      "Agent copy configure/finish/details",
+      "Full advanced config retained on duplication",
+      "Archive and restore",
+      "Inline name edit keeps assigned tasks",
+      "Avatar color selection",
+      "Member role edit",
+      "Captain selection",
+      "Visibility selection and reload",
+      "Member link opens agent detail",
+      "Full assignment form and required title",
+      "Shared board status reflected in agent",
+      "Deleting board task does not recreate it"
+    ],
+    "scheduled": [
+      "All/on/off filtering and search",
+      "Batch select/confirmation cancel",
+      "Required name/assignee",
+      "Webhook event filter and URL copy",
+      "Maximize/restore",
+      "Copy configuration, change filter/output, create",
+      "Nested creation buttons accessible over detail",
+      "Manual run creates linked task",
+      "Prompt edit/save",
+      "Enable/pause",
+      "Weekly and monthly controls",
+      "Interval controls",
+      "Invalid Cron disables submit; valid Cron accepted",
+      "Trigger nested Escape preserves detail",
+      "Run history detail, delete cancel and confirm"
+    ],
+    "board": [
+      "Invalid calendar date rejected",
+      "Nested date picker Escape preserves detail",
+      "Link invalid/valid add",
+      "Wakeup future validation and save",
+      "Agent execution request detail",
+      "Comment edit/cancel/reopen/save",
+      "Project inspector resource required/URL validation",
+      "Project resource save/cancel/reload"
+    ],
+    "chat": [
+      "Empty send disabled",
+      "Starter fills without sending",
+      "Send and keyboard submit",
+      "Session history survives reload",
+      "New session",
+      "Agent switch",
+      "Unsent draft survives reload",
+      "Direct deep link works before opening agent catalog"
+    ]
+  },
+  "layout": {
+    "viewports": [
+      [
+        1280,
+        800
+      ],
+      [
+        1470,
+        900
+      ]
+    ],
+    "pages": [
+      "agent list",
+      "agent detail",
+      "squad detail",
+      "agent chat",
+      "scheduled detail",
+      "board detail"
+    ],
+    "documentHorizontalOverflow": false,
+    "screenshotsVisuallyInspected": [
+      "agent-detail-new",
+      "squad-detail-new",
+      "scheduled-detail",
+      "agent-settings-general",
+      "agent-settings-mcp",
+      "agent-chat",
+      "work-board-detail"
+    ]
+  },
+  "checks": {
+    "build": "node design-v2/build.mjs passed",
+    "nativeJsSyntax": "passed",
+    "gitDiffCheck": "passed",
+    "htmlFilesChecked": 36,
+    "missingHtmlAssetReferences": 0,
+    "applicationErrors": [],
+    "excludedBrowserExtensionError": "StorageArea Illegal invocation"
+  },
+  "limitations": [
+    "Static prototype: no actual model execution, scheduled worker, webhook receiver or runtime discovery",
+    "No assertion of exhaustive parity for all Multica pages or all possible input combinations"
+  ],
+  "cleanup": "Reset only QA data on port 8766 and closed only our QA, reference and blank scratch tabs; user active page and data preserved."
+}

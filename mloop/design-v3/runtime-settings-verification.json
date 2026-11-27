@@ -1,0 +1,110 @@
+{
+  "date": "2026-11-09",
+  "scope": [
+    "settings-daemon",
+    "settings-runtimes"
+  ],
+  "build": "node design-v2/build.mjs: passed",
+  "browser": "Tabbit / Chromium",
+  "screenshots": {
+    "daemon": "previews/settings-daemon.png",
+    "runtimes": "previews/settings-runtimes.png",
+    "runtimesReference": "previews/settings-runtimes-reference.png"
+  },
+  "visualChecks": {
+    "workSettingsWindow": [
+      1470,
+      841
+    ],
+    "daemonReferenceViewport": [
+      2237,
+      1308
+    ],
+    "runtimesReferenceViewport": [
+      2253,
+      566
+    ],
+    "desktopSmallViewport": [
+      1280,
+      800
+    ],
+    "horizontalPageOverflow": false,
+    "brokenImages": [],
+    "diagnosticRows": 8,
+    "initialMachines": 2,
+    "initialConnectedCloudServices": 0
+  },
+  "interactionsPassed": {
+    "daemon": [
+      "toggle auto-start",
+      "toggle auto-stop",
+      "preferences persist across reload",
+      "start and stop update diagnostics and machine status",
+      "open and close logs"
+    ],
+    "runtimes": [
+      "all/online/offline filtering",
+      "empty state and reset filters",
+      "machine navigation",
+      "rename machine and clear custom name",
+      "custom runtime wizard",
+      "required name and command validation",
+      "unclosed quote validation",
+      "quoted argument and pipe parsing identical to source",
+      "create custom runtime",
+      "runtime detail navigation",
+      "visibility selection",
+      "member access selection",
+      "concurrency commit on Enter and blur",
+      "concurrency persists across reload",
+      "invalid concurrency restores saved value",
+      "other owner's runtime configuration is read-only",
+      "delete runtime confirmation",
+      "add remote machine",
+      "macOS/Linux and Windows install command switch",
+      "troubleshooting disclosure",
+      "local connection success and new machine detail",
+      "Qoder required fields disable submit",
+      "Qoder invalid token feedback",
+      "Qoder environment loads after local verification",
+      "GitHub repository authorization inputs",
+      "execution concurrency and timeout inputs",
+      "Qoder concurrency range validation",
+      "connect Qoder",
+      "pause confirmation and resume",
+      "disconnect confirmation and list update",
+      "child dialog Escape preserves settings window"
+    ],
+    "offline": [
+      "file:// settings-runtimes.html loads",
+      "file:// menus and child dialog work",
+      "1280x800 settings window fits without whole-page horizontal overflow"
+    ]
+  },
+  "qaCleanup": "Removed QA-created runtime and remote machine, disconnected Qoder, restored screenshot's initial two-machine state.",
+  "limitations": [
+    "Static local interactions; no real processes or services are controlled.",
+    "Qoder token verification uses local example rules; no credentials are sent or persisted.",
+    "Online Multica Qoder form requires a missing server secret; its full interaction is reproduced from local source.",
+    "Browser extension translation/storage errors were observed separately from application behavior."
+  ],
+  "layoutRefinement": {
+    "request": "Keep the circled daemon cards and remove the redundant toolbar.",
+    "daemonViewport": [
+      1328,
+      883
+    ],
+    "dialogSize": [
+      1040,
+      720
+    ],
+    "daemonToolbarCount": 0,
+    "wholePageHorizontalOverflow": false,
+    "checks": [
+      "auto-start toggle works and is restored",
+      "both cards fit at 1280x800",
+      "runtime navigation and scope control still work"
+    ],
+    "build": "passed"
+  }
+}

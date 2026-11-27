@@ -1,0 +1,96 @@
+ZH
+运行与维护 LOOP 客户端
+运行与维护 Loop 客户端
+
+Loop 客户端是运行在本地机器上的客户端。你可以把它理解成“让这台机器持续接入 Loop 的守护进程和操作入口”。
+
+第一次连接机器
+
+在 Loop Web 中创建机器后，页面会生成一条连接命令。标准形式如下：
+
+loop daemon --server-url <url> --api-key <machineApiKey>
+
+
+这条命令通常会做两件事：
+
+保存该机器与 Loop 工作区的连接配置
+如果 daemon 还没有运行，就顺带启动它
+
+推荐直接使用页面生成的命令，不要自己手工拼装。
+
+普通 loop daemon 是什么
+
+普通 loop daemon 只做一件事：使用本地已保存的连接配置启动 daemon。
+
+如果你已经完成过连接配置，之后需要让这台机器重新上线，最常见的做法就是启动或恢复本地 daemon。loop daemon --server-url ... --api-key ... 则用于重写本地连接配置，并在需要时启动 daemon。对于需要长期在线的机器，推荐把它作为常驻进程运行。
+
+daemon、机器和智能体是什么关系
+
+理解这三个对象的最简单方式是：
+
+机器：工作区里登记的那台本地机器
+daemon：让这台机器持续连回 Loop 的本地进程
+智能体运行状态：当前是否在这台机器上执行
+
+所以：
+
+机器在线，不等于每个智能体都一定正常
+daemon 退出，通常会让机器离线
+智能体问题不一定是连接问题，也可能是运行环境或角色本身的问题
+如何让机器长期在线
+
+有两种常见方式：
+
+在前台直接运行 loop daemon
+使用 loop service install 安装为系统服务；在 Linux 上也可以用 loop service install --user 安装为当前用户级别的 systemd 服务
+
+Linux 上，loop service install 负责注册并启用 systemd 服务；如果希望现在就启动它，还需要执行 loop service start。之后可以用 loop status 查看服务是否已经 active、failed 或 inactive。
+
+连接命令和 service 命令应尽量使用同一个系统用户执行。如果你切到 root shell 安装 service，后台服务会使用 root 的 Loop 配置；如果连接配置保存在另一个用户下，应从那个用户执行 sudo loop service install。
+
+在 Linux 上，--user 服务会跟随该用户的 systemd manager 启动。若希望机器重启后在登录前就恢复，需要启用 lingering。
+
+如果这台机器承担正式团队工作，通常更推荐系统服务方式。这样在重启、登录会话变化或日常值守场景里更稳定。
+
+什么时候应该重新执行连接命令
+
+通常在下面这些情况下重新执行 loop daemon --server-url ... --api-key ... 是合理的：
+
+你正在接入一台新机器
+你在 Web 中轮换了机器 API key
+你要把这台机器新的 Loop 连接配置写回本地
+
+如果只是 daemon 退出或机器重启，而本地连接配置仍然有效，很多时候重新启动 daemon 就够了。
+
+页面提示 daemon 版本过旧是什么意思
+
+如果机器页面出现类似 daemon outdated 或 update available 的提示，更稳妥的理解是：
+
+当前这台机器上报的 loop daemon 版本落后于 Loop 当前推荐的一方版本
+这是一方 Loop 产品语义里的版本提醒
+它不是在告诉你“外部世界有个别的 daemon 包更新了”
+
+遇到这种提示时，通常更合理的动作是：
+
+按你团队当前分发方式更新本地 loop daemon
+重启 daemon
+如有需要，再重新执行连接命令
+什么时候只需要重启 daemon，什么时候要重新连接
+
+优先按下面这条判断：
+
+如果只是进程退出、机器重启或服务没拉起来，先重启 loop daemon
+如果机器 API key 轮换了，或者你需要把新的连接配置写回本地，再重新执行 loop daemon --server-url ... --api-key ...
+团队运维建议
+给每台机器一个容易识别的名称
+让关键机器使用长期稳定的运行方式
+记录这台机器主要承载哪些智能体
+看到版本提示时，尽量让关键机器保持在当前推荐的一方版本
+如果机器主要用于某类角色，尽量保持用途清晰
+Desktop 页面无法显示时
+
+渲染进程异常退出后，Desktop 会自动尝试重载一次。仍然失败，或页面加载、preload 失败时，原生提示会显示错误码，可选择“重试”或“打开日志位置”。重载页面不会主动 重启 daemon 或清除登录。Windows 日志统一位于 %LOCALAPPDATA%\Loop\Logs\loop.log， macOS 位于 ~/Library/Logs/loop/loop.log；问题持续时，将错误码和该日志提供给技术支持。
+
+下一步
+机器排障
+连接你的第一台机器

@@ -1,0 +1,137 @@
+ZH
+机器排障
+机器排障
+
+当 machine、daemon 或 agent 表现异常时，最有效的做法不是一上来改配置，而是先确认问题落在哪一层。
+
+先判断是哪一层出了问题
+
+可以按下面顺序排查：
+
+machine 是否在线
+daemon 是否正在本地运行
+连接命令使用的 server-url 和 machineApiKey 是否仍然有效
+当前 daemon 是否已经落后到被页面提示为 outdated
+本地 runtime 是否可用
+agent 当前是否在正确的 machine 上运行
+
+这样能快速区分：这是连接问题、运行问题，还是 agent 本身的问题。
+
+查看 daemon 日志
+
+优先使用 loop journal，因为它会读取当前 daemon 配置解析出的日志文件：
+
+loop journal --tail 100
+loop journal -f --tail 100
+
+
+如果 loop 不在 PATH 中，可以直接调用安装目录下的二进制：
+
+~/.loop/bin/loop journal --tail 100
+~/.loop/bin/loop journal -f --tail 100
+
+
+默认日志文件位置如下：
+
+平台	默认日志文件
+macOS	~/Library/Logs/loop/loop.log
+Linux	${TMPDIR:-/tmp}/loop/log/loop.log
+Windows	%LOCALAPPDATA%\loop\Logs\loop.log
+
+也可以在 ~/.loop/config.yaml 中通过 log.dir 或 log.file 覆盖日志路径。轮转日志会保留在同一目录下，文件名带时间戳。
+
+页面显示 machine 离线
+
+优先检查：
+
+本地 daemon 是否仍在运行
+这条 machine 的连接命令是否在正确机器上执行过
+当前 server-url 是否可达
+machine API key 是否已经轮换或失效
+你是否在正确的 workspace 中查看这台机器
+machine 在线，但 agent 不工作
+
+这通常说明“连接在，但执行链路不通”。
+
+优先检查：
+
+runtime 是否安装完成并可用
+agent 当前是否在这台 machine 上运行
+你是否真正 @agent
+当前讨论是否在更合适的话题中继续
+Runtime 一直检测中或暂不可用
+
+Runtime 页面的重新检测在客户机后台执行，页面每 2 秒查询结果，不会每次查询都重新 启动检测命令。离开页面不会中断后台检测；新装和 daemon 重启也会自动检测。
+
+慢电脑上的能力检查及内置版本校验最多允许单条命令运行 180 秒，单独读取展示版本 最多 60 秒；正常返回会提前结束。这不是整轮检测的固定耗时。外部 Runtime 版本号 暂时读不到，不等于未安装。
+
+如果检测超时或暂不可用，点击重新检测并查看上面的 loop.log。检测日志包含实际 daemon 路径、Runtime 候选路径、失败阶段、版本和有界脱敏的执行错误。内置 Runtime 还需要配套文件和匹配版本，另一个目录下的 EXE 能运行不代表 Loop 检查的这份可用。
+
+Codex 启动后立刻 MCP 握手失败
+
+如果 Codex 或其他 Runtime 刚启动就因为 MCP 握手报错退出，优先检查本地 daemon 流量是不是被系统代理接管了。
+
+Loop 为这个场景提供了 LOOP_MCP_LOOPBACK_NO_PROXY：
+
+auto（默认）：只对 loopback MCP 端点自动绕过代理
+on：始终向 NO_PROXY / no_proxy 追加 127.0.0.1、localhost 和 ::1
+off：关闭这项自动绕过行为
+
+如果你的环境会代理 127.0.0.1 流量，通常应该使用 auto 或 on。
+
+重启后又离线
+
+这通常不是产品配置问题，而是 daemon 没有作为长期进程运行。
+
+如果这台机器需要长期在线，建议：
+
+用 loop service install 安装为系统服务；在 Linux 上也可以用 loop service install --user 安装为当前用户级别的 systemd 服务
+或确保有稳定的前台常驻方式
+
+Linux 上，loop service install 负责注册并启用 systemd 服务；如果希望现在就启动它，还需要执行 loop service start。之后可以用 loop status 查看服务是否已经 active、failed 或 inactive。
+
+连接命令和 service 命令应尽量使用同一个系统用户执行。如果你切到 root shell 安装 service，后台服务会使用 root 的 Loop 配置；如果连接配置保存在另一个用户下，应从那个用户执行 sudo loop service install。
+
+如果你选择的是 loop service install --user，记得它跟随当前用户的 systemd manager。若希望机器在重启后、登录前就恢复，需要启用 lingering。
+
+轮换 key 之后连不上
+
+如果你已经在 Web 中执行了 Rotate key，就必须使用新的连接命令重新接入。
+
+旧 key 在轮换之后不应继续使用。
+
+页面提示 daemon 版本过旧
+
+这通常说明当前这台机器上报的 loop daemon 版本落后于 Loop 当前推荐的一方版本。
+
+先记住两件事：
+
+这不一定代表 machine 已经断连
+这也不等于 agent 一定马上不可用
+
+但如果这台机器承担关键角色，通常仍然应该尽快更新本地 daemon，并重新启动它。
+
+已经在线，但行为还是怪
+
+如果 machine 在线、daemon 也在跑，但行为仍然怪，继续按下面这条顺序排查：
+
+这是不是 daemon 版本提醒带来的稳定性关注
+runtime 是否真的可用
+agent 当前是否跑在你以为的那台 machine 上
+这个 agent 的角色本来是否适合处理当前问题
+收集诊断日志
+
+在 Loop Desktop 中打开当前 Machine，进入设置，点击收集诊断日志。 Desktop 会下载一个 ZIP，其中包含当前电脑上属于此工作区智能体的、有容量上限的 daemon 与 OpenCode 诊断日志。压缩包只保存在本地，不会自动上传。
+
+如果已经开启运行时诊断模式，请先重启受影响的 agent，再复现问题，确保详细的 OpenCode 事件已经写入日志。诊断文件达到固定大小后会轮转，因此建议在问题发生后 尽快收集。
+
+什么时候应该怀疑不是 machine 问题
+
+如果 machine 明确在线、runtime 可用、agent 配置正常，但协作行为仍不对，接下来就应该转去检查：
+
+是否用了正确的 @agent
+当前问题是否落在正确的频道或话题
+这个 agent 的职责是否本来就不适合处理该问题
+下一步
+运行与维护 Loop 客户端
+日常管理智能体

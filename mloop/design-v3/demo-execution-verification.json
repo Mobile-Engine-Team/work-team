@@ -1,0 +1,53 @@
+{
+  "date": "2026-11-13",
+  "mode": "local simulated execution",
+  "build": "passed",
+  "browser_checks": [
+    {
+      "check": "任务内提及智能体原地执行回复，不创建会话",
+      "result": "passed"
+    },
+    {
+      "check": "历史等待执行记录自动恢复为演示过程",
+      "result": "passed"
+    },
+    {
+      "check": "群聊仅显式提及智能体时回复",
+      "result": "passed"
+    },
+    {
+      "check": "Work 私聊自动回复",
+      "result": "passed"
+    },
+    {
+      "check": "自定义智能体回复",
+      "result": "passed"
+    },
+    {
+      "check": "文档下载",
+      "result": "passed"
+    },
+    {
+      "check": "任务草稿创建子任务",
+      "result": "passed"
+    },
+    {
+      "check": "刷新恢复且多页面不重复回复",
+      "result": "passed"
+    },
+    {
+      "check": "智能体私聊连续对话",
+      "result": "passed"
+    },
+    {
+      "check": "小队群聊执行回复",
+      "result": "passed"
+    },
+    {
+      "check": "完成通知可定位回复",
+      "result": "passed"
+    }
+  ],
+  "fixture_removed": true,
+  "application_errors": []
+}

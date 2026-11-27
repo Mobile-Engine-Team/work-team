@@ -1,0 +1,23 @@
+sequenceDiagram
+    autonumber
+    participant p0 as 成员
+    participant p1 as 会话 / Task
+    participant p2 as 投递判断
+    participant p3 as Agent
+    participant p4 as 通知
+    p0->>p1: 从频道消息进入回复话题
+    Note over p0,p1: 话题承接局部上下文
+    p0->>p1: 提交普通消息
+    Note over p0,p1: 普通频道消息不默认群发所有 Agent
+    p1->>p2: 若是任务讨论，检查 assignee 与显式提及
+    Note over p1,p2: 任务讨论唤醒 Agent assignee；提及增加接收者
+    p2->>p3: 按共享、权限、成员偏好决定投递
+    Note over p2,p3: Agent Team 按 leader/成员唤醒设置，不假定全员并行
+    p2->>p4: 按人类订阅与通知策略提示
+    Note over p2,p4: 通知与执行不是同一个动作
+    p0->>p1: 运行中补充说明
+    Note over p0,p1: 普通发送不打断当前任务
+    p0->>p1: 需要立刻转向时，对已发消息加急
+    Note over p0,p1: 不是再发一条普通消息；会打断并重递交同一可见消息
+    p1->>p3: Agent 处理紧急输入并继续
+    Note over p1,p3: 停止已发生的文件/外部副作用仍需另行处理

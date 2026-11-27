@@ -1,0 +1,483 @@
+{
+  "format": "xmindmap",
+  "version": 1,
+  "title": "人与智能体一起协作",
+  "root": {
+    "data": {
+      "uid": "7d775025-b735-4b5c-b492-35898c18a57d",
+      "text": "人与智能体一起协作",
+      "expand": true,
+      "richText": false
+    },
+    "children": [
+      {
+        "data": {
+          "uid": "be6da863-bed2-4c1f-a42a-7cfb77701e23",
+          "text": "工作区",
+          "expand": true,
+          "richText": false
+        },
+        "children": [
+          {
+            "data": {
+              "uid": "54dd3078-e2e8-41f8-9897-e2c501ca024c",
+              "text": "成员管理",
+              "expand": true,
+              "richText": false
+            },
+            "children": [
+              {
+                "data": {
+                  "uid": "9646bf82-2c43-4854-becd-8bb7362a1f31",
+                  "text": "邀请",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              },
+              {
+                "data": {
+                  "uid": "aabe2305-a70e-4be3-b389-8b15f385637d",
+                  "text": "删除",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              },
+              {
+                "data": {
+                  "uid": "cdc710e0-d235-4d3d-8b4b-61d9195dacc6",
+                  "text": "查看",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "data": {
+              "uid": "910359ee-ad91-4180-a428-b622a8e92179",
+              "text": "工作区信息",
+              "expand": true,
+              "richText": false
+            },
+            "children": [
+              {
+                "data": {
+                  "uid": "509eb983-88f5-4d58-ade8-a50aa96b1314",
+                  "text": "名称",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              },
+              {
+                "data": {
+                  "uid": "267ba30f-4d1c-4859-8feb-d9c8789d4ee2",
+                  "text": "智能体上下文",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              },
+              {
+                "data": {
+                  "uid": "128c9d78-c2df-44fb-914e-a66cae3dbc65",
+                  "text": "退出和加入工作区",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              },
+              {
+                "data": {
+                  "uid": "5252222c-42a1-4421-90db-bc85799aa4fe",
+                  "text": "切换工作区",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "data": {
+          "uid": "d45cb1d1-c912-4eba-b1e3-15972a069f83",
+          "text": "任务看板",
+          "expand": true,
+          "richText": false
+        },
+        "children": [
+          {
+            "data": {
+              "uid": "d3392a3c-759c-46b3-83bc-4973707d352e",
+              "text": "状态列、任务卡片、新建与编辑、移动阶段、负责人、截止时间；筛选人、智能体和标签筛选。",
+              "expand": true,
+              "richText": false
+            },
+            "children": []
+          },
+          {
+            "data": {
+              "uid": "ab4901f1-0e4a-4643-9671-552d159616eb",
+              "text": "卡片进入任务详情：展示未读、@提醒和AI进展；AI执行结束不自动等同任务完成。",
+              "expand": true,
+              "richText": false
+            },
+            "children": []
+          },
+          {
+            "data": {
+              "uid": "8810727a-a950-4387-8397-39a7716301b5",
+              "text": "任务列表",
+              "expand": true,
+              "richText": false
+            },
+            "children": [
+              {
+                "data": {
+                  "uid": "e83092a4-942d-4d44-9be5-75fb6da50db3",
+                  "text": "任务智能新增",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              },
+              {
+                "data": {
+                  "uid": "4591d06d-e3cf-4eb9-a330-f7e33a527a8f",
+                  "text": "任务手动新增",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              },
+              {
+                "data": {
+                  "uid": "33f5a0e3-dfe3-4eb7-82ca-73258a08c155",
+                  "text": "子任务新增",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              },
+              {
+                "data": {
+                  "uid": "431fcc72-11a3-4cdd-8ced-f00ae96909f0",
+                  "text": "任务信息修改",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": [
+                  {
+                    "data": {
+                      "uid": "ce22de16-2709-4283-94d5-71759e753463",
+                      "text": "状态",
+                      "expand": true,
+                      "richText": false
+                    },
+                    "children": []
+                  },
+                  {
+                    "data": {
+                      "uid": "5c0a2c9b-3196-4dba-8a44-c247aacfce4a",
+                      "text": "描述",
+                      "expand": true,
+                      "richText": false
+                    },
+                    "children": []
+                  },
+                  {
+                    "data": {
+                      "uid": "12e41b0b-2960-4d67-aee0-a86305b01529",
+                      "text": "....",
+                      "expand": true,
+                      "richText": false
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "data": {
+          "uid": "04a5581b-7f02-4c39-9c47-63e90f46d05c",
+          "text": "团队",
+          "expand": true,
+          "richText": false
+        },
+        "children": [
+          {
+            "data": {
+              "uid": "e3ad8421-9c48-436f-a174-c9b89cb0a361",
+              "text": "智能体管理",
+              "expand": true,
+              "richText": false
+            },
+            "children": [
+              {
+                "data": {
+                  "uid": "f536c2c3-1e33-48fb-b484-30bcc75dd48c",
+                  "text": "默认智能体管理",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": [
+                  {
+                    "data": {
+                      "uid": "3c8657db-9f6b-4619-9382-defa07473f13",
+                      "text": "基础属性管理",
+                      "expand": true,
+                      "richText": false
+                    },
+                    "children": [
+                      {
+                        "data": {
+                          "uid": "87b06862-5aa1-4c94-8587-eef8d5a366a8",
+                          "text": "运行时",
+                          "expand": true,
+                          "richText": false
+                        },
+                        "children": []
+                      },
+                      {
+                        "data": {
+                          "uid": "babfcc5c-9241-489a-80a3-13dcfdf15e5b",
+                          "text": "harness",
+                          "expand": true,
+                          "richText": false
+                        },
+                        "children": []
+                      },
+                      {
+                        "data": {
+                          "uid": "ac140cc6-478c-45f5-a190-262e8d81d80c",
+                          "text": "模型",
+                          "expand": true,
+                          "richText": false
+                        },
+                        "children": []
+                      },
+                      {
+                        "data": {
+                          "uid": "0f0ce28e-84c8-47a6-bc6a-3450ea40f48e",
+                          "text": "权限",
+                          "expand": true,
+                          "richText": false
+                        },
+                        "children": []
+                      },
+                      {
+                        "data": {
+                          "uid": "758eea39-c91c-4e64-b9a6-5f6aa7d4bc17",
+                          "text": "skill和指令",
+                          "expand": true,
+                          "richText": false
+                        },
+                        "children": []
+                      },
+                      {
+                        "data": {
+                          "uid": "bc4323e9-b20d-4667-8e13-a6ec18faf17d",
+                          "text": "mcp",
+                          "expand": true,
+                          "richText": false
+                        },
+                        "children": []
+                      }
+                    ]
+                  },
+                  {
+                    "data": {
+                      "uid": "951ebddb-ed45-499c-8ff5-45c689079dd2",
+                      "text": "任务派发",
+                      "expand": true,
+                      "richText": false
+                    },
+                    "children": []
+                  },
+                  {
+                    "data": {
+                      "uid": "d5b5b19e-b080-4564-a791-69fd3739eaef",
+                      "text": "聊天",
+                      "expand": true,
+                      "richText": false
+                    },
+                    "children": []
+                  }
+                ]
+              },
+              {
+                "data": {
+                  "uid": "5a8c20cb-c297-4690-802b-34632d027716",
+                  "text": "自定义智能体",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "data": {
+              "uid": "e13e1b47-c7c1-442d-a1e5-52477257165d",
+              "text": "小队管理",
+              "expand": true,
+              "richText": false
+            },
+            "children": [
+              {
+                "data": {
+                  "uid": "73103d82-245b-4507-beee-22d2ea35cd9a",
+                  "text": "创建小队",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": [
+                  {
+                    "data": {
+                      "uid": "f5f54a56-a70f-41e9-a7de-79393220b360",
+                      "text": "人类成员",
+                      "expand": true,
+                      "richText": false
+                    },
+                    "children": []
+                  },
+                  {
+                    "data": {
+                      "uid": "5e4dd61b-5cb0-4ab6-a64d-30964f56e730",
+                      "text": "队长智能体",
+                      "expand": true,
+                      "richText": false
+                    },
+                    "children": []
+                  },
+                  {
+                    "data": {
+                      "uid": "248321fa-44f2-4465-a84a-5d34692a1b75",
+                      "text": "小队基础信息",
+                      "expand": true,
+                      "richText": false
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "data": {
+              "uid": "a7609205-4513-4985-9ff2-538b7df049c1",
+              "text": "成员管理",
+              "expand": true,
+              "richText": false
+            },
+            "children": []
+          },
+          {
+            "data": {
+              "uid": "f8369d1f-4c0d-4d09-8047-6a25a9fd33e8",
+              "text": "资源",
+              "expand": true,
+              "richText": false
+            },
+            "children": [
+              {
+                "data": {
+                  "uid": "911ce495-be67-4fd9-b3b4-cc27252ee883",
+                  "text": "skill",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              },
+              {
+                "data": {
+                  "uid": "834b54ce-5d77-453d-a388-0cc3fdcd5b0d",
+                  "text": "mcp",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              },
+              {
+                "data": {
+                  "uid": "e31a4193-b1a2-4e66-8836-05d8af87e5a5",
+                  "text": "运行时",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "data": {
+          "uid": "f9e28e1e-1bc2-4b68-887d-75b089fe9b38",
+          "text": "团队聊天",
+          "expand": true,
+          "richText": false
+        },
+        "children": []
+      },
+      {
+        "data": {
+          "uid": "d75dcbeb-e807-4194-8015-24cc1861c781",
+          "text": "设置",
+          "expand": true,
+          "richText": false
+        },
+        "children": []
+      },
+      {
+        "data": {
+          "uid": "e0921707-908f-4d72-a943-07698abc06b0",
+          "text": "自动化",
+          "expand": true,
+          "richText": false
+        },
+        "children": [
+          {
+            "data": {
+              "uid": "269f53ed-7c53-47ba-bf69-360b4a519158",
+              "text": "代码自动化",
+              "expand": true,
+              "richText": false
+            },
+            "children": [
+              {
+                "data": {
+                  "uid": "63a64a69-b65c-4385-9577-ad4070512c16",
+                  "text": "PR与任务关联",
+                  "expand": true,
+                  "richText": false
+                },
+                "children": []
+              }
+            ]
+          },
+          {
+            "data": {
+              "uid": "00dfe669-5b5f-436a-965e-f95746a283ff",
+              "text": "定时任务",
+              "expand": true,
+              "richText": false
+            },
+            "children": []
+          }
+        ]
+      }
+    ]
+  },
+  "layout": "mindMap",
+  "themeId": "studio",
+  "lineStyle": "curve"
+}

@@ -1,0 +1,19 @@
+{
+  "protocol": "A2UI 1.0",
+  "model": "auto",
+  "endpoint": "http://127.0.0.1:8766/v1",
+  "tests": {"passed": 6, "failed": 0},
+  "browser": {
+    "naturalLanguageGeneration": true,
+    "officialSchemaValidation": true,
+    "formInputAndActionRoundTrip": true,
+    "modelRenderedConfirmation": true,
+    "followUpTitleChangePreservesFormData": true,
+    "jsonAndDataPanels": true,
+    "narrowPreviewWidth": 375,
+    "mobileViewportWidth": 390,
+    "mobileDocumentWidth": 390,
+    "composerWithinViewport": true
+  },
+  "scope": "Custom Basic Catalog subset; request-response transport; no full RPC support"
+}

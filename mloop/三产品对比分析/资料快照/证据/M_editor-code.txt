@@ -1,0 +1,39 @@
+源文件：/Users/xymtop/Desktop/multica/packages/views/editor/use-editor-upload.ts
+版本：3c5c8b245359b9b8e913a47f97211f2a3426f149
+SHA-256：487cb3b07c45457fae993a8b49f88369bd12d84ba9a37acbb8f39a85553314dc
+以下是带原行号的节选，不是完整文件。
+
+00001  "use client";
+00002  
+00003  import { useCallback } from "react";
+00004  import { toast } from "sonner";
+00005  import { api } from "@multica/core/api";
+00006  import { useFileUpload } from "@multica/core/hooks/use-file-upload";
+00007  import { useT } from "../i18n";
+00008  
+00009  /**
+00010   * `useFileUpload` wired to the failure toast the upload gate depends on.
+00011   *
+00012   * The gate's failure fallback is "drop the placeholder, say so, let them
+00013   * submit again". Dropping the placeholder is handled in the upload extension,
+00014   * but without the toast the file just vanishes mid-upload with no explanation
+00015   * — which is what every composer did, since `uploadWithToast` only toasts if
+00016   * the caller supplies `onError` and no caller ever did (MUL-4808).
+00017   *
+00018   * `useFileUpload` lives in `@multica/core`, which may not import a UI library,
+00019   * so the toast is supplied here — once, rather than per composer.
+00020   */
+00021  function useEditorUpload() {
+00022    const { t } = useT("editor");
+00023    const onError = useCallback(
+00024      (error: Error, file: File) => {
+00025        toast.error(
+00026          t(($) => $.upload.failed, { filename: file.name, reason: error.message }),
+00027        );
+00028      },
+00029      [t],
+00030    );
+00031    return useFileUpload(api, onError);
+00032  }
+00033  
+00034  export { useEditorUpload };

@@ -1,0 +1,24 @@
+{
+  "date": "2026-11-10",
+  "page": "work.html",
+  "build": "node design-v2/build.mjs: passed",
+  "checks": {
+    "manual_to_agent_preserves_description": true,
+    "agent_to_manual_preserves_title": true,
+    "agent_and_squad_selection": true,
+    "priority_carries_between_modes": true,
+    "squad_request_saved_with_prompt_and_priority": true,
+    "request_persists_on_reload": true,
+    "empty_prompt_disables_submit": true,
+    "continue_creating_clears_prompt": true,
+    "manual_creation_still_creates_issue": true,
+    "attachment_add_remove": true,
+    "desktop_dialog_no_horizontal_overflow": true
+  },
+  "application_script_errors": [],
+  "browser_extension_error_excluded": "chrome-extension contentScript.bundle.js: Illegal invocation: StorageArea",
+  "limitations": [
+    "Local demo requests only; no agent execution",
+    "Attachment metadata only"
+  ]
+}

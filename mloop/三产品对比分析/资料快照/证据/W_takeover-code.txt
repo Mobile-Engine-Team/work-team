@@ -1,0 +1,26 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/browser/ManualTakeoverButton.tsx
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：f50aa867bc3484f34fecb54ff64ecf4402394d1212ffbfb46739bd6daa3bb673
+以下是带原行号的节选，不是完整文件。
+
+00001  import './css/TakeoverOverlay.css';
+00002  import takeoverStart from './assets/browserStatus/takeover-start-icon.svg';
+00003  
+00004  interface ManualTakeoverButtonProps {
+00005      onTakeover: () => void;
+00006      pending?: boolean;
+00007  }
+00008  
+00009  export const ManualTakeoverButton = ({onTakeover, pending = false}: ManualTakeoverButtonProps) => (
+00010      <button type="button" id="floating-lock-btn-locked" className="floating-lock-btn locked" data-browser-control
+00011          onClick={onTakeover} disabled={pending} title="手动接管" aria-label="手动接管">
+00012          <div className="lock-icon-inner">
+00013              {/* <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+00014                  <circle cx="12" cy="12" r="9" stroke="currentColor" strokeWidth="2" fill="none"/>
+00015                  <path d="M9 9L16 11L11 16Z" fill="currentColor" stroke="none"/>
+00016              </svg> */}
+00017              <img src={takeoverStart} alt="" aria-hidden="true" />
+00018          </div>
+00019          <span className="lock-text">手动接管</span>
+00020      </button>
+00021  );

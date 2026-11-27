@@ -1,0 +1,360 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/components/chat/message-list.tsx
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：31b6d0831f247308e2bd07b9a4f1bcc2cd70b7dfbdd252ada75c4cbdacce805c
+以下是带原行号的节选，不是完整文件。
+
+00001  "use memo";
+00002  
+00003  import * as React from "react"
+00004  import { FailureCardPortal, FailureCardPortalProvider } from "./failure-card-portal"
+00005  import {
+00006    ArrowRight,
+00007    Check,
+00008    ChevronDown,
+00009    ChevronRight,
+00010    ChevronUp,
+00011    Copy,
+00012    ExternalLink,
+00013    FileIcon,
+00014    Globe,
+00015    HelpCircle,
+00016    Loader2,
+00017    Paperclip,
+00018    Reply,
+00019    X,
+00020  } from "lucide-react"
+01370        className={cn(
+01371          "mx-auto flex w-full flex-col items-start gap-2 text-muted-foreground",
+01372          className
+01373        )}
+01374        {...props}
+01375      >
+01376        Empty message
+01377      </div>
+01378    )
+01379  }
+01380  
+01381  interface CopyMessageButtonProps {
+01382    messages: UIMessage[]
+01383  }
+01384  
+01385  function CopyMessageButton({ messages }: CopyMessageButtonProps) {
+01386    const [copied, setCopied] = React.useState(false)
+01387    const { skillDisplayNames } = useMessageList()
+01388    // 复制内容只含文本：先统一剥离 `[附件文件:path]` 标记与 attachment-policy 机器文案
+01389    // （与气泡渲染同一事实源），技能标记 `[skill xxx]` 再按渲染语义替换为技能显示名。
+01390    const text = React.useMemo(() => {
+01391      const raw = getMessagesText(messages)
+01392      if (!raw) return ""
+01393      const cleaned = stripUserMessageMachineText(raw)
+01394      return buildUserSkillPromptDisplayParts(cleaned, skillDisplayNames)
+01395        .map((part) => (part.type === "skill" ? part.displayName : part.text))
+01396        .join("")
+01397        .trim()
+01398    }, [messages, skillDisplayNames])
+01399  
+01400    const onCopy = React.useCallback(async () => {
+01401      if (!text) {
+01402        return
+01403      }
+01404  
+01405      try {
+01406        await navigator.clipboard.writeText(text)
+01407        setCopied(true)
+01408        window.setTimeout(() => setCopied(false), 2000)
+01409        toast.success(t("config.copied"))
+01410      } catch {
+01411        // ignore clipboard failures
+01412      }
+01413    }, [text])
+01414  
+01415    if (!text) {
+01416      return null
+01417    }
+01418  
+01419    return (
+01420      <MessageAction tooltip={copied ? t("config.copied") : t("config.copy")}>
+01421        <button
+01422          type="button"
+01423          aria-label={t("session.copy_message")}
+01424          onClick={() => void onCopy()}
+01425          className={MESSAGE_ACTION_HIT_CLASS}
+01426        >
+01427          {copied ? <Check className="size-4" strokeWidth={2} /> : <MessageActionCopyIcon />}
+01428        </button>
+01429      </MessageAction>
+01430    )
+01431  }
+01432  
+01433  /** 「一键上报」菜单图标（高保真 3:0891 的 16×16 反馈气泡形）。颜色跟菜单文字。 */
+01434  function IssueReportIcon() {
+01435    return (
+01436      <svg
+01437        xmlns="http://www.w3.org/2000/svg"
+01438        viewBox="0 0.12 16 15.76"
+01439        width="16"
+01440        height="15.76"
+01441        aria-hidden="true"
+01442      >
+01443        <path
+01444          d="M8.0000238440625,7.456801899609375C8.3313951540625,7.456802399609375,8.6000242140625,7.188172799609375,8.6000242140625,6.856801999609375L8.6000242140625,3.1184019996093753C8.6000242140625,2.7870311696093752,8.3313951540625,2.518402099609375,8.0000247940625,2.518402099609375C7.6686534840625,2.518402099609375,7.4000244140625,2.7870311696093752,7.4000244140625,3.1184019996093753L7.4000244140625,6.856801999609375C7.4000244140625,7.188002099609375,7.6688241940625,7.456801899609375,8.0000238440625,7.456801899609375Z"
+01445          fill="currentColor"
+01446        />
+01447        <path
+01448          d="M8.80001260703125,9.059185981015625Q8.80001260703125,9.137979091015625,8.78464080703125,9.215258241015626Q8.76926900703125,9.292537491015626,8.73911620703125,9.365332691015626Q8.70896340703125,9.438128091015624,8.66518820703125,9.503642191015626Q8.62141300703125,9.569156291015625,8.56569790703125,9.624871491015625Q8.50998270703125,9.680586591015626,8.44446860703125,9.724361791015625Q8.37895450703125,9.768136991015625,8.30615910703125,9.798289791015625Q8.23336390703125,9.828442591015625,8.15608465703125,9.843814391015625Q8.07880550703125,9.859186191015626,8.00001239703125,9.859186191015626Q7.92121922703125,9.859186191015626,7.84394001703125,9.843814391015625Q7.76666092703125,9.828442591015625,7.69386553703125,9.798289791015625Q7.62107014703125,9.768136991015625,7.55555608703125,9.724361791015625Q7.49004196703125,9.680586591015626,7.43432682703125,9.624871491015625Q7.37861165703125,9.569156291015625,7.33483654703125,9.503642191015626Q7.29106141603125,9.438128091015624,7.26090858903125,9.365332691015626Q7.23075576103125,9.292537491015626,7.21538398403125,9.215258241015626Q7.20001220703125,9.137979091015625,7.20001220703125,9.059185981015625Q7.20001220703125,8.980392811015625,7.21538398403125,8.903113601015624Q7.23075576103125,8.825834511015625,7.26090858903125,8.753039121015625Q7.29106141603125,8.680243731015626,7.33483654703125,8.614729671015626Q7.37861165703125,8.549215551015624,7.43432682703125,8.493500411015624Q7.49004196703125,8.437785241015625,7.55555605703125,8.394010131015625Q7.62107014703125,8.350235000015624,7.69386553703125,8.320082173015624Q7.76666092703125,8.289929345015626,7.84394007703125,8.274557568015625Q7.92121922703125,8.259185791015625,8.00001239703125,8.259185791015625Q8.07880550703125,8.259185791015625,8.15608465703125,8.274557568015625Q8.23336390703125,8.289929345015626,8.30615910703125,8.320082173015624Q8.37895450703125,8.350235000015624,8.44446860703125,8.394010131015625Q8.50998270703125,8.437785241015625,8.56569790703125,8.493500411015624Q8.62141300703125,8.549215551015624,8.66518820703125,8.614729641015625Q8.70896340703125,8.680243731015626,8.73911620703125,8.753039121015625Q8.76926900703125,8.825834511015625,8.78464080703125,8.903113661015626Q8.80001260703125,8.980392811015625,8.80001260703125,9.059185981015625Z"
+01449          fill="currentColor"
+01450        />
+01451        <path
+01452          d="M13.8,0.1199951171875L2.2,0.1199951171875C0.98552179,0.1213178112875,0.0013228675,1.1055166671875,0,2.3199951171875L0,10.3199951171875C0.00088259979,11.5346561171875,0.98533964,12.5191131171875,2.2,12.5199951171875L5.776,12.5199951171875L7.4759998,15.5719951171875C7.5819664,15.7619771171875,7.7824636,15.8797221171875,8,15.8797221171875C8.2175369,15.8797221171875,8.4180336,15.7619771171875,8.5240002,15.5719951171875L10.3952,12.2119951171875C10.556688,11.9223771171875,10.452818,11.5566821171875,10.163199,11.3951941171875C9.8735819,11.2337051171875,9.5078878,11.3375771171875,9.3463993,11.6271951171875L8,14.0471951171875L6.6528001,11.6279951171875C6.5469046,11.4379081171875,6.3463941,11.3200501171875,6.1287999,11.3199961171875L2.2,11.3199961171875C1.6488001,11.3199961171875,1.2,10.8711961171875,1.2,10.3199961171875L1.2,2.3199959171875C1.2,1.7687958171875,1.6488,1.3199957171875,2.2,1.3199957171875L13.8,1.3199957171875C14.3512,1.3199957171875,14.8,1.7687957171875,14.8,2.3199959171875L14.8,10.3199961171875C14.8,10.8711961171875,14.3512,11.3199961171875,13.8,11.3199961171875L13.088,11.3199961171875C12.75663,11.3199961171875,12.488001,11.5886251171875,12.488001,11.9199951171875C12.488001,12.2513661171875,12.75663,12.5199961171875,13.088,12.5199961171875L13.8,12.5199961171875C15.014661,12.5191141171875,15.999118,11.5346561171875,16,10.3199951171875L16,2.3199949171875C15.999118,1.1053340471875,15.014661,0.1208771988775,13.8,0.1199951171875Z"
+01453          fill="currentColor"
+01454        />
+01455      </svg>
+01456    )
+01457  }
+01458  
+01459  /**
+01460   * 消息操作栏的「...」菜单（高保真 3:0891）：当前只有「一键上报」一项，浮层在按钮
+01461   * 上方（side="top"）。结构化分组与纯对话分组共用本组件——两条渲染路径各写一遍
+01462   * 曾在仓库里反复漂移。
+01463   */
+01464  function IssueReportMenuItem({ onSelect }: { onSelect: () => void }) {
+01465    return (
+01466      <MessageAction tooltip={t("session.issue_report_menu")}>
+01467        <DropdownMenu>
+01468          <DropdownMenuTrigger
+01469            aria-label={t("session.issue_report_menu")}
+01470            className={MESSAGE_ACTION_HIT_CLASS}
+01471          >
+01472            <MessageActionMoreIcon />
+01473          </DropdownMenuTrigger>
+01474          <DropdownMenuContent
+01475            align="start"
+01476            side="top"
+01477            sideOffset={6}
+01478            className="w-auto min-w-0 rounded-[4px] bg-[var(--mw-dropdown-surface)] px-2 py-3 shadow-[0px_2px_8px_0px_rgba(0,0,0,0.15)] ring-0"
+01479          >
+01480            <DropdownMenuItem
+01481              className="gap-2 rounded-[3px] px-2 py-0.5 text-[14px] font-normal leading-[22px] text-[color:var(--mw-gray-2)]"
+01482              onClick={onSelect}
+01483            >
+01484              <IssueReportIcon />
+01485              {t("session.issue_report_label")}
+01486            </DropdownMenuItem>
+01487          </DropdownMenuContent>
+01488        </DropdownMenu>
+01489      </MessageAction>
+01490    )
+01491  }
+01492  
+01493  type AssistantMessageProps = {
+01494    message: UIMessage
+01495    isLastMessage: boolean
+01496    isStreaming: boolean
+01497    isLastStep: boolean
+01498    /** 最后一条助手消息才传，在气泡内容末尾渲染状态卡片（重试/网络门/错误）。 */
+01499    trailingStatus?: TrailingStatus | null
+01500    /** 这一轮之后用户又发了新消息：上一条失败已经过期，只留文字。 */
+01501    hasNewerUserTurn?: boolean
+01502  }
+01503  
+01504  type ToolRenderGroup = Extract<AssistantRenderGroup, { kind: "tool" }>
+01505  
+01506  /** 单个工具卡片（无独立灰底，灰底由外层 ToolCluster 托盘统一提供）。 */
+01507  function ToolCard({ group, sessionId, compact }: { group: ToolRenderGroup; sessionId: string; compact?: boolean }) {
+01508    const { workbenchSessionId } = useMessageList()
+01509    // result_file / result_url 不进折叠式工具卡，而是渲染为带「预览」/「打开」
+02635                  const ts = getMessageCreatedAt(message)
+02636                  if (!ts) return null
+02637                  return (
+02638                    <span className="select-none text-[10px] leading-none text-[color:var(--mw-gray-4)]">
+02639                      {formatMessageTime(ts)}
+02640                    </span>
+02641                  )
+02642                })()}
+02643                <CopyMessageButton messages={[message]} />
+02644              </div>
+02645            ) : null}
+02646            </div>
+02647          </div>
+02648        </Message>
+02649      )
+02650    }
+02651  )
+02652  
+02653  UserMessage.displayName = "UserMessage"
+02654  
+02655  type MessageComponentProps = {
+02656    message: UIMessage
+02657    isLastMessage: boolean
+02658    isStreaming: boolean
+02659    isLastStep: boolean
+02660    /** 最后一条助手消息才传，透传到 AssistantMessage 气泡末尾渲染状态卡片。 */
+02661    trailingStatus?: TrailingStatus | null
+02662    /** 这一轮之后用户又发了新消息：上一条失败已经过期，只留文字。 */
+02663    hasNewerUserTurn?: boolean
+02664  }
+02665  
+02666  const MessageComponent = React.memo(
+02667    ({ message, isLastMessage, isStreaming, isLastStep, trailingStatus, hasNewerUserTurn = false }: MessageComponentProps) => {
+02668      if (isMafNoticeMessage(message)) {
+02669        return <MafNoticeMessage notice={getMessagesText([message])} />
+02670      }
+02671  
+02672      // 合成错误消息不再独立渲染：其内容由 trailingStatus 统一嵌入最后一条助手气泡。
+03230    items: rawItems,
+03231    messageCount,
+03232    messagesRef,
+03233    isStreaming,
+03234    trailingStatus,
+03235    isCurrentTurn,
+03236    hasNewerUserTurn,
+03237  }: AssistantMessageGroupProps) {
+03238    const { workspaceId, sessionId, onRevertToUserMessage, showThinking, searchQuery } = useMessageList()
+03239    // 合成错误消息不进 step 渲染：它们不是正常回复内容。
+03240    const items = rawItems.filter((it) => !isSessionErrorMessage(it.message))
+03241    // 该组内合成错误消息的就地错误卡片——紧跟在出错的助手消息之后显示，
+03242    // 而非集中到最后一条助手消息。
+03243    const groupSessionError = extractGroupSessionError(rawItems)
+03244    // 本轮是否被用户主动停止——事实源是与上报插件同一份的中止标记文件（会话级，
+03245    // 见 status/abort-mark-store）。不再读 run 的终止意图：那份状态在轮结算时就复位了，
+03246    // 消息落地后再读只会得到缺省档 timeout（「点了停止却显示执行超时」的成因）。
+03247    // hook 必须留在下方流式空组早退之上（与 useRunningClock 同理，否则 React #300）。
+03248    const userStopped = useAbortMarkStore(
+03249      (state) => selectSessionAbortMark(state, workspaceId, sessionId) !== null,
+03250    )
+03251    const firstItem = items[0]
+03252    const stepGroupId = firstItem?.message.id ?? "empty-assistant-group"
+03253    const open = useSessionStepDisclosureStore((state) =>
+03254      selectStepGroupOpen(state.stepGroupsByWorkspace, workspaceId, sessionId, stepGroupId),
+03255    )
+03256    const setStepGroupOpen = useSessionStepDisclosureStore((state) => state.setStepGroupOpen)
+03257    const [isAnimating, setIsAnimating] = React.useState(false)
+03258    const layoutEnabled = isAnimating && !isStreaming
+03259    const layoutTransition = layoutEnabled
+03260      ? { type: "spring" as const, bounce: 0.1, duration: 0.1 }
+03261      : { duration: 0 }
+03262  
+03263    // 段级折叠态：process / deliverable 各自的展开/收起
+03264    // 由列表持有临时偏好，虚拟行卸载后可恢复；不落全局 store，列表卸载即释放。
+03265    // processOpen：finished 时默认收起（执行完成后收起），running 时由 ProcessSection
+03266    // 内部强制展开（执行过程中不收起），符合用户确认的交互规则。
+03267    const [processOpen, setProcessOpen] = useMessageViewBoolean("process")
+03445        setIsAnimating,
+03446        open,
+03447        lastTextMessage,
+03448        renderableItems,
+03449        workspaceId,
+03450        sessionId,
+03451        stepGroupId,
+03452        setStepGroupOpen,
+03453        onRevertToUserMessage,
+03454        classified,
+03455        runStatus,
+03456        durationLabel,
+03457        trailingStatus: trailingStatus ?? null,
+03458        groupSessionError,
+03459        isCurrentTurn,
+03460        hasNewerUserTurn,
+03461        usageStats: usageStats,
+03462        roundIsInner,
+03463        completionMessages: runMessages,
+03464        onIssueReport: openIssueReport,
+03465        issueFeedbackSlot,
+03466      })
+03467    }
+03468  
+03469    const messagesLength = messageCount
+03470    const processHasSteps = classified.processStepIndices.length > 0
+03471    const resultHasStep = classified.resultStepIndex != null
+03472    const deliverableHasRows = classified.deliverableCount > 0
+03473    // 结果正文分块（与 AssistantMessageContent 渲染同源，SSOT；空 text 已被过滤）：
+03474    // 首块类型供正文容器免 mt-4 判定；末块类型供「已中止」卡间距判定——
+03475    // 中止卡上一段是 markdown 正文时不加 mt-4（正文自带段落间距）。
+03476    const resultGroups = resultHasStep
+03477      ? getAssistantRenderGroups(items[classified.resultStepIndex!].message.parts, showThinking)
+03478      : []
+03479    const resultFirstIsMarkdown = resultGroups[0]?.kind === "text"
+03480    const resultLastIsMarkdown = resultGroups.at(-1)?.kind === "text"
+03481  
+03482    return (
+03692              <MessageActions className="flex items-center gap-4">
+03693                <CopyMessageButton messages={renderableItems.map((item) => item.message)} />
+03694                <MessageFeedbackActions messageId={lastTextMessage.id} />
+03695                <MessageAction tooltip={t("session.revert_label")}>
+03696                  <button
+03697                    type="button"
+03698                    aria-label={t("session.revert_label")}
+03699                    className={MESSAGE_ACTION_HIT_CLASS}
+03700                    onClick={() => onRevertToUserMessage(lastTextMessage.id)}
+03701                  >
+03702                    <MessageActionUndoIcon />
+03703                  </button>
+03704                </MessageAction>
+03705                <IssueReportMenuItem onSelect={openIssueReport} />
+03706              </MessageActions>
+03707              {/* 本轮积分与终态：与实时行同源（高保 3:1958 的四项统计在操作栏内）。 */}
+03708              <MessageUsageStats
+03709                points={usageStats.points}
+03710                hideConsumptionItem={!roundIsInner}
+03711                className="gap-2"
+03712                rate={usageStats.rate}
+03713                durationLabel={usageStats.elapsedLabel}
+03714                status={usageStats.outcome}
+03715              />
+03716              <MessageCompletionDetails messages={runMessages} />
+03717            </div>
+03718          )}
+03719          {issueFeedbackSlot}
+03720          {/* 空组兜底只在「无错误可展示」时出现：有合成错误卡片 / 会话级状态卡片
+03721              （重试、网络门、兜底错误）时,EmptyMessage 是同屏噪音且会掩盖失败。 */}
+03722          {renderableItems.length === 0 && !precedesAutoCompaction && !isStreaming && !groupSessionError && !trailingStatus ? <EmptyMessage /> : null}
+03723        </div>
+03724      </LayoutGroup>
+03725    )
+03726  })
+03727  
+03728  /**
+03729   * 纯对话（isConversational=true）的 MessageGroup 渲染：不套三段容器，
+03730   * 扁平 step + 共享头像 + 共享气泡，视觉与旧版一致，零回归。
+03731   * 抽出为独立函数，避免 MessageGroup 内 if 分支嵌套过深。
+03732   */
+03733  function renderPlainConversationalGroup(params: {
+03734    continuation: boolean
+03945                    type="button"
+03946                    aria-label={t("session.revert_label")}
+03947                    className={MESSAGE_ACTION_HIT_CLASS}
+03948                    onClick={() => onRevertToUserMessage(lastTextMessage.id)}
+03949                  >
+03950                    <MessageActionUndoIcon />
+03951                  </button>
+03952                </MessageAction>
+03953                <IssueReportMenuItem onSelect={params.onIssueReport} />
+03954              </MessageActions>
+03955              {/* 本轮积分与终态：与实时行、结构化分组同源（高保 3:1958）。 */}
+03956              <MessageUsageStats
+03957                points={usageStats.points}
+03958                hideConsumptionItem={!roundIsInner}
+03959                className="gap-2"
+03960                rate={usageStats.rate}
+03961                durationLabel={usageStats.elapsedLabel}
+03962                status={usageStats.outcome}
+03963              />
+03964              <MessageCompletionDetails messages={completionMessages} />
+03965            </div>
+03966          )}
+03967          {params.issueFeedbackSlot}
+03968          {/* 与结构化路径同一判据：有错误/状态卡片时不显示 EmptyMessage。 */}
+03969          {renderableItems.length === 0 && !precedesAutoCompaction && !isStreaming && !groupSessionError && !trailingStatus ? <EmptyMessage /> : null}
+03970        </div>
+03971      </LayoutGroup>
+03972    )
+03973  }
+03974  
+03975  interface MessageListProps {
+03976    messages: UIMessage[]
+03977    status: ThreadStatus
+03978    retryStatus?: RetryStatus | null
+03979    /** 网络检测不通、已自动终止时置位:重试横幅消失后改挂只留「重新发送」的横幅。 */
+03980    networkGate?: { target: string | null } | null
+03981    /** 重试多次仍失败时的处置动作:「终止」与「重新发送」。 */
+03982    onRetryStop?: () => void

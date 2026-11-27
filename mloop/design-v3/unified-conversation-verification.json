@@ -1,0 +1,23 @@
+{
+  "date": "2026-11-16",
+  "mode": "frontend-only",
+  "checks": {
+    "build": "passed",
+    "legacyPrivateRouteUsesSharedConversation": "passed",
+    "legacyGroupRouteUsesSharedConversation": "passed",
+    "squadRouteUsesSharedConversation": "passed",
+    "migrationIdempotentAfterReload": "passed",
+    "sharedMessageSearch": "passed",
+    "privateEntryCardAuthorMatchesAgent": "passed: Mika",
+    "entryCardPersistsAfterReload": "passed",
+    "groupMentionPicker": "passed",
+    "groupNaturalRiskQueryStreamsChart": "passed",
+    "squadLeaderDefaultReply": "passed: 内容创作助手",
+    "automaticRelevantReminder": "passed with temporary local blocked-task fixture",
+    "collapseAndExpandSameReminder": "passed",
+    "reminderOpensScopedRiskChart": "passed: one matching task",
+    "reloadDoesNotRepeatReminder": "passed",
+    "temporaryRiskFixtureRemoved": "passed",
+    "chatCreatesAndLinksActualTask": "passed: 确认发布清单"
+  }
+}

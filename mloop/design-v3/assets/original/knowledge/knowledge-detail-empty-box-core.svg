@@ -1,0 +1,29 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="200" height="170" viewBox="0 0 200 170" fill="none">
+  <svg x="93.74980735778809" y="61.19524383544922" width="60.57422637939453" height="19.081762313842773" viewBox="0 0 60.574226 19.081762">
+    <defs><linearGradient id="knowledge-detail-00799" x1="1" y1="0.5" x2="0" y2="0.5"><stop offset="1940.67" stop-color="#7DA4FE"/><stop offset="1949.79" stop-color="#D4E3FF"/></linearGradient><linearGradient id="knowledge-detail-00802" x1="0" y1="0.5" x2="1" y2="0.5"><stop offset="0" stop-color="#B9E2FB"/><stop offset="0.94" stop-color="#7EB9F0"/></linearGradient></defs>
+    <path d="M0,0L60.574226,6.5295763L27.233601,18.528494L0,19.081762L0,0Z" fill="url(#knowledge-detail-00799)" fill-rule="evenodd"/>
+    <path d="M0,0L60.574226,6.5295763L27.233601,18.528494L0,19.081762L0,0Z" fill="url(#knowledge-detail-00802)" fill-rule="evenodd"/>
+  </svg>
+  <svg x="43.20422172546387" y="61.20143928937614" width="50.553077697753906" height="18.794151306152344" viewBox="0 0 50.553078 18.794771">
+    <defs><linearGradient id="knowledge-detail-00809" x1="-0.0465" y1="0.4426" x2="1.0465" y2="0.5574"><stop offset="0.3" stop-color="#A3D0FA"/><stop offset="0.98" stop-color="#74B3EF"/></linearGradient></defs>
+    <path d="M0,11.263463301696472L50.553078,0.0006203016964718699L50.553078,18.79477130169647L0,11.263463301696472Z" fill="url(#knowledge-detail-00809)" fill-rule="evenodd"/>
+  </svg>
+  <svg x="101.6534252166748" y="67.71900122070312" width="52.687625885009766" height="83.80228424072266" viewBox="0 0 52.687626 83.802284">
+    <defs><linearGradient id="knowledge-detail-00826" x1="1.0945" y1="0.6705" x2="-0.0945" y2="0.3295"><stop offset="1438.85" stop-color="#7DA4FE"/><stop offset="1443.76" stop-color="#D4E3FF"/></linearGradient><linearGradient id="knowledge-detail-00823" x1="-0.0704" y1="0.3994" x2="1.0704" y2="0.6006"><stop offset="0.22" stop-color="#C1E5FB"/><stop offset="0.93" stop-color="#7BB8F1"/></linearGradient></defs>
+    <path d="M0,10.880181L52.687626,0L52.687626,66.148796C52.687626,67.257774,51.963135,68.232697,50.90316,68.549545L0,83.802284L0,10.880181Z" fill="url(#knowledge-detail-00826)" fill-rule="evenodd"/>
+    <path d="M0,10.880181L52.687626,0L52.687626,66.148796C52.687626,67.257774,51.963135,68.232697,50.90316,68.549545L0,83.802284L0,10.880181Z" fill="url(#knowledge-detail-00823)" fill-rule="evenodd"/>
+  </svg>
+  <svg x="43.20422172546387" y="72.45800876617432" width="58.459144592285156" height="79.06902313232422" viewBox="0 0 58.459145 79.069023">
+    <defs><linearGradient id="knowledge-detail-00788" x1="0.4105" y1="1.065" x2="0.5895" y2="-0.065"><stop offset="0.13" stop-color="#CDECFF"/><stop offset="0.86" stop-color="#7CB8F0"/></linearGradient></defs>
+    <path d="M0,0L58.459145,6.1664109L58.459145,79.069023L2.0251343,68.118156C0.84846467,67.889053,0,66.858055,0,65.656456L0,0Z" fill="url(#knowledge-detail-00788)" fill-rule="evenodd"/>
+  </svg>
+  <svg x="101.6534252166748" y="67.69597291946411" width="76.43175506591797" height="33.58263397216797" viewBox="0 0 76.753456 33.954273">
+    <defs><linearGradient id="knowledge-detail-00792" x1="1.1035" y1="0.2562" x2="-0.1035" y2="0.7438"><stop offset="0.15" stop-color="#B5D7F6"/><stop offset="0.73" stop-color="#E1F3FF"/></linearGradient></defs>
+    <path d="M0,10.904558L52.532032,0L75.917145,17.068535C76.753456,17.677866,76.5298,18.984264,75.540321,19.281618L28.687428,33.320572C26.569916,33.954273,24.274921,33.420498,22.653341,31.916677L0,10.904558Z" fill="url(#knowledge-detail-00792)" fill-rule="evenodd"/>
+  </svg>
+  <svg x="21.54219627380371" y="72.4653902053833" width="80.11365509033203" height="29.196399688720703" viewBox="-0.36185876 0 80.47551376 29.535414">
+    <defs><linearGradient id="knowledge-detail-00816" x1="0.7192" y1="1.1022" x2="0.2808" y2="-0.1022"><stop offset="1170.75" stop-color="#6AACEE"/><stop offset="1175.53" stop-color="#C2E7FC"/></linearGradient><linearGradient id="knowledge-detail-00813" x1="0.4321" y1="-0.0531" x2="0.5679" y2="1.0531"><stop offset="0.07" stop-color="#B5D7F6"/><stop offset="0.73" stop-color="#DCF1FF"/></linearGradient></defs>
+    <path d="M21.666681,0L80.113655,6.1493473L59.334724,26.993292C57.572151,28.762785,55.046204,29.535414,52.598049,29.057692L1.0117362,18.994013C-0.038517002,18.78927,-0.36185876,17.443882,0.47688669,16.780926L21.666681,0Z" fill="url(#knowledge-detail-00816)" fill-rule="evenodd"/>
+    <path d="M21.666681,0L80.113655,6.1493473L59.334724,26.993292C57.572151,28.762785,55.046204,29.535414,52.598049,29.057692L1.0117362,18.994013C-0.038517002,18.78927,-0.36185876,17.443882,0.47688669,16.780926L21.666681,0Z" fill="url(#knowledge-detail-00813)" fill-rule="evenodd"/>
+  </svg>
+</svg>

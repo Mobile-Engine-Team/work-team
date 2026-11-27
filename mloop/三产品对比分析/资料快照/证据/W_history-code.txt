@@ -1,0 +1,40 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/session/history-questions/history-questions-source.ts
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：35dee26de25ec0b9d5104178ff24ae43a04141db5bf20c92706e2827cdd726b7
+以下是带原行号的节选，不是完整文件。
+
+00001  import type { UIMessage } from "ai";
+00002  import { useCallback, useState } from "react";
+00003  
+00004  const EMPTY_MESSAGES: UIMessage[] = [];
+00005  
+00006  type HistoryQuestionsSource = {
+00007    workspaceId: string | null;
+00008    sessionId: string | null;
+00009    messages: UIMessage[];
+00010  };
+00011  
+00012  /**
+00013   * 历史提问的数据源：surface 上报时连同当时的 workspace/session 一起记录，读取时按 key 匹配。
+00014   * 因此切换会话后旧条目会立即失效，不依赖父组件清空 effect 的执行时机。
+00015   */
+00016  export function useHistoryQuestionsMessages(
+00017    workspaceId: string | null,
+00018    sessionId: string | null,
+00019  ) {
+00020    const [source, setSource] = useState<HistoryQuestionsSource | null>(null);
+00021  
+00022    const report = useCallback(
+00023      (messages: UIMessage[]) => {
+00024        setSource({ workspaceId, sessionId, messages });
+00025      },
+00026      [sessionId, workspaceId],
+00027    );
+00028  
+00029    const messages =
+00030      source && source.workspaceId === workspaceId && source.sessionId === sessionId
+00031        ? source.messages
+00032        : EMPTY_MESSAGES;
+00033  
+00034    return { messages, report };
+00035  }

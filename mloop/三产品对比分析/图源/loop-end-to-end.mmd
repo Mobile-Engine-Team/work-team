@@ -1,0 +1,44 @@
+sequenceDiagram
+    autonumber
+    participant p0 as 王蕾 / 管理员
+    participant p1 as Loop 页面
+    participant p2 as 频道 / Task
+    participant p3 as 消息路由
+    participant p4 as Agent / Machine
+    participant p5 as 周启明 / 陈晓
+    p0->>p1: 准备工作区并邀请开发、测试
+    Note over p0,p1: 成员接受邀请；角色与频道成员分别校验
+    p1->>p2: 创建或加入问题频道
+    Note over p1,p2: 普通频道默认 private；未加入不能看消息
+    p0->>p1: 配置修复与测试 Agent，授权共享
+    Note over p0,p1: Agent 公开与频道公开分别设置；Machine/runtime 需可用
+    p0->>p2: 频道提出弱网缺陷，进入回复话题
+    Note over p0,p2: 复现、预期、实际在局部话题澄清
+    p5->>p2: 补充开发约束与回归条件
+    Note over p2,p5: 讨论与业务责任先明确，避免让所有 Agent 抢答
+    p0->>p2: 由话题建任务并设置负责人
+    Note over p0,p2: 任务归单频道，保存来源 refs；指派与状态独立
+    p0->>p3: 真实提及修复 Agent，明确请求执行
+    Note over p0,p3: 精确启动方式遵循当前任务/话题与权限规则
+    p3->>p4: 按协作面、共享与投递规则唤醒
+    Note over p3,p4: 普通频道消息不默认广播给所有 Agent
+    p4->>p2: 回写执行活动与补丁 v1
+    Note over p2,p4: 可观察工具与运行时输入；R1 为示例编号
+    p5->>p2: 陈晓回归：预期 1，实际 2
+    Note over p2,p5: 示例失败；把具体差异写到任务讨论
+    p2->>p3: 任务讨论唤醒 Agent assignee
+    Note over p2,p3: 若 Agent 为 assignee；显式提及可增加接收目标
+    p3->>p4: 返工分支：请求第二次修复
+    Note over p3,p4: 运行中普通消息等待后续读取；加急才打断
+    p4->>p2: 回写补丁 v2 与第二次执行进展
+    Note over p2,p4: 不承诺聊天 Rewind 会回滚文件
+    p5->>p2: 陈晓再次回归：预期 1，实际 1
+    Note over p2,p5: 示例通过；保留对应 v2 的测试证据
+    p0->>p2: 王蕾在 In Review 检查并记录通过
+    Note over p0,p2: Browser 用状态、讨论、活动；不是一等 Review Request
+    p0->>p2: 确认完成并显式发布任务公告
+    Note over p0,p2: 公告可按里程碑、评审、产物、总结等类别回到来源
+    p2->>p1: 通知相关成员并在收件箱查阅
+    Note over p1,p2: 按 Watcher/assignee 等策略；排除本次作者
+    p0->>p1: 整理话题、未读与任务记录
+    Note over p0,p1: 空间级归档是管理操作，不能等价于单个任务删除

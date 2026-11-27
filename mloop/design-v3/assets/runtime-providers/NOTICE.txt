@@ -1,0 +1,1 @@
+Provider marks copied from Multica packages/views/runtimes/components/provider-logo.tsx. Claude and Codex: Bootstrap Icons (MIT); Cursor and Qoder: product brand marks. Original source comments retained in the Multica source repository. Multica attribution/license: ../multica/.

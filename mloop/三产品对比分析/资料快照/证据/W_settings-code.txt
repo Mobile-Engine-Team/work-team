@@ -1,0 +1,119 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/settings/mobilework/sections.ts
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：bbb67d1b6102ce19c5faa492a6fbc2639aca9e2d0358ceb315723b504a4cce12
+以下是带原行号的节选，不是完整文件。
+
+00001  /**
+00002   * MobileWork settings hi-fi IA (中移信息设计规范「设置」hi-fi boards).
+00003   * The unified settings dialog shares a left 设置菜单 nav.
+00004   * Order mirrors MasterGo 1007:77536：账户管理 → 系统设置 → 记忆 → 模型 →
+00005   * 个性化 → 软件配置 → 安全与审计 → 帮助与反馈.
+00006   */
+00007  import type { ComponentType, SVGProps } from "react";
+00008  
+00009  import { Palette } from "lucide-react";
+00010  import { t } from "@/i18n";
+00011  
+00012  import {
+00013    MwSettingsAccountIcon,
+00014    MwSettingsChainIcon,
+00015    MwSettingsHelpIcon,
+00016    MwSettingsMemoryIcon,
+00017    MwSettingsModelsIcon,
+00018    MwSettingsSecurityIcon,
+00019    MwSettingsSystemIcon,
+00020  } from "./nav-icons";
+00021  
+00022  /**
+00023   * 设置左栏导航（8 项）。移除的 账户升级/用量余额/智能体设置/系统授权/
+00024   * 数据管理 见 PRD `mobilework-settings-redesign.md` §2 与评审 R1：其中
+00025   * authorization/data/agent 的页面组件与 lib 暂留在树内，仅从导航裁掉。
+00026   */
+00027  export type MwSettingsSectionKey =
+00028    | "account"
+00029    | "system"
+00030    | "memory"
+00031    | "models"
+00032    | "personalization"
+00033    | "security"
+00034    | "software"
+00035    | "help";
+00036  
+00037  export type MwSettingsSection = {
+00038    key: MwSettingsSectionKey;
+00039    label: string;
+00040    icon: ComponentType<SVGProps<SVGSVGElement>>;
+00041  };
+00042  
+00043  const MW_SETTINGS_SECTION_DEFINITIONS = [
+00044    { key: "account", labelKey: "mw_settings.nav.account", icon: MwSettingsAccountIcon },
+00045    { key: "system", labelKey: "mw_settings.nav.system", icon: MwSettingsSystemIcon },
+00046    { key: "memory", labelKey: "mw_settings.nav.memory", icon: MwSettingsMemoryIcon },
+00047    { key: "models", labelKey: "mw_settings.nav.models", icon: MwSettingsModelsIcon },
+00048    { key: "personalization", labelKey: "mw_settings.nav.personalization", icon: Palette },
+00049    { key: "software", labelKey: "mw_settings.nav.software", icon: MwSettingsChainIcon },
+00050    { key: "security", labelKey: "mw_settings.nav.security", icon: MwSettingsSecurityIcon },
+00051    { key: "help", labelKey: "mw_settings.nav.help", icon: MwSettingsHelpIcon },
+00052  ] satisfies Array<{ key: MwSettingsSectionKey; labelKey: string; icon: ComponentType<SVGProps<SVGSVGElement>> }>;
+00053  
+00054  /** Controls whether Help & Feedback appears in the settings navigation. */
+00055  const SHOW_HELP_SECTION = true;
+00056  
+00057  export function isMwSettingsSectionKey(value: string): value is MwSettingsSectionKey {
+00058    return MW_SETTINGS_SECTION_DEFINITIONS.some((section) => section.key === value);
+00059  }
+00060  
+00061  export function getMwSettingsSections(): MwSettingsSection[] {
+00062    const visibleSections = MW_SETTINGS_SECTION_DEFINITIONS.filter(
+00063      ({ key }) => key !== "help" || SHOW_HELP_SECTION,
+00064    );
+00065  
+00066    return visibleSections.map(({ key, labelKey, icon }) => ({
+00067      key,
+00068      label: t(labelKey),
+00069      icon,
+00070    }));
+00071  }
+00072  
+00073  /**
+00074   * 旧 `/settings/*` 与 `/workspace/:id/settings/*` 深链 → 新弹窗分区。
+00075   * 未列出的 tab 回退 account。
+00076   */
+00077  export const LEGACY_SETTINGS_TAB_TO_MW: Record<string, MwSettingsSectionKey> = {
+00078    general: "account",
+00079    ai: "models",
+00080    appearance: "system",
+00081    preferences: "system",
+00082    permissions: "system",
+00083    shell: "system",
+00084    updates: "software",
+00085    environment: "software",
+00086    advanced: "software",
+00087    recovery: "software",
+00088    debug: "software",
+00089    extensions: "models",
+00090    skills: "models",
+00091    "cloud-account": "account",
+00092    "cloud-marketplaces": "account",
+00093    "cloud-workers": "account",
+00094    "cloud-providers": "account",
+00095    den: "account",
+00096  };
+00097  
+00098  /** Map a legacy settings tab id (first path segment) to a hi-fi section. */
+00099  export function resolveMwSettingsSectionFromLegacyTab(tab: string): MwSettingsSectionKey {
+00100    const key = tab.split("/")[0]?.trim() ?? "";
+00101    if (isMwSettingsSectionKey(key)) return key;
+00102    return LEGACY_SETTINGS_TAB_TO_MW[key] ?? "account";
+00103  }
+00104  
+00105  /** Map any legacy settings URL to a hi-fi section (global or workspace-scoped). */
+00106  export function resolveMwSettingsSectionFromLegacyPath(pathname: string): MwSettingsSectionKey {
+00107    const trimmed = pathname
+00108      .replace(/^\/workspace\/[^/]+\/settings\/?/, "")
+00109      .replace(/^\/settings\/mw\/?/, "")
+00110      .replace(/^\/settings\/?/, "")
+00111      .replace(/^\/+|\/+$/g, "");
+00112    if (!trimmed) return "account";
+00113    return resolveMwSettingsSectionFromLegacyTab(trimmed);
+00114  }

@@ -1,0 +1,53 @@
+ZH
+管理 LOOP 授权
+管理 Loop 授权
+
+Loop 客户端会把 Loop 服务授权保存在本地。每条授权对应一个 Loop server URL 和一个 workspace。
+
+常用命令一览
+
+列出本地已有授权：
+
+loop auth status
+
+
+连接或重连一个 Loop machine：
+
+loop daemon --server-url <url> --api-key <machineApiKey>
+
+
+只保存或刷新授权，不启动前台 daemon：
+
+loop auth login --api-key <machineApiKey>
+
+
+省略 --server-url 时，loop auth login 默认使用 Loop SaaS 地址 https://loop.pingkai.cn。连接其他 Loop server 时再传 --server-url <url>。
+
+删除某条授权：
+
+loop auth logout <auth-id>
+
+loop daemon --server-url ... --api-key ... 和 loop auth login 的区别
+
+这两个命令容易混淆，但职责不同：
+
+loop auth login --api-key ...：解析并保存本地 Loop machine 授权；默认使用 Loop SaaS 地址，除非显式传入 --server-url
+loop daemon --server-url ... --api-key ...：解析并保存同一份授权，然后在需要时以前台方式启动 daemon
+
+两个命令都会先向 Loop Server 解析 machine API key，拿到 workspace 和 machine 身份后再保存。本地命令不再要求用户填写 workspace ID。
+
+对同一个 server URL、workspace 和 Machine 重新执行命令，会更新同一条本地授权 ID，包括该 Machine 的 API key 轮换。缺少 Machine ID 的旧授权在被另一条 key 更新前，会先验证自己保存的 key。如果无法验证身份，或当前 Loop profile 已经绑定到该 server 和 workspace 中另一台 Machine，命令会直接停止，不会改写正在运行的连接。即使旧 Machine 已离线或保存的 key 已失效也同样如此：轮换 key 也会使旧 key 失效，但 Machine 及其 Agent 仍可能存在。若要替换旧 Machine，应先处理其 Agent 并在 Loop Web 中移除该 Machine，再在本地执行 loop auth logout <auth-id> 后重试；若要保留两台 Machine，则应从隔离的 Loop profile 执行新 Machine 的连接命令。同一个 server URL 下的不同 workspace 会保存为不同授权条目。
+
+什么时候应该删除授权
+
+当下面这些情况发生时，删除更合适：
+
+这条授权已经不再使用
+你希望彻底移除旧配置
+新的 machine key 或 workspace 授权已经替代它
+推荐管理习惯
+控制本地授权数量
+定期检查哪些授权仍然启用且有人维护
+轮换 key 或删除 machine 后，及时清理旧授权
+下一步
+机器

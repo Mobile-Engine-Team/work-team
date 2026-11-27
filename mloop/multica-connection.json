@@ -1,0 +1,70 @@
+{
+  "verified_on": "2026-11-06",
+  "instance": {
+    "api_base_url": "https://api.multica.xymtop.com",
+    "public_ip": "101.201.116.55",
+    "server_version": "0.8.0",
+    "source_commit": "3c5c8b245",
+    "web_frontend_available": true,
+    "cli_profile": "xymtop",
+    "web_frontend_version": "v0.8.0",
+    "web_login_url": "https://api.multica.xymtop.com/login"
+  },
+  "workspace": {
+    "id": "b884447d-a09a-4a84-82c2-b5c01ef32284",
+    "slug": "multica-demo",
+    "name": "Multica Demo",
+    "issue_prefix": "DEMO"
+  },
+  "http": {
+    "health_path": "/health",
+    "readiness_path": "/readyz",
+    "public_config_path": "/api/config",
+    "identity_path": "/api/me",
+    "workspaces_path": "/api/workspaces",
+    "issues_path": "/api/issues",
+    "agents_path": "/api/agents",
+    "runtimes_path": "/api/runtimes",
+    "workspace_header": "X-Workspace-ID",
+    "authorization_scheme": "Bearer",
+    "personal_access_token_prefix": "mul_",
+    "token": null
+  },
+  "authentication": {
+    "send_email_code_path": "/auth/send-code",
+    "verify_email_code_path": "/auth/verify-code",
+    "create_personal_access_token_path": "/api/tokens",
+    "invitations_path": "/api/invitations",
+    "requires_workspace_membership": true,
+    "credentials_provisioning": "Desktop: sign in with own real email and one-time code, then accept a workspace invitation. API/CLI only: obtain own PAT if needed."
+  },
+  "websocket": {
+    "user_events_url": "wss://api.multica.xymtop.com/ws?workspace_id=b884447d-a09a-4a84-82c2-b5c01ef32284",
+    "user_events_first_frame": {
+      "type": "auth",
+      "payload": {
+        "token": "<PERSONAL_ACCESS_TOKEN>"
+      }
+    },
+    "daemon_url": "wss://api.multica.xymtop.com/api/daemon/ws",
+    "daemon_protocol": "Use the official Multica CLI daemon."
+  },
+  "operator_access_required": false,
+  "recommended_client": "installed_multica_desktop",
+  "desktop": {
+    "config_path_relative_to_user_home": ".multica/desktop.json",
+    "config": {
+      "schemaVersion": 1,
+      "apiUrl": "https://api.multica.xymtop.com",
+      "wsUrl": "wss://api.multica.xymtop.com/ws",
+      "appUrl": "https://api.multica.xymtop.com"
+    },
+    "requires_full_app_restart": true,
+    "requires_source_code": false,
+    "requires_repackaging": false,
+    "requires_cli": false,
+    "requires_pat_for_desktop_login": false,
+    "login_method": "real email and one-time verification code in Desktop",
+    "default_api_when_config_missing": "https://api.multica.ai"
+  }
+}

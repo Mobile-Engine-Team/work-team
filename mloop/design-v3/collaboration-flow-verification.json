@@ -1,0 +1,37 @@
+{
+  "date": "2026-11-12",
+  "method": "Tabbit browser UI interactions against localhost:8086",
+  "passed": [
+    "production build",
+    "two independent page identities",
+    "bidirectional message delivery",
+    "simultaneous sends retain both messages",
+    "message and identity persistence after refresh",
+    "independent drafts survive refresh",
+    "attachment sent and visible on second page",
+    "conversation rename and project association",
+    "new project creation synchronizes",
+    "member add and removal synchronizes",
+    "mention automatically invites participant",
+    "task creation from discussion binds original conversation",
+    "task detail embedded conversation sends to original pages",
+    "settings section switching and close preserve conversation",
+    "new menu opens manual task form",
+    "redundant header management strips removed",
+    "home conversation-task tabs removed",
+    "700px layout has no document horizontal overflow",
+    "700px sidebar expand and collapse",
+    "conversation gear opens nonmodal right sidebar with conversation-only controls",
+    "rename/member/project/task binding work from sidebar",
+    "closing sidebar preserves draft and Escape closes it",
+    "account software settings separate from conversation sidebar",
+    "embedded task conversation settings opens and returns to chat"
+  ],
+  "applicationPageErrors": [],
+  "preservation": "Only this run's known test conversation, messages, task and project were removed. Existing user records were retained.",
+  "limits": [
+    "Same browser profile and origin only",
+    "Agent execution service not connected",
+    "Legacy unrelated settings remain prototype controls"
+  ]
+}

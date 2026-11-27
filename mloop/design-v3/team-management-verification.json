@@ -1,0 +1,29 @@
+{
+  "date": "2026-11-10",
+  "type": "Static prototype browser interaction verification",
+  "checks": {
+    "create_name_required": true,
+    "create_success_and_invite_entry": true,
+    "new_team_empty_board_agents_groups_chats_automation": true,
+    "ordinary_work_conversations_retained": true,
+    "personal_draft_preserved_while_settings_open": true,
+    "rename_and_context_persist_after_reload": true,
+    "member_role_change_and_search": true,
+    "member_removal_confirmation_cancel": true,
+    "invite_multiple_emails_and_validation": true,
+    "existing_invite_rejected": true,
+    "invitation_search_and_revoke": true,
+    "invite_links_enable_disable_delete": true,
+    "unsaved_changes_discard_confirmation": true,
+    "member_role_readonly": true,
+    "nested_escape_closes_only_child": true,
+    "narrow_no_horizontal_overflow": true,
+    "build": true,
+    "git_diff_check": true
+  },
+  "limits": [
+    "Local prototype persistence only",
+    "No email delivery, server authorization, or real link redemption",
+    "Member removal confirmation was cancelled for existing sample members"
+  ]
+}

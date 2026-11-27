@@ -1,0 +1,85 @@
+源文件：/Users/xymtop/Desktop/multica/packages/views/settings/components/plugins-tab.tsx
+版本：3c5c8b245359b9b8e913a47f97211f2a3426f149
+SHA-256：6312031363b4536510c53bdd877c38c01e444f228518a126ac4c77623e821f57
+以下是带原行号的节选，不是完整文件。
+
+00001  "use client";
+00002  
+00003  import { useMemo, useRef, useState } from "react";
+00004  import { useQuery } from "@tanstack/react-query";
+00005  import { AlertCircle, CalendarClock, Loader2, Trash2, Upload } from "@multica/ui/icons";
+00006  import { toast } from "sonner";
+00007  import { useCurrentMember } from "@multica/core/permissions";
+00008  import {
+00009    pluginInstallationsOptions,
+00010    pluginPackagesOptions,
+00011    useConfigurePlugin,
+00012    useDeletePluginPackage,
+00013    useInstallPlugin,
+00014    usePreviewPlugin,
+00015    usePublishPluginPackage,
+00016    useSetPluginEnabled,
+00017    useUninstallPlugin,
+00018  } from "@multica/core/plugins";
+00019  import { useCurrentWorkspace } from "@multica/core/paths";
+00020  import type {
+00662  
+00663          {contributions.length > 0 ? (
+00664            <div className="space-y-1">
+00665              <div className="text-caption font-medium">{t(($) => $.plugins.contributes)}</div>
+00666              <p className="text-caption text-muted-foreground">{contributions.join(" · ")}</p>
+00667            </div>
+00668          ) : null}
+00669  
+00670        </div>
+00671  
+00672        <ConfigForm installation={installation} canManage={canManage} wsId={wsId} />
+00673      </SettingsCard>
+00674    );
+00675  }
+00676  
+00677  export function PluginsTab() {
+00678    const { t } = useT("settings");
+00679    const workspace = useCurrentWorkspace();
+00680    const wsId = workspace?.id ?? "";
+00681    const { role } = useCurrentMember(wsId);
+00682    const canManage = role === "owner" || role === "admin";
+00683  
+00684    const { data, isLoading, isError } = useQuery(pluginInstallationsOptions(wsId));
+00685    const installations = useMemo(() => data?.plugins ?? [], [data]);
+00686  
+00687    return (
+00688      <SettingsTab title={t(($) => $.plugins.title)} scope="workspace">
+00689        {role && !canManage ? <SettingsReadOnlyNotice wsId={wsId} /> : null}
+00690  
+00691        {canManage ? <PublishAndInstall wsId={wsId} canManage={canManage} /> : null}
+00692  
+00693        <SettingsSection title={t(($) => $.plugins.installed.title)}>
+00694          {isLoading ? (
+00695            <Skeleton className="h-24 w-full" aria-label={t(($) => $.plugins.loading)} />
+00696          ) : isError ? (
+00697            <Alert variant="destructive">
+00698              <AlertCircle />
+00699              <AlertTitle>{t(($) => $.plugins.load_failed)}</AlertTitle>
+00700              <AlertDescription>{t(($) => $.plugins.load_failed_description)}</AlertDescription>
+00701            </Alert>
+00702          ) : installations.length === 0 ? (
+00703            <SettingsCard>
+00704              <p className="px-4 py-6 text-caption text-muted-foreground">{t(($) => $.plugins.empty)}</p>
+00705            </SettingsCard>
+00706          ) : (
+00707            <div className="space-y-4">
+00708              {installations.map((installation) => (
+00709                <InstalledPlugin
+00710                  key={installation.id}
+00711                  installation={installation}
+00712                  wsId={wsId}
+00713                  canManage={canManage}
+00714                />
+00715              ))}
+00716            </div>
+00717          )}
+00718        </SettingsSection>
+00719      </SettingsTab>
+00720    );
+00721  }

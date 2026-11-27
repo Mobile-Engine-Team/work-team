@@ -1,0 +1,71 @@
+{
+  "date": "2026-11-16",
+  "entry": "work-upgrade-demo.html",
+  "verifiedTeam": "upgrade-demo-1794799584780",
+  "frontendOnly": true,
+  "build": "passed",
+  "steps": [
+    {
+      "name": "workspace invitations",
+      "result": "3 pending invitation records"
+    },
+    {
+      "name": "local invitation acceptance",
+      "result": "3 colleagues joined"
+    },
+    {
+      "name": "agent creation",
+      "result": "Work 升级研究助手 visible in original agent detail"
+    },
+    {
+      "name": "initial Work discussion",
+      "result": "specific upgrade scope, deliverables, confirmations and document"
+    },
+    {
+      "name": "colleague goal agreement",
+      "result": "4 human messages, participants and common scope saved"
+    },
+    {
+      "name": "task creation through native message cards",
+      "result": "4 actual tasks, assignees and project linked"
+    },
+    {
+      "name": "task collaboration",
+      "result": "colleague comments and one mentioned-agent checklist reply"
+    },
+    {
+      "name": "leader progress query",
+      "result": "progressive card: 4 tasks, 2 completed, 50%"
+    },
+    {
+      "name": "compatibility blocked event",
+      "result": "actual compatibility task changed to blocked"
+    },
+    {
+      "name": "automatic proactive notification",
+      "result": "appeared without manual trigger; relevant Work upgrade project"
+    },
+    {
+      "name": "notification action",
+      "result": "natural risk query generated card with exactly 1 blocked task"
+    },
+    {
+      "name": "risk follow-up",
+      "result": "action, migration mapping, fallback and acceptance comments saved"
+    },
+    {
+      "name": "leader recheck",
+      "result": "4 completed, 100%, no risk"
+    }
+  ],
+  "fixesDuringVerification": [
+    "Custom workspaces no longer generate unrelated legacy sample conversations",
+    "Mentioning an agent named Work 升级研究助手 does not also invoke the Work alias",
+    "Named scenario conversations preserve their title on first send",
+    "Presentation controls moved to lower sidebar to avoid covering content headers"
+  ],
+  "persistenceAudit": {
+    "result": "passed: stored project → risk → project cards retain 50%, one blocked task, then 100%",
+    "completedAt": "2026-11-16T03:28:49.234Z"
+  }
+}

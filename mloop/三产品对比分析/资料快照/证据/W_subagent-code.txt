@@ -1,0 +1,136 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/session/subagent/subagent-aggregate.ts
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：337b6f0d386074f0508b3fa6294483cbe056550691ca94a542b477b01f9a0c56
+以下是带原行号的节选，不是完整文件。
+
+00001  import type { DynamicToolUIPart, UIMessage } from "ai";
+00002  
+00003  import { isSubagentToolName } from "./subagent-tool-name";
+00004  import { isToolInputStreamingPlaceholder } from "../sync/tool-input-placeholders";
+00005  
+00006  /**
+00007   * Subagent pipeline aggregation (M2).
+00008   *
+00009   * 引擎把子智能体调度作为父 assistant 轮上的一个工具调用派生：OpenCode 叫
+00010   * `task`，MobileCoder 叫 `subagent`（双名判定 SSOT `subagent-tool-name.ts`）；
+00011   * 子会话经工具块 `state.metadata.sessionId` 关联（M0 §1.3）。转录管线把子智能体
+00012   * 工具块转成 `dynamic-tool` UI part，并由 `parse-tool-parts.ts` 把子会话 id 与
+00013   * type 透传到 `callProviderMetadata.opencode`。本模块把它读回来，把每次调用
+00014   * 关联到子会话转录。
+00015   */
+00016  
+00017  export type SubagentStatus = "pending" | "running" | "completed" | "error";
+00018  
+00019  export interface SubagentItem {
+00020    /** Stable key = the task tool part id. */
+00021    id: string;
+00022    /** Child session id (M0 §1.3 linkage); null until the task tool reports it. */
+00023    childSessionId: string | null;
+00024    /** e.g. "general" — `task` input.subagent_type. */
+00025    subagentType: string;
+00026    /** Card title — input.description || tool title. */
+00027    task: string;
+00028    /** Full task prompt handed to the subagent — `task` input.prompt (falls back to task). */
+00029    prompt: string;
+00030    status: SubagentStatus;
+00031    /** Child session transcript (the app-native equivalent of M0 §1.4 `result`). */
+00032    result: UIMessage[];
+00033  }
+00034  
+00035  /** Shape carried on a task dynamic-tool part's `callProviderMetadata.opencode`. */
+00036  interface CarriedSubagentMeta {
+00037    subagentSessionId: string | null;
+00038    subagentType: string;
+00039    subagentTitle: string;
+00040    subagentStatus: SubagentStatus;
+00041  }
+00042  
+00043  function asRecord(value: unknown): Record<string, unknown> | null {
+00044    return value && typeof value === "object" ? (value as Record<string, unknown>) : null;
+00045  }
+00046  
+00047  const STATUSES: ReadonlySet<string> = new Set<SubagentStatus>([
+00048    "pending",
+00049    "running",
+00050    "completed",
+00051    "error",
+00052  ]);
+00053  
+00054  /** True for `dynamic-tool` parts produced from a subagent tool call (`subagent`/`task`). */
+00055  export function isTaskToolPart(part: UIMessage["parts"][number]): part is DynamicToolUIPart {
+00056    return part.type === "dynamic-tool" && isSubagentToolName(part.toolName);
+00057  }
+00058  
+00059  function readCarriedMeta(part: DynamicToolUIPart): CarriedSubagentMeta {
+00060    const opencode = asRecord(asRecord(part.callProviderMetadata)?.opencode);
+00061    const sessionId = opencode?.subagentSessionId;
+00062    const type = opencode?.subagentType;
+00063    const title = opencode?.subagentTitle;
+00064    const status = opencode?.subagentStatus;
+00065    return {
+00066      subagentSessionId: typeof sessionId === "string" && sessionId ? sessionId : null,
+00067      subagentType: typeof type === "string" && type ? type : "general",
+00068      subagentTitle: typeof title === "string" ? title : "",
+00069      subagentStatus:
+00070        typeof status === "string" && STATUSES.has(status) ? (status as SubagentStatus) : "running",
+00071    };
+00072  }
+00073  
+00074  /**
+00075   * Build the pipeline items for a set of task parts. `getChildMessages` resolves
+00076   * a child session id to its transcript (in the app: the TanStack transcript
+00077   * query for that session). Pure — no React, no globals — so it is unit-testable.
+00078   */
+00079  export function aggregateSubagents(
+00080    taskParts: DynamicToolUIPart[],
+00081    getChildMessages: (sessionId: string) => UIMessage[] | undefined,
+00082  ): SubagentItem[] {
+00083    return taskParts.map((part) => {
+00084      const meta = readCarriedMeta(part);
+00085      const childSessionId = meta.subagentSessionId;
+00086      const result = childSessionId ? getChildMessages(childSessionId) ?? [] : [];
+00087      const input = asRecord(part.input);
+00088      const prompt = input && typeof input.prompt === "string" ? input.prompt : "";
+00089      const task = meta.subagentTitle || "子智能体任务";
+00090      return {
+00091        id: part.toolCallId,
+00092        childSessionId,
+00093        subagentType: meta.subagentType,
+00094        task,
+00095        prompt: prompt || task,
+00096        status: meta.subagentStatus,
+00097        result,
+00098      } satisfies SubagentItem;
+00099    });
+00100  }
+00101  
+00102  /** Convenience: pull the task parts out of one assistant message's parts. */
+00103  export function collectTaskParts(parts: UIMessage["parts"]): DynamicToolUIPart[] {
+00104    return parts.filter(isTaskToolPart);
+00105  }
+00106  
+00107  /**
+00108   * Args-streaming placeholder built by `session.next.tool.input.started`
+00109   * (event-router.ts): marked by `streamingInput`（未过门控，参数原文）或
+00110   * `streamingInputChars`（门控会话，仅字数）in `callProviderMetadata.opencode`。
+00111   * The v1 `message.part.updated` (running/completed) replaces it in place and drops
+00112   * the marker. If the v1 part never lands (aborted/retried generation), the
+00113   * placeholder orphans in the transcript — it carries no subagent meta, so it must
+00114   * not become a subagent card (untitled, stuck "running", unclickable).
+00115   * 判定用 SSOT `isToolInputStreamingPlaceholder`（两种载荷形态都认）。
+00116   *
+00117   * Session-wide collector: every subagent tool call (`subagent`/`task`) across
+00118   * the whole transcript, in chronological order. Drives the sub-session pill
+00119   * row above the composer, which aggregates all child sessions of the parent
+00120   * session (not one assistant turn).
+00121   */
+00122  export function collectSessionTaskParts(messages: UIMessage[]): DynamicToolUIPart[] {
+00123    const out: DynamicToolUIPart[] = [];
+00124    for (const message of messages) {
+00125      if (message.role !== "assistant") continue;
+00126      for (const part of message.parts) {
+00127        if (isTaskToolPart(part) && !isToolInputStreamingPlaceholder(part)) out.push(part);
+00128      }
+00129    }
+00130    return out;
+00131  }

@@ -1,0 +1,165 @@
+源文件：/Users/xymtop/Desktop/multica/server/internal/handler/comment.go
+版本：3c5c8b245359b9b8e913a47f97211f2a3426f149
+SHA-256：3375a3d9a764cf2e1a8a08ca5eddac963c633b7562152253eb5443f2e57cb17f
+以下是带原行号的节选，不是完整文件。
+
+00001  package handler
+00002  
+00003  import (
+00004  	"bytes"
+00005  	"context"
+00006  	"encoding/json"
+00007  	"errors"
+00008  	"log/slog"
+00009  	"net/http"
+00010  	"sort"
+00011  	"strconv"
+00012  	"strings"
+00013  	"time"
+00014  	"unicode"
+00015  
+00016  	"github.com/go-chi/chi/v5"
+00017  	"github.com/jackc/pgx/v5"
+00018  	"github.com/jackc/pgx/v5/pgtype"
+00019  	"github.com/multica-ai/multica/server/internal/logger"
+00020  	obsmetrics "github.com/multica-ai/multica/server/internal/metrics"
+00334  	commentThreadMaxDepth      = 64
+00335  )
+00336  
+00337  // ListComments returns chronological comments with bounded thread-aware reads.
+00338  // The default newest-comment cap restores complete threads within a context budget
+00339  // or drops each incomplete thread as a unit and sets HeaderCommentsTruncated.
+00340  //
+00341  // roots_only provides activity metadata; summary clips bodies. thread accepts a
+00342  // root or descendant anchor; tail limits replies while retaining the root. recent
+00343  // limits whole active threads, not individual comments. Resolved-thread folding
+00344  // requires complete threads and cannot combine with partial-thread projections.
+00345  //
+00346  // Cursors pair a timestamp with an ID for tie-breaking: recent pages by thread
+00347  // activity, while thread+tail pages by reply creation. Since filtering follows
+00348  // the thread window. The validation below enforces supported combinations.
+00349  func (h *Handler) ListComments(w http.ResponseWriter, r *http.Request) {
+00350  	issueID := chi.URLParam(r, "id")
+00351  	issue, ok := h.loadIssueForUser(w, r, issueID)
+00352  	if !ok {
+00353  		return
+00354  	}
+00355  
+00356  	q := r.URL.Query()
+00357  
+00358  	var sinceTime pgtype.Timestamptz
+00359  	if v := q.Get("since"); v != "" {
+00360  		// RFC3339Nano parsing also accepts timestamps without fractional seconds.
+00361  		t, err := time.Parse(time.RFC3339Nano, v)
+00362  		if err != nil {
+00363  			writeError(w, http.StatusBadRequest, "invalid since parameter; expected RFC3339 format")
+00364  			return
+00365  		}
+00366  		sinceTime = pgtype.Timestamptz{Time: t, Valid: true}
+00367  	}
+00368  
+00369  	threadStr := q.Get("thread")
+00370  	recentStr := q.Get("recent")
+00371  	tailStr := q.Get("tail")
+00372  	beforeTimeStr := q.Get("before")
+00373  	beforeIDStr := q.Get("before_id")
+00374  	if beforeIDStr == "" {
+00375  		// Accept hyphenated alias to match CLI flag convention.
+00376  		beforeIDStr = q.Get("before-id")
+00377  	}
+00378  
+00379  	rootsOnlyStr := q.Get("roots_only")
+00380  	if rootsOnlyStr == "" {
+00381  		// Accept hyphenated alias to match CLI flag convention.
+00382  		rootsOnlyStr = q.Get("roots-only")
+00383  	}
+00384  
+00385  	rootsOnly := false
+00386  	if rootsOnlyStr != "" {
+00387  		switch rootsOnlyStr {
+00388  		case "true":
+00389  			rootsOnly = true
+00390  		case "false":
+00391  		default:
+00392  			writeError(w, http.StatusBadRequest, "invalid roots_only parameter; expected boolean")
+00393  			return
+00394  		}
+00395  	}
+00396  
+00397  	// summary=true is an orthogonal content projection: it clips each comment's
+00398  	// content to a fixed budget so an agent can scan a list without pulling full
+00399  	// bodies into context. It is intentionally NOT mutually exclusive with any
+00400  	// mode — it composes with the default list, since, thread, recent, and
+00401  	// roots_only alike.
+00402  	summary := false
+00403  	if summaryStr := q.Get("summary"); summaryStr != "" {
+00404  		switch summaryStr {
+00405  		case "true":
+00406  			summary = true
+00407  		case "false":
+00408  		default:
+00409  			writeError(w, http.StatusBadRequest, "invalid summary parameter; expected boolean")
+00410  			return
+00411  		}
+00412  	}
+00413  
+00414  	// fold=true is a thread-level projection: it collapses every resolved thread
+00415  	// in the result to root + conclusion (reply-resolved) or root only
+00416  	// (root-resolved), reusing the human timeline's fold semantics so an agent
+00417  	// reading a long issue doesn't pay tokens for settled discussion. Unlike
+00418  	// summary (a per-comment content clip that composes with everything), fold
+00419  	// needs WHOLE threads to compute a resolution, so it is rejected on the
+00420  	// partial-thread reads (since / tail) and on roots_only (which carries no
+00421  	// replies to fold). It composes with summary, the default list, recent, and
+00422  	// untailed thread reads.
+00423  	fold := false
+00424  	if foldStr := q.Get("fold"); foldStr != "" {
+00425  		switch foldStr {
+00426  		case "true":
+00427  			fold = true
+00428  		case "false":
+00429  		default:
+00430  			writeError(w, http.StatusBadRequest, "invalid fold parameter; expected boolean")
+00431  			return
+00432  		}
+00433  	}
+00434  
+00435  	// --- combination validation ----------------------------------------
+00436  	if fold && sinceTime.Valid {
+00437  		writeError(w, http.StatusBadRequest, "fold and since are mutually exclusive: since returns a partial thread, and a fold over a partial thread could hide a resolution that was not fetched")
+00438  		return
+00439  	}
+00440  	if fold && tailStr != "" {
+00441  		writeError(w, http.StatusBadRequest, "fold and tail are mutually exclusive: tail returns a partial thread, which cannot be folded safely")
+00442  		return
+00443  	}
+00444  	if fold && rootsOnly {
+00445  		writeError(w, http.StatusBadRequest, "fold and roots_only are mutually exclusive: roots_only returns no replies to fold")
+00446  		return
+00447  	}
+00448  	if rootsOnly && threadStr != "" {
+00449  		writeError(w, http.StatusBadRequest, "roots_only and thread are mutually exclusive")
+00450  		return
+00451  	}
+00452  	if rootsOnly && recentStr != "" {
+00453  		writeError(w, http.StatusBadRequest, "roots_only and recent are mutually exclusive")
+00454  		return
+00455  	}
+00456  	if rootsOnly && tailStr != "" {
+00457  		writeError(w, http.StatusBadRequest, "roots_only and tail are mutually exclusive")
+00458  		return
+00459  	}
+00460  	if rootsOnly && (beforeTimeStr != "" || beforeIDStr != "") {
+00461  		writeError(w, http.StatusBadRequest, "roots_only does not support before / before_id")
+00462  		return
+00463  	}
+00464  	if threadStr != "" && recentStr != "" {
+00465  		writeError(w, http.StatusBadRequest, "thread and recent are mutually exclusive")
+00466  		return
+00467  	}
+00468  	if tailStr != "" && threadStr == "" {
+00469  		writeError(w, http.StatusBadRequest, "tail requires thread (it is a thread-scoped limit)")
+00470  		return
+00471  	}
+00472  	if (beforeTimeStr == "") != (beforeIDStr == "") {
+00473  		writeError(w, http.StatusBadRequest, "before and before_id must be set together (composite cursor)")

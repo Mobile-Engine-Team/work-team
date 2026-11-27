@@ -1,0 +1,85 @@
+{
+  "date": "2026-11-09",
+  "scope": "仅看板；Work 视觉，Multica 实际显示弹层与四种视图流程",
+  "removed": [
+    "重复页头（看板标题、新建项目、新建任务）",
+    "常驻布局标签",
+    "统计副标题",
+    "底部说明",
+    "任务详情抽屉"
+  ],
+  "build": "node design-v2/build.mjs passed",
+  "styleIsolation": "所有看板样式限定 body[data-page=\"work\"]",
+  "browser": "Tabbit / Chromium",
+  "viewports": [
+    {
+      "width": 1470,
+      "height": 900,
+      "documentOverflow": false,
+      "visuallyReviewed": true
+    },
+    {
+      "width": 1280,
+      "height": 800,
+      "documentOverflow": false,
+      "displayMenuWithinViewport": true,
+      "visuallyReviewed": true
+    }
+  ],
+  "applicationErrors": [],
+  "notes": [
+    "应用错误采集排除 chrome-extension:// 来源 StorageArea 扩展错误。",
+    "修改验收在 localhost 测试数据中完成；127.0.0.1 原有任务和评论未用于修改测试。",
+    "截图为浏览器实际渲染，裁去 localhost 缩放产生的画布留白。",
+    "仅静态数据与浏览器本地保存，未接入 Multica 服务端、真实智能体执行、自定义工作流或自定义字段。",
+    "本轮未重新验证 file:// 加载。"
+  ],
+  "screenshots": [
+    "previews/work-board.png",
+    "previews/work-board-display.png",
+    "previews/work-board-table.png",
+    "previews/work-board-swimlane.png",
+    "previews/work-board-create.png",
+    "previews/work-board-detail.png"
+  ],
+  "previousChecks": [
+    "新建任务标题自动聚焦",
+    "中文、emoji、多行描述输入",
+    "无效日期拒绝，日期输入 Enter 确认",
+    "任务创建、标题编辑与刷新保留",
+    "任务详情留在当前工作区，返回看板",
+    "中文多行评论草稿刷新保留、快捷键发送",
+    "评论编辑、附件、删除取消与确认",
+    "子任务创建、完成与进度刷新保留",
+    "标签含中文逗号输入并保存",
+    "拖动状态并刷新保留",
+    "卡片优先级、负责人、日期直接编辑",
+    "批量负责人编辑并刷新保留",
+    "搜索、清除、状态筛选",
+    "分组选择保持显示面板打开",
+    "保存视图与刷新保留、删除取消与确认",
+    "项目创建后的 URL、属性、资源、重命名、刷新保留和删除",
+    "复制任务、删除取消与确认",
+    "新建任务弹窗属性紧凑排列，1470×900 视觉复查"
+  ],
+  "checks": [
+    "显示弹层内四种类型切换，同批任务数量一致",
+    "显示按钮图标随类型改变，点击外部和 Escape 关闭",
+    "表格创建任务，中文与 emoji 输入、标题聚焦",
+    "表格直接修改状态、负责人、日期、标签，列表同步并刷新保留",
+    "列表属性开关：描述、标签、子任务进度",
+    "表格列显隐、状态分组与 CSV 导出内容",
+    "泳道按负责人、项目、父任务分组",
+    "原生拖动任务同时修改负责人和状态",
+    "泳道新建任务带入项目与状态",
+    "布局设置按视图隔离，刷新保留",
+    "搜索条件跨布局共享",
+    "栏目折叠与展开",
+    "布局切换重置滚动位置",
+    "删除临时验收任务，保留已有任务和评论",
+    "重复页头 DOM 已删除",
+    "1470×900 与 1280×800 显示复查",
+    "任务详情与新建弹窗视觉复查",
+    "node design-v2/build.mjs 和 git diff --check 通过"
+  ]
+}

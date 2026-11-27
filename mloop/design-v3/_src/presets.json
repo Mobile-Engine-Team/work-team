@@ -1,0 +1,246 @@
+{
+  "skills": [
+    {
+      "id": "skill-manager",
+      "name": "skill-manager",
+      "description": "创建新技能、修改和改进现有技能，并衡量技能表现。当用户希望从头创建技能、编辑或优化现有技能、运行评估来测试技能、通过方差分析对技能表现进行基准测试，或优化技能描述以提高触发准确率时使用。"
+    },
+    {
+      "id": "mobilework-expert-manager",
+      "name": "mobilework-expert-manager",
+      "description": "设计、创建、修改、检查、安装、打包或发布 MobileWork 专家和专家团时使用。 把业务需求、SOP、资料或旧角色包整理成可交付的单专家或团队包，并修复、迁移已有专家。 涵盖角色分工、工作步骤和技能边界，按真实运行职责选择资料、技能、工具和外部连接，不按角色数量机械生成资源。 外部压缩包、附件和陌生目录默认只做安全检查；普通 UI 修改或独立通用 Skill 编写不属于本技能。"
+    },
+    {
+      "id": "cmjt-desktop-auto",
+      "name": "cmjt-desktop-auto",
+      "description": "跨平台桌面自动化命令行工具。在Windows系统使用UIAutomation (UIA3)技术标准，在Linux系统使用AT-SPI2无障碍接口标准。通过分析桌面无障碍树结构，为AI Agent提供跨平台的桌面元素交互能力。支持快照获取、元素索引点击、窗口管理、鼠标键盘操作等功能。"
+    },
+    {
+      "id": "cmit-browser",
+      "name": "cmit-browser",
+      "description": "面向内置浏览器的自动化命令行工具。采用 daemon 架构，通过内置浏览器 API 保持并控制浏览器实例，支持页面分析、交互、人工接管和进度消息，适用于网页交互、数据提取、表单填写和 Web UI 测试。"
+    },
+    {
+      "id": "ai-ppt-generation",
+      "name": "ai-ppt-generation",
+      "description": "用 3 个预设模板从 PDF/Word/PPTX/Excel/HTML/图片/一句话生成可编辑 PPTX。公众版模型自带文生图与读图：配图用宿主 ImageGen，图意用宿主 Read（对标 teleagent_pptx）；禁止 mobilework_auth / 聚智 VL / scripts/image_gen.py 网关。信息不足可联网搜索。用户通常只选模板。触发词：SVG PPT、生成PPT、svg to pptx、Mobile Work PPT、ai-ppt-generation"
+    },
+    {
+      "id": "meeting-and-brief",
+      "name": "meeting-and-brief",
+      "description": "会议纪要 + 工作简报一体化 skill。把原始会议文字稿智能整理为结构化正式纪要 docx（议题、结论、待办、责任人、截止日期）， 双模板体系：内部会议/通用场景走章节式（8 章节 + 议题三段式 + 签署栏，默认），甲方咨询交付走附件10 单表； 自动入库归档、支持跨会议检索；月底一键聚合多场会议为正式信函式月度工作简报 docx；随时问询输出 5 项优先级清单或 3 桶交付清单。 按管理咨询交付标准打磨（正式模板、客户代号脱敏、人审门），覆盖销售/经营分析/项目管理/调研/参观/流程梳理/制度设计 8 类会议。 日程集成三层路线：企微 CalDAV → gcal MCP → ICS 离线。 触发词：整理纪要 / 会议纪要 / 会议记录 / 会议记录整理 / 写会议纪要 / 整理会议记录 / 按纪要模板整理 / 归档纪要 / 会议总结 / 会议摘要 / 纪要模板 / 上次和甲方 X 聊了啥 / 出 5 项优先级清单 / 出 X 月简报 / 给甲方 X 写月度简报 / 整理本月工作简报 / 月底整理一下 / 工作简报 / 工作总结 / 周报 / 月报 / 周报月报 / 登记客户代号 / 新建客户 / 甲方最近有什么问题 / 我方承诺未交付 / X 客户做了哪些工作 / Y 时段交付了什么。   输入支持文字稿（.docx/.txt/.md）；录音请先用 asr-transcribe 转写后接入。"
+    },
+    {
+      "id": "mobile-icon-system-design",
+      "name": "mobile-icon-system-design",
+      "description": "移动端图标系统设计技能。把一套经过验证的移动端图标设计流程固化为可重复执行步骤： 先确定 App 领域与主题色，建立设计哲学、定义视觉规范，按统一网格纪律（24×24 viewBox、 2px 描边、round 端帽、0.5 整数坐标）批量生成导航/操作/状态/领域四类 SVG 图标（颜色直接写入 领域主题色），一键构建 + 自动校验 + 生成自包含 preview.html 预览页，产出可直接交付前端工程的 独立 SVG 文件。 This skill should be used when the user wants to design a mobile app icon system, generate SVG icon sets with a unified theme color, or build icon templates for an app. 触发词：图标设计、图标系统、设计图标、移动端图标、整套图标、SVG 图标、icon design、 图标生成、主题色图标、底部导航图标。"
+    },
+    {
+      "id": "skill-creator",
+      "name": "skill-creator",
+      "description": "创建新技能、修改和改进现有技能，并衡量技能表现。当用户希望从头创建技能、编辑或优化现有技能、运行评估来测试技能、通过方差分析对技能表现进行基准测试，或优化技能描述以提高触发准确率时使用。"
+    },
+    {
+      "id": "github",
+      "name": "github",
+      "description": "Interact with GitHub using the `gh` CLI. Use `gh issue`, `gh pr`, `gh run`, and `gh api` for issues, PRs, CI runs, and advanced queries."
+    },
+    {
+      "id": "email-official",
+      "name": "email-official",
+      "description": "国央企场景中文邮件的起草与润色技能。覆盖内部通知、请示汇报、跨部门协调、 对外正式邮件、会议纪要回复等正式商务邮件；按收件人职级调整称呼与敬语，遵循 公文式结构（事由→依据→事项→要求），去口语化、降 AI 味，语气克制得体。 支持从零起草与对既有邮件润色（改正式/改简洁/统一口径）。 This skill should be used when the user wants to draft or polish a formal Chinese business email in a state-owned enterprise / government-adjacent context, including internal notices, reports to leadership, cross-department coordination, and external formal email. 触发词：写邮件、起草邮件、润色邮件、改邮件、发通知、请示、汇报邮件、 正式邮件、国央企邮件、公文邮件、把邮件改正式、邮件语气。"
+    },
+    {
+      "id": "web-design-layout",
+      "name": "web-design-layout",
+      "description": "网站设计与排版美化技能。支持从零设计 HTML 页面、多页面网站和美化优化现有页面。 提供完整的设计系统参考（色彩、排版、间距、布局、动效）和内置页面模板 （Hero区、导航栏、卡片网格、特性展示、CTA、页脚、完整落地页、多页站点骨架等）。 用户要「网站/官网/站点」时默认交付多页面网站（共享导航/样式、≥2 页），只有明确要 「落地页/单页」才交付单页。This skill should be used when the user wants to design a website, create a landing page, beautify an existing page, improve layout/typography, or apply professional styling to HTML. 触发词：网站设计、页面设计、排版、美化、CSS美化、落地页、网页设计、布局优化、 UI美化、页面改版、设计漂亮的页面、帮我设计一个页面、帮我把页面变好看、企业官网、公司网站、多页面网站。"
+    },
+    {
+      "id": "sdd",
+      "name": "sdd",
+      "description": "Implements the Spec-Driven Development lifecycle (Intent, Requirements, Design, Tasks, Build) for structured feature development. Use when the user wants to scaffold a new feature spec, generate EARS requirements, create a technical design, break work into tasks, or check spec status. Trigger on keywords: sdd, spec-driven, ears requirements, feature spec."
+    },
+    {
+      "id": "brainstorm-with-file",
+      "name": "brainstorm-with-file",
+      "description": "MobileWork 中文多视角创意构思技能。适用于产品、功能、广告、品牌、内容、活动、服务、界面和视觉等创意任务；在当前对话中完成主题理解、创意发散、多视角分析、方案挑战、创意合并、评分比较和收敛推荐，并默认在当前工作区生成完整的 Markdown 创意方案文档。方案包含图片时自动创建 assets 文件夹保存图片，并使用相对链接导入 Markdown。只使用当前会话，不开启多个会话，不委派其他智能体，不直接修改项目源代码。"
+    },
+    {
+      "id": "dev-expert",
+      "name": "dev-expert",
+      "description": "编程专家综合技能套件，含 18 个子技能：软件项目总控、网站项目总控、API设计、Bug诊断、代码生成、代码审查、重构建议、测试用例生成、性能基准测试、技术选型、文档生成、任务拆解与执行、Spec驱动开发、Karpathy编码规范、项目记忆管理、CMS二次开发、前端设计、MySQL数据库。按用户输入关键词路由到对应子技能模板执行，支持 `@英文标识` 显式调用跳过路由匹配；Laravel/PHP、Java/Spring 框架能力以专项 reference 方式按需加载，不新增子技能标识。关键词路由表、领域路由表、优先级矩阵和子技能索引见 SKILL.md 主体。 强制项（L0，任何网站/软件项目任务交付必须包含，见正文顶部「交付强制清单」）：①复杂度分级+AI工期预估 ②表单校验清单+实测证据 ③Windows启动脚本run.bat ④后端需求判定 ⑤已知限制披露；表单校验三条红线：禁止超长静默截断、禁止非法枚举静默降级、提交接口必须有后端幂等兜底。"
+    },
+    {
+      "id": "mobilework-knowledge",
+      "name": "mobilework-knowledge",
+      "description": "MobileWork 产品的知识百科——身份与开发方、平台能力、下载安装、数智员工、任务执行、账号登录、隐私与算力积分、故障排查、设置与操作指南。当用户问「你是谁」「你是什么」「介绍一下你自己」「MobileWork 是什么」「谁开发的」「和传统 AI 工具有什么区别」「支持哪些系统」「怎么下载安装」「数智员工/RPA 怎么用」「订购/取消员工」「中断任务/补充需求」「查看任务结果」「技能和工具的区别」「需要注册吗」「登录失败/收不到验证码」「隐私数据」「算力积分」「怎么添加模型」「怎么设置权限」「怎么用 MCP/语音/浏览器/技能」「怎么创建插件」「什么是跨会话记忆」「打不开/转圈/执行失败」，或遇到「登录超时」「端口占用」「密钥环」「MAF/安全合规检查」「清理缓存」「日志路径」「安装失败/架构不匹配」「模型列表为空」「提工单/意见反馈」等故障 FAQ 类问题时使用。"
+    },
+    {
+      "id": "mindmap",
+      "name": "mindmap",
+      "description": "把任意结构化内容（大纲、需求拆解、方案对比、知识梳理、会议纪要）生成可交互脑图，保存为 .markmap 文件，工作台右侧栏直接渲染。触发词：脑图、思维导图、生成脑图、mind map、mindmap"
+    },
+    {
+      "id": "workday-calendar",
+      "name": "workday-calendar",
+      "description": "管理本地法定假日、调休补班、轮休、公休/临修和个人日程，计算年度工日并生成周历或排班表。用户提到法定假日、国务院放假安排、工作日、调休、补班、年度工日、周历、轮休、排班、公休、临修、日程或空闲时间时使用。用户上传日程表、会议通知、会议安排、培训计划、值班表等文件要求生成或导入日程时使用。仅查询普通日期、设计日历 UI，或要求直接操作 Google/Outlook 等外部日历时不要使用。"
+    },
+    {
+      "id": "chinese-official-writing",
+      "name": "chinese-official-writing",
+      "description": "用于起草、改写和复核中文公文及正式工作材料；当用户要求通知、请示、报告、函、复函、批复、意见、决定、决议、议案、公报、命令、公告、通告、公示、通报、纪要、方案、说明、申请、征求意见函、采购公告、可研、调研、总结、工作要点、审查材料、讲话稿、致辞、述职报告等中文正式文本，或需要顺稿、压缩、去口语化、降 AI 味、文种校验、办理要素核对时使用。不用于英文、文学、营销、社媒、批量语料或替代法律/财务/采购/审计判断。"
+    },
+    {
+      "id": "poster-skill",
+      "name": "poster-skill",
+      "description": "根据用户提示词设计活动宣传海报：主视觉构图、配色、排版与文案创意，先输出设计规范再生成可预览的单文件 HTML（可下载 PNG）。 触发场景：做海报、生成海报、活动海报、宣传海报、推广海报、flyer、poster skill、/poster。 输入以自然语言提示词为主，外部链接可选而非必需。不进行截图或视觉复盘。"
+    },
+    {
+      "id": "mobilework-skill-creator",
+      "name": "mobilework-skill-creator",
+      "description": "创建、更新、评估并交付带完整展示信息的可复用 MobileWork 技能。用户需要编写技能、完善触发描述、检查展示元数据、比较执行效果或安全打包安装技能时使用。"
+    }
+  ],
+  "experts": [
+    {
+      "slug": "deeptrading-agent-team",
+      "name": "财经专家团",
+      "version": "2.0.0",
+      "summary": "A 股深度投研专家团：团长编排标的确认、四大分析师、研究经理、独立交易员、七章报告与可视化。",
+      "defaultPrompt": "请对中国移动（600941）进行深度投研，重点关注其 AI、数字化与智能办公相关业务布局，并给出今日操作建议与主要风险提示。",
+      "quickPrompts": [
+        "请对中国移动（600941）进行深度投研，重点关注其 AI、数字化与智能办公相关业务布局，并给出今日操作建议与主要风险提示。",
+        "帮我研究一下宁德时代最近怎么样，给出明确操作方向与可视化报告。"
+      ],
+      "language": "zh",
+      "avatar": "avatars/deeptrading-agent-team.png",
+      "classification": {
+        "domain": "经营管理领域",
+        "subdomain": "财务领域",
+        "scene": "资本管理场景",
+        "source": "scene-list",
+        "needsReview": false,
+        "reason": "参考 trading-agent-team：A 股深度投研专家团，归入财务资本管理场景"
+      },
+      "primaryAgentId": "deeptrading-mw",
+      "primaryTitle": "财经分析专家团主理人 · A 股深度投研蜂群编排专家"
+    },
+    {
+      "slug": "deepinsight-mw",
+      "name": "深度研究专家团",
+      "version": "1.2.0",
+      "summary": "证据驱动的深度研究专家团（三档量级合一）：dispatcher 弹窗选择 light / medium / high，随后内联执行该档编排并派发对应 worker，交付可追溯的 Markdown、HTML 与 A4 PDF。",
+      "defaultPrompt": "AI Agent产品对比研究：对Codex、Claude Code与WorkBuddy进行清晰对比，从核心功能、易用性、定价、实际案例和优劣势入手，以故事线形式呈现选型逻辑，形成2026年AI Agent实用决策报告，结构清晰、洞察明确",
+      "quickPrompts": [
+        "AI Agent产品对比研究：对Codex、Claude Code与WorkBuddy进行清晰对比，从核心功能、易用性、定价、实际案例和优劣势入手，以故事线形式呈现选型逻辑，形成2026年AI Agent实用决策报告，结构清晰、洞察明确",
+        "帮我深度研究一下【主题】，要求：证据可追溯、关键案例与数据有来源、交付 Markdown 与 HTML 报告。"
+      ],
+      "language": "zh",
+      "avatar": "avatars/deepinsight-mw.png",
+      "classification": {
+        "domain": "经营管理领域",
+        "subdomain": "战略管理领域",
+        "scene": "战略管理场景",
+        "source": "scene-list",
+        "needsReview": false,
+        "reason": "首页「数据分析-深度研究」入口：深度行业研究报告以战略决策价值为主线，归入战略管理场景"
+      },
+      "primaryAgentId": "deepinsight-dispatcher"
+    },
+    {
+      "slug": "zhengqi-visit-intel",
+      "name": "政企拓客专家团",
+      "version": "1.0.1",
+      "summary": "融合内部门户数据与公开情报，产出可溯源的政企拜访决策报告：为何拜访、谈什么、争取什么共识。",
+      "defaultPrompt": "帮我生成阿里巴巴的谈参高拜报告",
+      "quickPrompts": [
+        "帮我生成阿里巴巴的谈参高拜报告",
+        "基于内部门户导出的客户数据，生成一份可溯源的谈参高拜报告。"
+      ],
+      "language": "zh",
+      "avatar": "avatars/team.png",
+      "classification": {
+        "domain": "营销服务领域",
+        "subdomain": "政企领域",
+        "scene": "商客管理场景",
+        "source": "scene-list",
+        "needsReview": false,
+        "reason": "首页「数据分析-政企拓客」入口：以商机洞察与客户拓展策略为主线，归入政企领域商客管理场景"
+      },
+      "primaryAgentId": "zhengqi-visit-intel-team-lead"
+    },
+    {
+      "slug": "deepinsight-zyzx-mw-light",
+      "name": "智慧巡察专家团",
+      "version": "1.4.0",
+      "summary": "本地材料深读、严格用户意图映射、问题归并与深度分析、章节并行写作，交付富含可视化素材的长篇 Markdown 及渲染 HTML/PDF。",
+      "defaultPrompt": "帮我分析巡查材料，识别现场风险并生成巡查报告",
+      "quickPrompts": [
+        "帮我分析巡查材料，识别现场风险并生成巡查报告",
+        "基于这份问题清单和业务底稿做归并研判：保留各单位事实与原值，分析共性机制与差异，图表要有原值、口径和来源。"
+      ],
+      "language": "zh",
+      "avatar": "avatars/deepinsight-zyzx-mw-light.png",
+      "classification": {
+        "domain": "经营管理领域",
+        "subdomain": "巡视领域",
+        "scene": "现场巡视场景",
+        "source": "scene-list",
+        "needsReview": false,
+        "reason": "首页「数据分析-智慧巡察」入口：以风险洞察与合规价值为主线，归入巡视领域现场巡视场景"
+      },
+      "primaryAgentId": "deepinsight-zyzx-light"
+    },
+    {
+      "slug": "shoppers-pro",
+      "name": "商品推荐专家团",
+      "version": "1.0.0",
+      "summary": "全品类购买决策专家团。务实需求洞察+各平台比价+真实口碑分析+推荐指数，给你可点击的购买决策报告。",
+      "defaultPrompt": "给父母买一台三千元左右的手机，操作简单、续航好，推荐一些并给购买入口",
+      "quickPrompts": [
+        "给父母买一台三千元左右的手机，操作简单、续航好，推荐一些并给购买入口",
+        "给自己买商务差旅轻薄本，推荐一些产品"
+      ],
+      "language": "zh",
+      "avatar": "avatars/team.png",
+      "classification": {
+        "domain": "购物领域",
+        "subdomain": "购物决策领域",
+        "scene": "购物决策场景",
+        "source": "scene-list",
+        "needsReview": false,
+        "reason": "首页「深度洞察-商品推荐」入口"
+      },
+      "primaryAgentId": "shoppers-pro-team-lead"
+    },
+    {
+      "id": "mermaid-diagram-expert",
+      "name": "图表设计与渲染专家",
+      "version": "1.0.0",
+      "subtitle": "图表设计与渲染专家",
+      "description": "将自然语言转化为专业级Mermaid图表，支持6种图表类型、15种主题配色，秒级渲染出版级SVG与ASCII可视化",
+      "defaultPrompt": "画一个用户登录认证流程图",
+      "quickPrompts": [
+        "画一个用户登录认证流程图",
+        "设计一个微服务架构的时序交互图",
+        "画一个电商系统的ER实体关系图"
+      ],
+      "tags": [
+        "Mermaid图表",
+        "SVG渲染",
+        "架构可视化"
+      ],
+      "category": "01-ProductDesign",
+      "agentId": "mermaid-diagram-expert",
+      "source": "preset",
+      "classification": {
+        "domain": "研发设计领域",
+        "subdomain": "研发领域",
+        "scene": "软件设计场景",
+        "source": "scene-list",
+        "needsReview": false,
+        "reason": "人工校正：架构图/流程图更贴近软件设计与系统建模"
+      }
+    }
+  ]
+}

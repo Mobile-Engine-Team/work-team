@@ -1,0 +1,65 @@
+{
+  "date": "2026-11-09",
+  "scope": "静态私聊精简、任务会话入口、小队群聊",
+  "build": "node design-v2/build.mjs passed",
+  "checks": [
+    {
+      "name": "私聊移除会话列表及入口",
+      "result": "passed",
+      "evidence": "顶部仅搜索聊天记录、私聊设置两个按钮；智能体名称为文本；无会话数量按钮与侧栏新建小加号"
+    },
+    {
+      "name": "私聊设置只读",
+      "result": "passed",
+      "evidence": "名称、简介、状态、所有者、模型、运行时、Harness、技能；抽屉只有关闭按钮，无重命名、删除、会话或配置操作"
+    },
+    {
+      "name": "旧用户会话补充 mock",
+      "result": "passed",
+      "evidence": "用户截图中小野喵的原会话展示 3 条原用户消息与 3 条示例智能体消息"
+    },
+    {
+      "name": "两条任务会话直达详情",
+      "result": "passed",
+      "evidence": "work.html?issue=3 与 work.html?issue=2；点击后主区域为任务详情，标题与入口一致"
+    },
+    {
+      "name": "智能体多会话",
+      "result": "passed",
+      "evidence": "从详情点击对话直接进入空会话；两次创建获得不同 session；首条消息生成主题标题；重新加载不追加 mock 回复"
+    },
+    {
+      "name": "小队对话入口与成员",
+      "result": "passed",
+      "evidence": "测试小队打开专属 group-chat.html?squad=…，4 位成员与小队相同；内置交付小队核对 5 位成员全部一致"
+    },
+    {
+      "name": "小队配置共用",
+      "result": "passed",
+      "evidence": "修改并恢复预览配置后核对名称、成员、队长、指引、智能体模型与侧栏名称均同步；群中不提供独立编辑成员与配置"
+    },
+    {
+      "name": "小队群聊保存",
+      "result": "passed",
+      "evidence": "文本和图片发送后重新加载保留；图片为 data URL，重新加载不损坏"
+    },
+    {
+      "name": "覆盖抽屉与窄屏",
+      "result": "passed",
+      "evidence": "抽屉顶边与会话头部对齐；390×844 窄屏文档宽度 390，抽屉稳定后范围 x=30..390"
+    },
+    {
+      "name": "记录搜索、文件与表情",
+      "result": "passed",
+      "evidence": "文字、表情、文件发送；关键词 [Work] 高亮、无结果、文件筛选和定位原消息均通过"
+    }
+  ],
+  "browser": "Tabbit；1470×900 桌面与 390×844 窄屏检查；最终页面重新加载无应用来源错误。浏览器扩展 StorageArea TypeError 的堆栈来自 chrome-extension://pcpkfgepcjdmdfelbabogmgoadgmiocg。",
+  "limits": "本地静态原型；示例回复不调用模型；不连接消息、成员或任务执行后端。普通测试群编辑仍为页面内演示，小队群聊消息保存在浏览器。",
+  "previews": [
+    "previews/agent-chat.png",
+    "previews/agent-chat-info.png",
+    "previews/squad-chat.png",
+    "previews/squad-chat-info.png"
+  ]
+}

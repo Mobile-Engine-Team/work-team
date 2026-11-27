@@ -1,0 +1,27 @@
+源文件：/Users/xymtop/Desktop/multica/server/internal/handler/file_upload_limits.go
+版本：3c5c8b245359b9b8e913a47f97211f2a3426f149
+SHA-256：5173b90e5e4654cd724d1f60348059bcea32b149b9229566af5cbff75f30cad3
+以下是带原行号的节选，不是完整文件。
+
+00001  package handler
+00002  
+00003  import "net/http"
+00004  
+00005  const maxUploadSize = 100 << 20 // 100 MiB per file
+00006  
+00007  // File contents have their own limit; multipart boundaries and metadata
+00008  // need extra room within the whole-request cap.
+00009  const maxUploadBodySize = maxUploadSize + (1 << 20)
+00010  
+00011  func parseUploadForm(w http.ResponseWriter, r *http.Request) error {
+00012  	r.Body = http.MaxBytesReader(w, r.Body, maxUploadBodySize)
+00013  	if err := r.ParseMultipartForm(maxUploadSize); err != nil {
+00014  		return err
+00015  	}
+00016  	for _, header := range r.MultipartForm.File["file"] {
+00017  		if header.Size > maxUploadSize {
+00018  			return &http.MaxBytesError{Limit: maxUploadSize}
+00019  		}
+00020  	}
+00021  	return nil
+00022  }

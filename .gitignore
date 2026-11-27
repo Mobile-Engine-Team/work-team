@@ -10,3 +10,11 @@ test-results/
 playwright-report/
 
 __pycache__/
+
+# mloop nested demos
+mloop/**/node_modules/
+mloop/**/.next/
+mloop/**/.env
+mloop/**/.env.*
+!mloop/**/.env.example
+mloop/**/*.dmg

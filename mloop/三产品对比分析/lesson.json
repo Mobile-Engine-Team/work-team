@@ -1,0 +1,762 @@
+{
+  "title": "先确认你在推进哪件工作，再决定是否叫醒 Agent",
+  "thesis": "Loop 让用户从「共同讨论」进入任务；Multica 让用户围绕「持续事项」调度多次执行；MobileWork 让用户在「个人工作空间」通过任务对话获得成果。用户看到相似的输入框，背后的责任、通知与执行含义却不同。",
+  "scope": "2026-11-08；Loop 官方文档快照、Multica 与 MobileWork 指定版本源码及产品约束。下述人物、编号、缺陷与结果均为讲解示例，不是实测日志。详见证据索引和覆盖范围。",
+  "case": "贯穿示例：王蕾负责弱网重复待办问题，周启明开发、陈晓独立回归；修复助手与测试助手参与。示例 W17 表示待完成的工作，R1/R2 表示两次执行，不代表三产品都有相同对象。",
+  "insights": [
+    {
+      "title": "输入框不等于同一种承诺",
+      "text": "在 MobileWork 发消息通常意味着启动本轮任务；在团队评论里，人常常只想留意见。必须让“留言”和“派工”可被预测。"
+    },
+    {
+      "title": "工作对象要跨越多次执行",
+      "text": "R1 写出补丁后测试失败，W17 仍未完成。Multica 的 issue/run 分层最清楚；Loop 任务也不等于 Agent 活动。"
+    },
+    {
+      "title": "团队不是多个 Agent 的别名",
+      "text": "Loop Agent Team 只有 Agent 且由创建者个人掌控；Multica Squad 可含人；MobileWork 专家团主要解决执行组织。"
+    }
+  ],
+  "nodes": [
+    {
+      "id": "entry",
+      "label": "用户选择的入口",
+      "role": "human",
+      "what": "承接需求与后续追问。",
+      "how": "Loop 在频道或话题进入；Multica 在事项评论或私聊进入；MobileWork 在工作空间新建任务对话。",
+      "boundary": "同为输入框，普通留言不一定都启动 Agent。",
+      "evidence": [
+        "L_channels",
+        "M_comments",
+        "W_session"
+      ],
+      "x": 42,
+      "y": 178,
+      "w": 176,
+      "h": 78,
+      "sub": "频道 / 事项 / 任务对话"
+    },
+    {
+      "id": "service",
+      "label": "上下文与工作归属",
+      "role": "server",
+      "what": "决定信息属于哪条协作主线。",
+      "how": "Loop 的 task 归单频道；Multica 的 issue 可归一个项目；MobileWork 的 session 绑定工作空间与任务目录。",
+      "boundary": "个人会话不是共享事项；引用另一个对象不自动获得其权限。",
+      "evidence": [
+        "L_channels",
+        "M_projects",
+        "W_workspace"
+      ],
+      "x": 312,
+      "y": 66,
+      "w": 330,
+      "h": 76,
+      "sub": "先定位对象 · 再决定动作"
+    },
+    {
+      "id": "records",
+      "label": "持续工作与执行痕迹",
+      "role": "data",
+      "what": "让人找回需求、进展和成果。",
+      "how": "Multica 明确一事项多次运行；Loop 留任务讨论与进展；MobileWork 保留消息、工具与成果。",
+      "boundary": "此图为跨产品解释框架，不主张三边有同一种数据库或运行模型。",
+      "evidence": [
+        "L_channels",
+        "M_tasks",
+        "W_session"
+      ],
+      "x": 312,
+      "y": 456,
+      "w": 330,
+      "h": 62,
+      "sub": "Task / Issue+Run / Session+Turn"
+    },
+    {
+      "id": "worker",
+      "label": "Agent 与工具执行",
+      "role": "edge",
+      "what": "把需求变成文件或外部动作。",
+      "how": "修复助手生成补丁；测试助手执行回归。MobileWork 可复用原生浏览器和手动接管。",
+      "boundary": "子代理并行不等于多个人对工作负责；工具许可也不是业务验收。",
+      "evidence": [
+        "M_tasks",
+        "W_takeover-code",
+        "W_subagent-code"
+      ],
+      "x": 750,
+      "y": 182,
+      "w": 208,
+      "h": 84,
+      "sub": "修复 · 浏览器操作 · 测试"
+    },
+    {
+      "id": "person",
+      "label": "王蕾 / 周启明 / 陈晓",
+      "role": "human",
+      "sub": "提出问题 · 开发 · 验收",
+      "what": "三人对同一业务目标负责，但操作权限与执行身份需分别识别。",
+      "how": "王蕾组织弱网问题修复；周启明提交变更；陈晓用测试证据确认是否修好。",
+      "boundary": "人物分工是示例，不代表产品预置这些角色。",
+      "x": 42,
+      "y": 66,
+      "w": 176,
+      "h": 70,
+      "evidence": [
+        "CASE"
+      ]
+    },
+    {
+      "id": "status",
+      "label": "用户判断与验收",
+      "role": "human",
+      "sub": "看成果 · 对照标准 · 决定下一步",
+      "what": "用户判断目标是否真正达成。",
+      "how": "Loop Browser 用 In Review 与讨论；Multica 可交人评审并更新事项；MobileWork 由当前用户检查成果。",
+      "boundary": "生成完成不代表业务通过；MobileWork 多成员验收记录属于后续建议。",
+      "x": 42,
+      "y": 330,
+      "w": 176,
+      "h": 76,
+      "evidence": [
+        "L_working",
+        "M_workflows",
+        "W_session"
+      ]
+    },
+    {
+      "id": "dispatch",
+      "label": "责任与执行路由",
+      "role": "server",
+      "sub": "通知谁 · 唤醒谁 · 是否启动",
+      "what": "将一次输入解释成人类协作或执行请求。",
+      "how": "Loop 按协作面与提及投递；Multica 按回复、提及、负责人规则触发；MobileWork 用户消息交给所选主专家。",
+      "boundary": "通知、指派、运行三件事分开；管理员不自动拥有所有 Agent 调用权。",
+      "x": 312,
+      "y": 204,
+      "w": 330,
+      "h": 82,
+      "evidence": [
+        "L_working",
+        "M_mentioning-agents",
+        "M_agents",
+        "W_experts"
+      ]
+    },
+    {
+      "id": "loader",
+      "label": "可用执行环境",
+      "role": "edge",
+      "sub": "Machine / Runtime / 本地引擎",
+      "what": "提供真正能干活的机器与工具。",
+      "how": "执行前需机器在线、身份与工具授权可用；具体条件以各产品规则为准。",
+      "boundary": "机器在线不等于 Agent 空闲；共享 Agent 不等于获得机器文件系统隔离。",
+      "x": 750,
+      "y": 66,
+      "w": 208,
+      "h": 70,
+      "evidence": [
+        "L_machine-client",
+        "M_daemon-runtimes",
+        "W_hitl-permission"
+      ]
+    },
+    {
+      "id": "report",
+      "label": "输出与失败回交",
+      "role": "edge",
+      "sub": "变更 / 报告 / 错误原因",
+      "what": "让执行结果可见并能再次处理。",
+      "how": "输出随任务/事项呈现，失败提供错误或人工处理入口；R1 失败后示例再发起 R2。",
+      "boundary": "停止、回退或重试不自动撤销外部副作用。",
+      "x": 750,
+      "y": 330,
+      "w": 208,
+      "h": 76,
+      "evidence": [
+        "L_rewind",
+        "M_tasks",
+        "W_files-artifacts"
+      ]
+    }
+  ],
+  "edges": [
+    {
+      "from": "person",
+      "to": "entry",
+      "label": "表达需求",
+      "path": "M130 136 L130 176",
+      "lx": 150,
+      "ly": 158,
+      "role": "human"
+    },
+    {
+      "from": "entry",
+      "to": "service",
+      "label": "内容 / 意图",
+      "path": "M218 216 C265 216 265 104 310 104",
+      "lx": 259,
+      "ly": 146,
+      "role": "human"
+    },
+    {
+      "from": "service",
+      "to": "dispatch",
+      "label": "定位工作",
+      "path": "M477 142 L477 202",
+      "lx": 514,
+      "ly": 177,
+      "role": "server"
+    },
+    {
+      "from": "dispatch",
+      "to": "records",
+      "label": "留下记录",
+      "path": "M477 286 L477 454",
+      "lx": 515,
+      "ly": 365,
+      "role": "data"
+    },
+    {
+      "from": "dispatch",
+      "to": "loader",
+      "label": "受控交接 / W17",
+      "path": "M642 241 L693 241 L693 102 L748 102",
+      "lx": 693,
+      "ly": 156,
+      "role": "server"
+    },
+    {
+      "from": "loader",
+      "to": "worker",
+      "label": "装配上下文",
+      "path": "M854 136 L854 180",
+      "lx": 892,
+      "ly": 160,
+      "role": "edge"
+    },
+    {
+      "from": "worker",
+      "to": "report",
+      "label": "执行出结果",
+      "path": "M854 266 L854 328",
+      "lx": 892,
+      "ly": 299,
+      "role": "edge"
+    },
+    {
+      "from": "report",
+      "to": "dispatch",
+      "label": "结果 / 错误",
+      "path": "M750 368 C699 368 694 267 644 267",
+      "lx": 695,
+      "ly": 321,
+      "role": "edge"
+    },
+    {
+      "from": "records",
+      "to": "status",
+      "label": "读取证据",
+      "path": "M312 487 L266 487 L266 368 L220 368",
+      "lx": 266,
+      "ly": 427,
+      "role": "server",
+      "dash": true
+    },
+    {
+      "from": "status",
+      "to": "entry",
+      "label": "继续或返工",
+      "path": "M130 330 L130 258",
+      "lx": 167,
+      "ly": 299,
+      "role": "human"
+    }
+  ],
+  "steps": [
+    {
+      "title": "提出弱网缺陷",
+      "actor": "王蕾",
+      "visible": "在所选入口写复现步骤、预期仅一条待办、实际出现两条。",
+      "system": "Loop 先形成话题；Multica 创建事项；MobileWork 首次发送创建 session 并开始任务。",
+      "changes": [
+        "共同目标：消除重复待办",
+        "三产品的工作主键不同，不能互换"
+      ],
+      "active": [
+        "person",
+        "entry",
+        "service"
+      ],
+      "evidence": [
+        "L_channels",
+        "M_issues",
+        "W_home-navigation"
+      ]
+    },
+    {
+      "title": "明确由谁处理",
+      "actor": "王蕾 / 周启明",
+      "visible": "选择修复助手，并约定陈晓回归。",
+      "system": "Loop 指派/提及需按投递规则；Multica 可以只指派暂不开始；MobileWork 选择主专家，仍未形成多成员负责人模型。",
+      "changes": [
+        "示例责任：周启明修复，陈晓回归",
+        "调用 Agent 与人类责任分开"
+      ],
+      "active": [
+        "entry",
+        "service",
+        "dispatch"
+      ],
+      "evidence": [
+        "L_working",
+        "M_assigning-issues",
+        "W_experts"
+      ]
+    },
+    {
+      "title": "执行第一版",
+      "actor": "修复助手",
+      "visible": "看到执行活动、补丁 v1 与工具状态。",
+      "system": "可用执行环境读取上下文并运行；本地工具可能需要权限确认。",
+      "changes": [
+        "示例 R1 生成补丁 v1",
+        "工具授权仅允许操作，不代表批准补丁"
+      ],
+      "active": [
+        "dispatch",
+        "loader",
+        "worker",
+        "records"
+      ],
+      "evidence": [
+        "L_operate",
+        "M_tasks",
+        "W_hitl-permission"
+      ]
+    },
+    {
+      "title": "测试发现仍重复",
+      "actor": "陈晓 / 测试助手",
+      "visible": "回归证据显示预期 1、实际 2，需要返工。",
+      "system": "讨论或评论记录原因；Multica 可按工作流交回开发；MobileWork 当前由用户在任务里追问，团队回归闭环属于建议。",
+      "changes": [
+        "示例 QA1：失败",
+        "W17 未通过验收；R1 有输出仍不算完成"
+      ],
+      "active": [
+        "worker",
+        "report",
+        "records",
+        "status"
+      ],
+      "evidence": [
+        "L_channels",
+        "M_workflows",
+        "W_session"
+      ]
+    },
+    {
+      "title": "返工并再次验证",
+      "actor": "周启明 / 修复助手 / 陈晓",
+      "visible": "生成补丁 v2，再跑同一弱网场景。",
+      "system": "重新触发后续执行并保留证据；不把回退聊天误认为撤销已写文件。",
+      "changes": [
+        "示例 R2 → 补丁 v2",
+        "示例 QA2：预期 1、实际 1"
+      ],
+      "active": [
+        "dispatch",
+        "worker",
+        "report",
+        "records"
+      ],
+      "evidence": [
+        "L_rewind",
+        "M_tasks",
+        "W_session"
+      ]
+    },
+    {
+      "title": "人工判断完成",
+      "actor": "王蕾",
+      "visible": "查看 v2、回归结果与业务标准，明确通过。",
+      "system": "Loop Browser 用任务状态和讨论；Multica 由有权操作者推进事项；MobileWork 当前是用户对个人成果的判断。",
+      "changes": [
+        "示例 W17 通过",
+        "多人审批证据对象是 MobileWork 的新增建议"
+      ],
+      "active": [
+        "status",
+        "records",
+        "entry"
+      ],
+      "evidence": [
+        "L_working",
+        "M_workflows",
+        "W_files-artifacts"
+      ]
+    }
+  ],
+  "modules": [
+    {
+      "title": "协作容器：让“大家在说哪件事”有边界",
+      "why": "人需要先找到共同上下文，才能判断一条回复是局部讨论还是全局进展。",
+      "how": "Loop 用频道与回复话题；Multica 用项目和事项；MobileWork 目前用个人工作空间与任务会话。",
+      "boundary": "组织成员资格、私有会话可见性和 Agent 调用权限不是同一个集合。",
+      "input": "复现资料、需求、参与者",
+      "output": "有归属的讨论与工作入口",
+      "depends": "身份、成员资格与上下文访问校验",
+      "evidence": [
+        "L_channels",
+        "M_projects",
+        "W_workspace"
+      ]
+    },
+    {
+      "title": "派工路由：把“请看看”变成可解释的动作",
+      "why": "一条评论可能只想通知人，也可能要启动机器；隐式执行会制造噪声与费用。",
+      "how": "Loop 有投递诊断与加急；Multica 有触发预览、/note 与按作者/线程的路由；MobileWork 每条任务用户消息进入主专家回合。",
+      "boundary": "提及不一定更换负责人；reaction 不等于新消息或启动工作。",
+      "input": "评论、真实提及、指派或定时触发",
+      "output": "人类通知、执行请求或仅保存意见",
+      "depends": "目标权限、Agent 可用性、任务状态与当前运行",
+      "evidence": [
+        "L_features",
+        "M_mentioning-agents",
+        "M_comments",
+        "W_session"
+      ]
+    },
+    {
+      "title": "执行反馈：让人知道是“在跑”还是“修好了”",
+      "why": "模型能输出内容，并不代表文件正确或缺陷消失。",
+      "how": "查看运行活动和产物，再由独立测试验证同一场景；必要时返工并保留后续执行。",
+      "boundary": "工具审批只准许动作；业务验收需业务责任人判断；外部副作用不随会话回退撤销。",
+      "input": "执行日志、补丁与测试结果",
+      "output": "继续、返工、失败处置或业务通过",
+      "depends": "成果定位、错误可见性与责任记录",
+      "evidence": [
+        "L_rewind",
+        "M_tasks",
+        "W_hitl-permission"
+      ]
+    }
+  ],
+  "comparisons": [
+    {
+      "title": "留言 / 派工",
+      "left": "留言保存给人看的意见",
+      "right": "派工请求 Agent 实际执行",
+      "difference": "MobileWork 加团队能力时，需要显式区分这两个意图。"
+    },
+    {
+      "title": "工作 / 一次执行",
+      "left": "W17 持续承载目标与责任",
+      "right": "R1、R2 承载两轮执行与错误",
+      "difference": "一次执行结束不能隐式覆盖业务验收结论。"
+    },
+    {
+      "title": "团队 / 执行组合",
+      "left": "多个人有不同责任与权限",
+      "right": "多个 Agent 共同产出",
+      "difference": "专家团不能直接替代成员、负责人、审批与审计。"
+    },
+    {
+      "title": "工具授权 / 业务验收",
+      "left": "允许某次工具修改文件",
+      "right": "确认修改满足业务标准",
+      "difference": "两种决策必须显示不同操作者、对象和结果。"
+    }
+  ],
+  "failures": [
+    {
+      "title": "提及了 Agent，却没有启动",
+      "trigger": "目标未共享、权限不足或运行环境不可用。",
+      "detect": "Loop 查看投递诊断；Multica 查看触发预览与运行；MobileWork 查看模型/连接就绪与任务错误。",
+      "recover": "由有权人补共享或修复连接，再显式发起；不通过管理员身份假定能越权调用。",
+      "limit": "不能从输入框出现名字推断目标已收到或执行已开始。",
+      "evidence": [
+        "L_working",
+        "M_agents",
+        "W_model-config"
+      ]
+    },
+    {
+      "title": "第一版完成，回归仍失败",
+      "trigger": "R1 有产物，但弱网重复问题仍复现。",
+      "detect": "陈晓拿 v1 按相同复现步骤回归，保留预期与实际差异。",
+      "recover": "记录具体失败原因，交回修复人；R2 使用明确的新输入与版本。",
+      "limit": "此处 QA 分工是场景示例，MobileWork 多人交接机制尚待建设。",
+      "evidence": [
+        "CASE",
+        "M_workflows",
+        "W_session"
+      ]
+    },
+    {
+      "title": "点了停止，文件仍发生过变化",
+      "trigger": "停止前，某个写文件或外部调用已成功。",
+      "detect": "核对文件版本和工具记录，不能只看聊天状态。",
+      "recover": "由操作者评估差异并采取补偿或新执行，保留原因。",
+      "limit": "三产品本次均未建立“聊天回退就撤销所有外部副作用”的证据。",
+      "evidence": [
+        "L_rewind",
+        "M_tasks",
+        "W_session"
+      ]
+    }
+  ],
+  "quizzes": [
+    {
+      "question": "修复助手结束 R1 并输出补丁，是否可以认定弱网问题已完成？",
+      "options": [
+        "可以，运行已结束",
+        "需核对回归证据并由责任人验收",
+        "看到最后一条消息就可以"
+      ],
+      "answer": 1,
+      "explanation": "执行结束只说明这一轮停止，业务目标是否实现要看证据与验收。"
+    },
+    {
+      "question": "MobileWork 专家团已有多个 Agent，是否等于多人协作项目已经具备？",
+      "options": [
+        "等于，多 Agent 就是多成员",
+        "不等于，还缺成员责任、共享工作对象与验收记录"
+      ],
+      "answer": 1,
+      "explanation": "执行的组织方式与人类协作的权责模型是两层能力。"
+    }
+  ],
+  "takeaways": [
+    "从工作入口问起：我现在是在团队讨论、持续事项，还是个人任务对话？",
+    "发送前确认谁会被通知、谁会执行、是否改变负责人和状态。",
+    "验收时同时看输入、执行、产物版本与测试证据，不只看完成文案。",
+    "要补多人能力，先补持续工作对象和可追责决策，再开放多 Agent 自动协作。"
+  ],
+  "sources": [
+    {
+      "id": "L_channels",
+      "kind": "文档",
+      "label": "平凯 Loop · 频道、私聊、话题与任务",
+      "url": "https://loop.pingkai.cn/docs/collaboration/channels-dms-threads-and-tasks",
+      "note": "版本 官方文档快照 2026-11-08；原始路径 /Users/xymtop/Desktop/mloop/三产品对比分析/资料快照/collaboration__channels-dms-threads-and-tasks.txt:1。离线快照见证据索引。"
+    },
+    {
+      "id": "L_features",
+      "kind": "文档",
+      "label": "平凯 Loop · 让 Agent 进入团队现有流程",
+      "url": "https://loop.pingkai.cn/features",
+      "note": "版本 官方文档快照 2026-11-08；原始路径 /Users/xymtop/Desktop/mloop/三产品对比分析/资料快照/features.txt:1。离线快照见证据索引。"
+    },
+    {
+      "id": "L_machine-client",
+      "kind": "文档",
+      "label": "平凯 Loop · 运行与维护 LOOP 客户端",
+      "url": "https://loop.pingkai.cn/docs/machines/operate-loop-client",
+      "note": "版本 官方文档快照 2026-11-08；原始路径 /Users/xymtop/Desktop/mloop/三产品对比分析/资料快照/machines__operate-loop-client.txt:1。离线快照见证据索引。"
+    },
+    {
+      "id": "L_operate",
+      "kind": "文档",
+      "label": "平凯 Loop · 日常管理智能体",
+      "url": "https://loop.pingkai.cn/docs/agents/operate-agents",
+      "note": "版本 官方文档快照 2026-11-08；原始路径 /Users/xymtop/Desktop/mloop/三产品对比分析/资料快照/agents__operate-agents.txt:1。离线快照见证据索引。"
+    },
+    {
+      "id": "L_rewind",
+      "kind": "文档",
+      "label": "平凯 Loop · 回退最近对话（REWIND）",
+      "url": "https://loop.pingkai.cn/docs/collaboration/rewind-conversations",
+      "note": "版本 官方文档快照 2026-11-08；原始路径 /Users/xymtop/Desktop/mloop/三产品对比分析/资料快照/collaboration__rewind-conversations.txt:1。离线快照见证据索引。"
+    },
+    {
+      "id": "L_working",
+      "kind": "文档",
+      "label": "平凯 Loop · 如何与智能体协作",
+      "url": "https://loop.pingkai.cn/docs/collaboration/working-with-agents",
+      "note": "版本 官方文档快照 2026-11-08；原始路径 /Users/xymtop/Desktop/mloop/三产品对比分析/资料快照/collaboration__working-with-agents.txt:1。离线快照见证据索引。"
+    },
+    {
+      "id": "M_agents",
+      "kind": "文档",
+      "label": "Multica · agents",
+      "url": "",
+      "note": "版本 3c5c8b245359b9b8e913a47f97211f2a3426f149；原始路径 /Users/xymtop/Desktop/multica/apps/docs/content/docs/agents.zh.mdx:1。离线快照见证据索引。"
+    },
+    {
+      "id": "M_assigning-issues",
+      "kind": "文档",
+      "label": "Multica · assigning-issues",
+      "url": "",
+      "note": "版本 3c5c8b245359b9b8e913a47f97211f2a3426f149；原始路径 /Users/xymtop/Desktop/multica/apps/docs/content/docs/assigning-issues.zh.mdx:1。离线快照见证据索引。"
+    },
+    {
+      "id": "M_comments",
+      "kind": "文档",
+      "label": "Multica · comments",
+      "url": "",
+      "note": "版本 3c5c8b245359b9b8e913a47f97211f2a3426f149；原始路径 /Users/xymtop/Desktop/multica/apps/docs/content/docs/comments.zh.mdx:1。离线快照见证据索引。"
+    },
+    {
+      "id": "M_daemon-runtimes",
+      "kind": "文档",
+      "label": "Multica · daemon-runtimes",
+      "url": "",
+      "note": "版本 3c5c8b245359b9b8e913a47f97211f2a3426f149；原始路径 /Users/xymtop/Desktop/multica/apps/docs/content/docs/daemon-runtimes.zh.mdx:1。离线快照见证据索引。"
+    },
+    {
+      "id": "M_issues",
+      "kind": "文档",
+      "label": "Multica · issues",
+      "url": "",
+      "note": "版本 3c5c8b245359b9b8e913a47f97211f2a3426f149；原始路径 /Users/xymtop/Desktop/multica/apps/docs/content/docs/issues.zh.mdx:1。离线快照见证据索引。"
+    },
+    {
+      "id": "M_mentioning-agents",
+      "kind": "文档",
+      "label": "Multica · mentioning-agents",
+      "url": "",
+      "note": "版本 3c5c8b245359b9b8e913a47f97211f2a3426f149；原始路径 /Users/xymtop/Desktop/multica/apps/docs/content/docs/mentioning-agents.zh.mdx:1。离线快照见证据索引。"
+    },
+    {
+      "id": "M_projects",
+      "kind": "文档",
+      "label": "Multica · projects",
+      "url": "",
+      "note": "版本 3c5c8b245359b9b8e913a47f97211f2a3426f149；原始路径 /Users/xymtop/Desktop/multica/apps/docs/content/docs/projects.zh.mdx:1。离线快照见证据索引。"
+    },
+    {
+      "id": "M_tasks",
+      "kind": "文档",
+      "label": "Multica · tasks",
+      "url": "",
+      "note": "版本 3c5c8b245359b9b8e913a47f97211f2a3426f149；原始路径 /Users/xymtop/Desktop/multica/apps/docs/content/docs/tasks.zh.mdx:1。离线快照见证据索引。"
+    },
+    {
+      "id": "M_workflows",
+      "kind": "文档",
+      "label": "Multica · workflows",
+      "url": "",
+      "note": "版本 3c5c8b245359b9b8e913a47f97211f2a3426f149；原始路径 /Users/xymtop/Desktop/multica/apps/docs/content/docs/workflows.zh.mdx:1。离线快照见证据索引。"
+    },
+    {
+      "id": "W_experts",
+      "kind": "文档",
+      "label": "MobileWork · invariants/experts.md",
+      "url": "",
+      "note": "版本 8d2ea29fdf828de0d2e2fddec23130e6b71eb02e；原始路径 /Users/xymtop/Desktop/mc/work/invariants/experts.md:1。离线快照见证据索引。"
+    },
+    {
+      "id": "W_files-artifacts",
+      "kind": "文档",
+      "label": "MobileWork · invariants/files-artifacts.md",
+      "url": "",
+      "note": "版本 8d2ea29fdf828de0d2e2fddec23130e6b71eb02e；原始路径 /Users/xymtop/Desktop/mc/work/invariants/files-artifacts.md:1。离线快照见证据索引。"
+    },
+    {
+      "id": "W_hitl-permission",
+      "kind": "文档",
+      "label": "MobileWork · invariants/hitl-permission.md",
+      "url": "",
+      "note": "版本 8d2ea29fdf828de0d2e2fddec23130e6b71eb02e；原始路径 /Users/xymtop/Desktop/mc/work/invariants/hitl-permission.md:1。离线快照见证据索引。"
+    },
+    {
+      "id": "W_home-navigation",
+      "kind": "文档",
+      "label": "MobileWork · invariants/home-navigation.md",
+      "url": "",
+      "note": "版本 8d2ea29fdf828de0d2e2fddec23130e6b71eb02e；原始路径 /Users/xymtop/Desktop/mc/work/invariants/home-navigation.md:1。离线快照见证据索引。"
+    },
+    {
+      "id": "W_model-config",
+      "kind": "文档",
+      "label": "MobileWork · invariants/model-config.md",
+      "url": "",
+      "note": "版本 8d2ea29fdf828de0d2e2fddec23130e6b71eb02e；原始路径 /Users/xymtop/Desktop/mc/work/invariants/model-config.md:1。离线快照见证据索引。"
+    },
+    {
+      "id": "W_session",
+      "kind": "文档",
+      "label": "MobileWork · invariants/session.md",
+      "url": "",
+      "note": "版本 8d2ea29fdf828de0d2e2fddec23130e6b71eb02e；原始路径 /Users/xymtop/Desktop/mc/work/invariants/session.md:1。离线快照见证据索引。"
+    },
+    {
+      "id": "W_subagent-code",
+      "kind": "源码",
+      "label": "MobileWork · apps/app/src/react-app/domains/session/subagent/subagent-aggregate.ts",
+      "url": "",
+      "note": "版本 8d2ea29fdf828de0d2e2fddec23130e6b71eb02e；原始路径 /Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/session/subagent/subagent-aggregate.ts:17。离线快照见证据索引。"
+    },
+    {
+      "id": "W_takeover-code",
+      "kind": "源码",
+      "label": "MobileWork · apps/app/src/react-app/domains/browser/ManualTakeoverButton.tsx",
+      "url": "",
+      "note": "版本 8d2ea29fdf828de0d2e2fddec23130e6b71eb02e；原始路径 /Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/browser/ManualTakeoverButton.tsx:9。离线快照见证据索引。"
+    },
+    {
+      "id": "W_workspace",
+      "kind": "文档",
+      "label": "MobileWork · invariants/workspace.md",
+      "url": "",
+      "note": "版本 8d2ea29fdf828de0d2e2fddec23130e6b71eb02e；原始路径 /Users/xymtop/Desktop/mc/work/invariants/workspace.md:1。离线快照见证据索引。"
+    },
+    {
+      "id": "CASE",
+      "kind": "示例",
+      "label": "弱网重复待办修复",
+      "url": "",
+      "note": "人物、编号、执行与测试结果均为讲解示例，参考用户提供的本地原型；未实际运行业务。"
+    }
+  ],
+  "shortTitle": "三产品 · 用户心智对照",
+  "storyTitle": "同一个缺陷，从提出需求到人工验收",
+  "storyLead": "每一步对照用户期待、系统对象与留下的证据。示例按已核验机制编排；生产账号可用性仍需单独验证。",
+  "roleDescriptions": {
+    "human": "人表达意图、选择入口并判断成果。",
+    "server": "产品决定这次输入归哪件工作，以及是否启动执行。",
+    "data": "记录上下文、运行状态、成果位置；对象因产品而异。",
+    "edge": "机器、工具与外部系统实际产生文件或业务变化。",
+    "agent": "按上下文和授权调用工具。"
+  },
+  "diagram": {
+    "width": 1000,
+    "height": 550,
+    "groups": [
+      {
+        "x": 20,
+        "y": 20,
+        "w": 220,
+        "h": 510,
+        "role": "human",
+        "label": "人和页面 · 发起与查看"
+      },
+      {
+        "x": 290,
+        "y": 20,
+        "w": 375,
+        "h": 390,
+        "role": "server",
+        "label": "协作与工作记录 · 各产品语义不同"
+      },
+      {
+        "x": 290,
+        "y": 424,
+        "w": 375,
+        "h": 106,
+        "role": "data",
+        "label": "工作记录 · 身份、状态与证据"
+      },
+      {
+        "x": 725,
+        "y": 20,
+        "w": 255,
+        "h": 510,
+        "role": "edge",
+        "label": "执行环境 · 工具与实际副作用"
+      }
+    ]
+  }
+}

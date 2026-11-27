@@ -1,0 +1,165 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/session/chat/message-feedback.tsx
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：b8d63ec31f7c14485067764a9fb4a9e92d6cc7d5c2a56a1029b82a94328dde13
+以下是带原行号的节选，不是完整文件。
+
+00001  /** @jsxImportSource react */
+00002  
+00003  import { useCallback, useEffect, useId, useState } from "react";
+00004  
+00005  import { MessageAction } from "@/components/ui/message";
+00006  import { Dialog, DialogOverlay, DialogPortal } from "@/components/ui/dialog";
+00007  import { Dialog as DialogPrimitive } from "@base-ui/react/dialog";
+00008  import { toast } from "@/components/ui/sonner";
+00009  import { cn } from "@/lib/utils";
+00010  import { t } from "@/i18n";
+00011  import { StaffApiError } from "@/react-app/domains/staff/staff-http";
+00012  
+00013  import feedbackMascotUrl from "./assets/feedback-mascot.png";
+00014  import {
+00015    buildDislikeParams,
+00016    buildLikeParam,
+00017    reportConversationEvaluate,
+00018    UNSATISFIED_CODES,
+00019    UNSATISFIED_OTHER_CODE,
+00020    type UnsatisfiedCode,
+00021  } from "./conversation-evaluate-api";
+00022  import {
+00023    MESSAGE_ACTION_HIT_CLASS,
+00024    MessageActionDislikeFilledIcon,
+00025    MessageActionDislikeIcon,
+00026    MessageActionLikeFilledIcon,
+00027    MessageActionLikeIcon,
+00028    MessageFeedbackCloseIcon,
+00029  } from "./message-action-icons";
+00030  import {
+00031    shouldSkipRepeatLike,
+00032    type MessageReaction,
+00033  } from "./message-feedback-policy";
+00034  
+00035  /** 点踩原因 = 接口 unsatisfiedCodeList 枚举（SSOT）。 */
+00036  export const MESSAGE_DISLIKE_REASON_IDS = UNSATISFIED_CODES;
+00037  
+00038  export type MessageDislikeReasonId = UnsatisfiedCode;
+00039  
+00040  export const MESSAGE_DISLIKE_OTHER_ID = UNSATISFIED_OTHER_CODE;
+00041  
+00042  /** 其他问题反馈原因上限（产品需求 200；接口上限 2000）。 */
+00043  export const MESSAGE_DISLIKE_DETAIL_MAX = 200;
+00044  
+00045  const REASON_LABEL_KEY: Record<MessageDislikeReasonId, string> = {
+00046    wrong_result: "session.feedback.reason_wrong_result",
+00047    misunderstood: "session.feedback.reason_misunderstood",
+00048    too_slow: "session.feedback.reason_too_slow",
+00049    failed_midway: "session.feedback.reason_failed_midway",
+00050    wrong_tool: "session.feedback.reason_wrong_tool",
+00051    need_rework: "session.feedback.reason_need_rework",
+00052    other: "session.feedback.reason_other",
+00053  };
+00054  
+00055  export type { MessageReaction };
+00056  
+00057  type MessageDislikeFeedbackDialogProps = {
+00058    open: boolean;
+00059    onOpenChange: (open: boolean) => void;
+00060    submitting?: boolean;
+00061    onSubmit: (payload: { reasons: MessageDislikeReasonId[]; detail: string }) => void;
+00062  };
+00063  
+00064  /**
+00065   * 点踩反馈弹窗（MasterGo 946:43837）：410×、浅黄渐变顶、右上吉祥物、
+00066   * 多选标签 +「其他问题」展开输入；提交后由调用方上报 evaluate 接口。
+00067   */
+00068  export function MessageDislikeFeedbackDialog(props: MessageDislikeFeedbackDialogProps) {
+00069    const { open, onOpenChange, submitting = false, onSubmit } = props;
+00070    const titleId = useId();
+00071    const glowId = useId();
+00072    const [selected, setSelected] = useState<ReadonlySet<MessageDislikeReasonId>>(new Set());
+00073    const [detail, setDetail] = useState("");
+00074  
+00075    useEffect(() => {
+00076      if (!open) return;
+00077      setSelected(new Set());
+00078      setDetail("");
+00079    }, [open]);
+00080  
+00081    const otherSelected = selected.has(MESSAGE_DISLIKE_OTHER_ID);
+00082    const canSubmit = selected.size > 0 && (!otherSelected || detail.trim().length > 0);
+00083  
+00084    const toggleReason = useCallback((id: MessageDislikeReasonId) => {
+00085      setSelected((prev) => {
+00086        const next = new Set(prev);
+00087        if (next.has(id)) next.delete(id);
+00088        else next.add(id);
+00089        return next;
+00090      });
+00091    }, []);
+00092  
+00093    const handleSubmit = useCallback(() => {
+00094      if (!canSubmit || submitting) return;
+00095      const reasons = MESSAGE_DISLIKE_REASON_IDS.filter((id) => selected.has(id));
+00096      const trimmed = otherSelected ? detail.trim().slice(0, MESSAGE_DISLIKE_DETAIL_MAX) : "";
+00097      onSubmit({ reasons, detail: trimmed });
+00098    }, [canSubmit, detail, onSubmit, otherSelected, selected, submitting]);
+00099  
+00100    return (
+00101      <Dialog open={open} onOpenChange={onOpenChange}>
+00102        <DialogPortal>
+00103          <DialogOverlay className="bg-black/20" />
+00104          <DialogPrimitive.Popup
+00105            aria-labelledby={titleId}
+00106            className={cn(
+00107              "fixed top-1/2 start-1/2 z-50 -translate-x-1/2 rtl:translate-x-1/2 -translate-y-1/2 outline-none",
+00108              "w-[min(410px,calc(100%-2rem))] overflow-visible rounded-lg",
+00109              "bg-[linear-gradient(177deg,#FFFADF_2%,#FFFFFF_35%)] shadow-[0px_5px_12px_0px_rgba(59,64,80,0.1)]",
+00110              "dark:bg-[var(--mw-dialog-surface)] dark:[background-image:none]",
+00111              "duration-100 data-open:animate-in data-open:fade-in-0 data-open:zoom-in-95",
+00112              "data-closed:animate-out data-closed:fade-out-0 data-closed:zoom-out-95",
+00113            )}
+00114          >
+00115            <svg
+00116              aria-hidden
+00117              className="pointer-events-none absolute end-0 top-0 h-[90px] w-[291px] blur-[50px] dark:hidden"
+00118              viewBox="0 0 291 90"
+00119              fill="none"
+00120            >
+00121              <defs>
+00122                <linearGradient id={glowId} x1="0%" y1="35%" x2="100%" y2="65%">
+00123                  <stop offset="38%" stopColor="rgb(255,194,148)" stopOpacity="0.92" />
+00124                  <stop offset="100%" stopColor="rgb(255,194,148)" stopOpacity="0.5" />
+00125                </linearGradient>
+00126              </defs>
+00127              <path d="M0 15.5L291 90V0H88L0 15.5Z" fill={`url(#${glowId})`} />
+00128            </svg>
+00129  
+00130            <img
+00131              src={feedbackMascotUrl}
+00132              alt=""
+00133              aria-hidden
+00134              // MasterGo 946:43837 hua948：76×81，距顶 30、距右 34。
+00135              className="pointer-events-none absolute end-[34px] top-[30px] size-[76px] h-[81px] w-[76px] object-contain"
+00136              draggable={false}
+00137            />
+00138  
+00139            <DialogPrimitive.Close
+00140              type="button"
+00141              aria-label={t("session.feedback.close")}
+00142              disabled={submitting}
+00143              // MasterGo 946:43837 closeBtn：距顶 12、距右 8（410 弹窗内 x≈378 y≈12）。
+00144              className="absolute end-2 top-3 z-10 flex size-6 items-center justify-center text-[var(--mw-gray-3)] transition-colors hover:text-[var(--mw-gray-2)] disabled:opacity-40"
+00145            >
+00146              <MessageFeedbackCloseIcon />
+00147            </DialogPrimitive.Close>
+00148  
+00149            <div className="relative z-[1] flex flex-col px-6 pb-6 pt-6">
+00150              <DialogPrimitive.Title
+00151                id={titleId}
+00152                className="pe-8 text-[18px] font-medium leading-6 text-[var(--mw-gray-1)]"
+00153              >
+00154                {t("session.feedback.dislike_title")}
+00155              </DialogPrimitive.Title>
+00156  
+00157              <div className="mt-6 flex flex-col gap-4">
+00158                <div className="flex flex-wrap gap-3">
+00159                  {MESSAGE_DISLIKE_REASON_IDS.map((id) => {
+00160                    const active = selected.has(id);

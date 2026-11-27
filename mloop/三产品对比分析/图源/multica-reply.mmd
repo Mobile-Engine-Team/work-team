@@ -1,0 +1,23 @@
+sequenceDiagram
+    autonumber
+    participant p0 as 评论作者
+    participant p1 as 评论 / Thread
+    participant p2 as 触发预览与路由
+    participant p3 as Agent / Run
+    participant p4 as 成员收件箱
+    p0->>p1: 写回复、批注或顶层评论
+    Note over p0,p1: 批注引用内的提及不触发；自己填写的真实提及才算
+    p1->>p2: 预览目标、来源、权限与当前状态
+    Note over p1,p2: 显式提及优先；无提及才考虑兜底
+    p2->>p3: 回复 Agent → 它；已有 Agent 讨论 → 它
+    Note over p2,p3: 直接回复人类不走负责人兜底；顶层才可能走 Agent owner
+    p2->>p4: 按订阅或直接提及通知人
+    Note over p2,p4: @all 只通知人并抑制负责人兜底；Agent 没有人类收件箱
+    p0->>p2: 选择 /note 或取消触发
+    Note over p0,p2: 只保存意见，不要求执行
+    p2->>p3: 同事项同 Agent 待运行合并，不同 Agent 分开
+    Note over p2,p3: 支持的 runtime 文本 steer 在当前步骤后读取
+    p3->>p1: 回写执行与已读取回执
+    Note over p1,p3: 带附件或不支持 steer 的场景走后续运行
+    p0->>p1: 标记解决或选一个结论；后续回复重开
+    Note over p0,p1: reaction 不触发执行、不改业务状态

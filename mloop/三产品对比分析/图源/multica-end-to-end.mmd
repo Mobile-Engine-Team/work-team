@@ -1,0 +1,44 @@
+sequenceDiagram
+    autonumber
+    participant p0 as 王蕾 / 管理员
+    participant p1 as Multica 页面
+    participant p2 as Project / Issue
+    participant p3 as 分派与调度
+    participant p4 as Agent / Runtime
+    participant p5 as 周启明 / 陈晓
+    p0->>p1: 准备工作区并邀请成员
+    Note over p0,p1: 受邀成员接受；至少保留一名 owner
+    p0->>p1: 连接 runtime，创建 Agent 并配置 Access
+    Note over p0,p1: Agent 调用权限与 runtime 共享分别授权
+    p0->>p2: 建项目、说明与代码资源
+    Note over p0,p2: 项目可设工作流；本地共享目录串行或 worktree 并行
+    p0->>p2: 创建缺陷事项 W17，填写复现与标准
+    Note over p0,p2: issue 是持续工作身份，和后续 run 分开
+    p5->>p2: 评论澄清，必要时选区批注
+    Note over p2,p5: 引用保留快照，发送前可预览触发目标
+    p0->>p3: 指派 Agent / Squad，选择开始方式
+    Note over p0,p3: 暂不开始仅保存；backlog 不执行；指派 Squad 先唤醒 leader
+    p3->>p4: 创建 R1，绑定原 runtime 排队与领取
+    Note over p3,p4: queued / dispatched / 等目录 / running 逐层推进
+    p4->>p2: 回写日志、补丁 v1 和运行结果
+    Note over p2,p4: run completed 不自动表示 issue done
+    p4->>p2: 按工作流动作更新事项或交回人评审
+    Note over p2,p4: run 结束本身不自动改业务状态；需执行者更新
+    p5->>p2: 陈晓批注失败点，记录预期与实际
+    Note over p2,p5: 可将某条回复设结论；reply 会重开已解决讨论
+    p5->>p3: 返工分支：按失败目标重新交接
+    Note over p3,p5: 工作流是项目状态路由；切换默认可确认取消前一 Agent 运行
+    p3->>p4: 创建后续 R2，保留 W17 身份
+    Note over p3,p4: 不同运行记录不覆盖前一轮证据
+    p4->>p2: 交回补丁 v2 与测试输出
+    Note over p2,p4: 正文附件/评论产物与输入描述附件用途区分
+    p5->>p2: 复测通过，关联 v2 并记录结论
+    Note over p2,p5: 同一讨论只保留一个选定结论
+    p0->>p2: 王蕾确认业务通过并推进 done
+    Note over p0,p2: 或由符合规则的集成更新；不能用运行结束替代
+    p2->>p1: 事项订阅者收通知并标读/归档
+    Note over p1,p2: 直接提及仍通知取消订阅者；自己操作不自通知
+    p0->>p1: 看项目进度与 Agent 运行费用
+    Note over p0,p1: done/closed 比例不是项目状态自动完成；费用是估算
+    p0->>p1: 整理视图与历史
+    Note over p0,p1: 事项保留证据，项目删除只解除关联，不删除事项

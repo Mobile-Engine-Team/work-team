@@ -1,0 +1,165 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/session/sidebar/app-sidebar.tsx
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：310397659618ffdf02d00efd9a1716542e5b39675914fa4fcd3b80ddd548ed54
+以下是带原行号的节选，不是完整文件。
+
+00001  /** @jsxImportSource react */
+00002  import * as React from "react";
+00003  import { useCallback, useEffect, useState } from "react";
+00004  import {
+00005    Archive,
+00006    ChevronRight,
+00007    Loader2,
+00008    MoreHorizontal,
+00009    PlusCircle,
+00010    RefreshCw,
+00011    Settings,
+00012    Trash2,
+00013  } from "lucide-react";
+00014  import { LazyMotion, Reorder, domMax, useDragControls } from "motion/react";
+00015  
+00016  import type { WorkspaceInfo } from "../../../../app/lib/desktop";
+00017  import { useSessionDisplayTitle } from "../status/pending-session-title-store";
+00018  
+00019  import type {
+00020    WorkspaceConnectionState,
+00135    return true;
+00136  }
+00137  
+00138  type SessionActionsProps = {
+00139    className: string;
+00140    sessionId: string;
+00141    isPinned: boolean;
+00142  };
+00143  
+00144  type SessionActionItemsProps = {
+00145    menuType: "dropdown" | "context";
+00146    sessionId: string;
+00147    isPinned: boolean;
+00148  };
+00149  
+00150  function SessionActionItems({ menuType, sessionId, isPinned }: SessionActionItemsProps) {
+00151    const ctx = useSidebarContext();
+00152    const store = useSessionManagementStore;
+00153    const actionIds = getSessionSidebarActionIds({
+00154      canRename: Boolean(ctx.onOpenRenameSession),
+00155      canDelete: Boolean(ctx.onOpenDeleteSession),
+00156      canReveal: Boolean(ctx.onRevealSessionFolder) && isDesktopRuntime(),
+00157    });
+00158  
+00159    return (
+00160      <>
+00161        {actionIds.map((actionId) => {
+00162          const icon = actionId === "toggle-pin"
+00163            ? isPinned
+00164              ? <SidebarActionIcon src={SIDEBAR_ACTION_ASSETS.sessionUnpin} />
+00165              : <SidebarActionIcon src={SIDEBAR_ACTION_ASSETS.sessionPin} />
+00166            : actionId === "reveal"
+00167              ? <SidebarActionIcon src={SIDEBAR_ACTION_ASSETS.workspaceReveal} />
+00168              : <SidebarActionIcon
+00169                  src={actionId === "rename"
+00170                    ? SIDEBAR_ACTION_ASSETS.sessionRename
+00171                    : SIDEBAR_ACTION_ASSETS.sessionDelete}
+00172                />;
+00173          const label = actionId === "toggle-pin"
+00174            ? isPinned
+00175              ? t("sidebar_actions.unpin_session")
+00176              : t("sidebar_actions.pin_session")
+00177            : actionId === "reveal"
+00178              ? isMacPlatform()
+00179                ? t("sidebar_actions.reveal_session_folder_finder")
+00180                : t("sidebar_actions.reveal_session_folder")
+00181              : actionId === "rename"
+00182                ? t("sidebar_actions.rename_session")
+00183                : t("sidebar_actions.delete_session");
+00184          const onClick = actionId === "toggle-pin"
+00185            ? () => store.getState().togglePin(sessionId)
+00186            : actionId === "reveal"
+00187              ? () => ctx.onRevealSessionFolder?.(sessionId)
+00188              : actionId === "rename"
+00189                ? () => ctx.onOpenRenameSession?.(sessionId)
+00190                : () => ctx.onOpenDeleteSession?.(sessionId);
+00191          const className = cn(
+00192            SIDEBAR_ACTION_MENU_STYLES.item,
+00193            actionId === "delete" && SIDEBAR_DESTRUCTIVE_ITEM_CLASS,
+00194          );
+00195  
+00196          return menuType === "dropdown" ? (
+00197            <DropdownMenuItem key={actionId} className={className} onClick={onClick}>
+00198              {icon}
+00199              {label}
+00200            </DropdownMenuItem>
+00201          ) : (
+00202            <ContextMenuItem key={actionId} className={className} onClick={onClick}>
+00203              {icon}
+00204              {label}
+00205            </ContextMenuItem>
+00206          );
+00207        })}
+00208      </>
+00209    );
+00210  }
+00211  
+00212  function SessionActions({ className, sessionId, isPinned }: SessionActionsProps) {
+00213    if (!useCanManageSession()) return null;
+00214  
+00215    return (
+00216      <DropdownMenu>
+00217        <DropdownMenuTrigger className="size-6 text-muted-foreground"
+00218          render={
+00219            <Button variant="ghost" size="icon-sm" className={cn("size-6", className)}>
+00220              <MoreHorizontal className="size-4" />
+00221            </Button>
+00222          }
+00223        />
+00224        <DropdownMenuContent align="end" side="bottom" sideOffset={4} alignOffset={-4} className={cn(SIDEBAR_ACTION_MENU_STYLES.sessionContent, 'overflow-hidden')}>
+00225          <SessionActionItems menuType="dropdown" sessionId={sessionId} isPinned={isPinned} />
+00226        </DropdownMenuContent>
+00227      </DropdownMenu>
+00228    );
+00229  }
+00230  
+00231  type SessionContextMenuProps = {
+00232    children: React.ReactElement;
+00233    sessionId: string;
+00234    isPinned: boolean;
+00235  };
+00236  
+00237  function SessionContextMenu({ children, sessionId, isPinned }: SessionContextMenuProps) {
+00238    if (!useCanManageSession()) return children;
+00239  
+00240    return (
+00241      <ContextMenu>
+00242        <ContextMenuTrigger render={children} />
+00243        <ContextMenuContent className={SIDEBAR_ACTION_MENU_STYLES.sessionContent}>
+00244          <SessionActionItems menuType="context" sessionId={sessionId} isPinned={isPinned} />
+00245        </ContextMenuContent>
+00246      </ContextMenu>
+00247    );
+00248  }
+00249  
+00250  type WorkspaceActionsMenuProps = {
+00251    workspace: WorkspaceInfo;
+00252    isConnectionActionBusy: boolean;
+00253    canRecover: boolean;
+00254    className: string;
+00255  };
+00256  
+00257  function WorkspaceActionsMenu({ workspace, isConnectionActionBusy, canRecover, className }: WorkspaceActionsMenuProps) {
+00258    const ctx = useSidebarContext();
+00259    const actionIds = getWorkspaceSidebarActionIds({ workspaceType: workspace.workspaceType, canRecover });
+00260    // P2(C1):默认徽标以 server 的 isDefault 标记为准,不再读 localStorage 缓存。
+00261    const isDefaultWorkspace = workspace.isDefault === true && workspace.workspaceType === "local";
+00262  
+00263    return (
+00264      <DropdownMenu>
+00265        <Tooltip>
+00266          <TooltipTrigger render={(
+00267              <DropdownMenuTrigger
+00268                render={
+00269                  <Button
+00270                    variant="ghost"
+00271                    size="icon"
+00272                    className={cn("size-6", className)}
+00273                    onClick={(e) => {
+00274                      e.stopPropagation();

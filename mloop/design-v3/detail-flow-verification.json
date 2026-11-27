@@ -1,0 +1,93 @@
+{
+  "date": "2026-11-09",
+  "method": "Tabbit browser interaction and screenshot inspection; Multica live pages and source comparison",
+  "viewports": [
+    {
+      "width": 1280,
+      "height": 800
+    },
+    {
+      "width": 1470,
+      "height": 900
+    }
+  ],
+  "cardSizesAt1470": {
+    "scheduled": [
+      320,
+      234
+    ],
+    "agent": [
+      310,
+      212
+    ],
+    "squad": [
+      310,
+      235
+    ]
+  },
+  "checks": {
+    "scheduled": [
+      "Single top-right New entry",
+      "Popup keeps list mounted",
+      "Create required validation",
+      "New agent selectable as assignee",
+      "Prompt edit and refresh persistence",
+      "Enable/pause",
+      "Manual run creates linked board task",
+      "Add/pause/delete trigger",
+      "Nested editor Escape preserves detail"
+    ],
+    "agents": [
+      "Runtime selection required before next",
+      "Back preserves configuration",
+      "Create/configure/finish/detail and refresh",
+      "Skills editing",
+      "Work assignment creates shared board task",
+      "Board status reflected in agent detail",
+      "Editing agent instructions preserves board task status",
+      "Local runtime connection setup"
+    ],
+    "squads": [
+      "Create with captain and human member",
+      "Captain automatically included",
+      "Add agent member",
+      "Edit instructions",
+      "Change captain and refresh persistence",
+      "Description count placement and live update; long-form footer remains visible while body scrolls"
+    ],
+    "board": [
+      "Comment and threaded reply with refresh",
+      "State and label activity records",
+      "Wakeup and related link persisted",
+      "Manual execution request and detail",
+      "Child task creation/completion"
+    ],
+    "layout": [
+      "No document horizontal overflow on agent/squad/scheduled pages at both viewports",
+      "Work styling inspected on actual screenshots",
+      "Application error collection empty, excluding browser extension StorageArea Illegal invocation errors",
+      "All HTML local asset references resolve; duplicate old bundle references absent; git diff --check and native JS syntax check passed"
+    ]
+  },
+  "build": {
+    "command": "node design-v2/build.mjs",
+    "result": "passed"
+  },
+  "previews": [
+    "previews/agents-new.png",
+    "previews/agent-create-new.png",
+    "previews/agent-detail-new.png",
+    "previews/squads-new.png",
+    "previews/squad-detail-new.png",
+    "previews/scheduled-list.png",
+    "previews/scheduled-detail.png",
+    "previews/scheduled-create.png",
+    "previews/work-board-detail.png",
+    "previews/squad-create-new.png"
+  ],
+  "cleanup": "Removed only objects created for this QA session from localhost stores; preserved pre-existing data and user 127.0.0.1 storage.",
+  "limitations": [
+    "Local static prototype; no real model calls, scheduled workers or webhook receiver.",
+    "No claim of exhaustive button coverage or pixel-perfect parity across all Multica pages."
+  ]
+}

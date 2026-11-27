@@ -1,0 +1,553 @@
+{
+  "team": {
+    "id": "showcase-collaboration",
+    "name": "MobileWork 产品协作",
+    "initial": "M",
+    "description": "人和智能体，一起把讨论推进成结果",
+    "role": "所有者",
+    "color": "blue",
+    "created": "2026-11-12"
+  },
+  "workspace": {
+    "issues": [
+      {
+        "subscribed": true,
+        "pinned": false,
+        "read": true,
+        "createdAt": "2026-11-12T08:00:00+08:00",
+        "updatedAt": "2026-11-12T08:00:00+08:00",
+        "start": "2026-11-12",
+        "id": 101,
+        "title": "梳理 Cursor 核心能力与产品需求",
+        "assignee": "彭姝",
+        "status": "进行中",
+        "project": "MobileCoder 产品升级",
+        "priority": "高",
+        "due": "2026-11-14",
+        "description": "## 目标\n梳理 Cursor 核心能力与产品需求，让用户在同一工作空间完成讨论、分工、执行和验收。\n\n## 工作范围\n- 保留会话中的需求背景与决策记录\n- 明确负责人、交付物和截止时间\n- 任务进展回到原会话，减少重复沟通\n\n## 验收标准\n- 人与智能体作为平等成员参与协作\n- 从任务可回溯原始讨论与成果文档\n- 成员可以看到一致的进展与状态",
+        "parent": null,
+        "activity": [
+          {
+            "id": "demo-activity-101",
+            "text": "从会话「Cursor 调研 → MobileCoder 功能落地」创建，已明确负责人和交付日期。",
+            "time": "2026-11-12T10:30:00+08:00"
+          }
+        ]
+      },
+      {
+        "subscribed": true,
+        "pinned": false,
+        "read": true,
+        "createdAt": "2026-11-12T08:00:00+08:00",
+        "updatedAt": "2026-11-12T08:00:00+08:00",
+        "start": "2026-11-12",
+        "id": 102,
+        "title": "实现多人会话与智能体协作",
+        "assignee": "赵一帆",
+        "status": "进行中",
+        "project": "MobileCoder 产品升级",
+        "priority": "高",
+        "due": "2026-11-18",
+        "description": "## 目标\n实现多人会话与智能体协作，让用户在同一工作空间完成讨论、分工、执行和验收。\n\n## 工作范围\n- 保留会话中的需求背景与决策记录\n- 明确负责人、交付物和截止时间\n- 任务进展回到原会话，减少重复沟通\n\n## 验收标准\n- 人与智能体作为平等成员参与协作\n- 从任务可回溯原始讨论与成果文档\n- 成员可以看到一致的进展与状态",
+        "parent": null,
+        "activity": [
+          {
+            "id": "demo-activity-102",
+            "text": "从会话「Cursor 调研 → MobileCoder 功能落地」创建，已明确负责人和交付日期。",
+            "time": "2026-11-12T10:30:00+08:00"
+          }
+        ]
+      },
+      {
+        "subscribed": true,
+        "pinned": false,
+        "read": true,
+        "createdAt": "2026-11-12T08:00:00+08:00",
+        "updatedAt": "2026-11-12T08:00:00+08:00",
+        "start": "2026-11-12",
+        "id": 103,
+        "title": "输出竞品调研与需求文档",
+        "assignee": "肖叶茂的 Work 助手",
+        "status": "已完成",
+        "project": "MobileCoder 产品升级",
+        "priority": "中",
+        "due": "2026-11-12",
+        "description": "## 目标\n输出竞品调研与需求文档，让用户在同一工作空间完成讨论、分工、执行和验收。\n\n## 工作范围\n- 保留会话中的需求背景与决策记录\n- 明确负责人、交付物和截止时间\n- 任务进展回到原会话，减少重复沟通\n\n## 验收标准\n- 人与智能体作为平等成员参与协作\n- 从任务可回溯原始讨论与成果文档\n- 成员可以看到一致的进展与状态",
+        "parent": null,
+        "activity": [
+          {
+            "id": "demo-activity-103",
+            "text": "从会话「Cursor 调研 → MobileCoder 功能落地」创建，已明确负责人和交付日期。",
+            "time": "2026-11-12T10:30:00+08:00"
+          }
+        ]
+      },
+      {
+        "subscribed": true,
+        "pinned": false,
+        "read": true,
+        "createdAt": "2026-11-12T08:00:00+08:00",
+        "updatedAt": "2026-11-12T08:00:00+08:00",
+        "start": "2026-11-12",
+        "id": 104,
+        "title": "会话成员邀请与 @ 提及",
+        "assignee": "赵一帆",
+        "status": "已完成",
+        "project": "MobileCoder 产品升级",
+        "priority": "高",
+        "due": "2026-11-15",
+        "description": "## 目标\n会话成员邀请与 @ 提及，让用户在同一工作空间完成讨论、分工、执行和验收。\n\n## 工作范围\n- 保留会话中的需求背景与决策记录\n- 明确负责人、交付物和截止时间\n- 任务进展回到原会话，减少重复沟通\n\n## 验收标准\n- 人与智能体作为平等成员参与协作\n- 从任务可回溯原始讨论与成果文档\n- 成员可以看到一致的进展与状态",
+        "parent": 102,
+        "activity": [
+          {
+            "id": "demo-activity-104",
+            "text": "从会话「Cursor 调研 → MobileCoder 功能落地」创建，已明确负责人和交付日期。",
+            "time": "2026-11-12T10:30:00+08:00"
+          }
+        ]
+      },
+      {
+        "subscribed": true,
+        "pinned": false,
+        "read": true,
+        "createdAt": "2026-11-12T08:00:00+08:00",
+        "updatedAt": "2026-11-12T08:00:00+08:00",
+        "start": "2026-11-12",
+        "id": 105,
+        "title": "任务执行进度与结果回传",
+        "assignee": "赵一帆的 Work 助手",
+        "status": "待办",
+        "project": "MobileCoder 产品升级",
+        "priority": "中",
+        "due": "2026-11-18",
+        "description": "## 目标\n任务执行进度与结果回传，让用户在同一工作空间完成讨论、分工、执行和验收。\n\n## 工作范围\n- 保留会话中的需求背景与决策记录\n- 明确负责人、交付物和截止时间\n- 任务进展回到原会话，减少重复沟通\n\n## 验收标准\n- 人与智能体作为平等成员参与协作\n- 从任务可回溯原始讨论与成果文档\n- 成员可以看到一致的进展与状态",
+        "parent": 102,
+        "activity": [
+          {
+            "id": "demo-activity-105",
+            "text": "从会话「Cursor 调研 → MobileCoder 功能落地」创建，已明确负责人和交付日期。",
+            "time": "2026-11-12T10:30:00+08:00"
+          }
+        ]
+      },
+      {
+        "subscribed": true,
+        "pinned": false,
+        "read": true,
+        "createdAt": "2026-11-12T08:00:00+08:00",
+        "updatedAt": "2026-11-12T08:00:00+08:00",
+        "start": "2026-11-12",
+        "id": 106,
+        "title": "统一任务详情与会话入口",
+        "assignee": "彭姝",
+        "status": "进行中",
+        "project": "MobileWork 协作平台",
+        "priority": "高",
+        "due": "2026-11-16",
+        "description": "## 目标\n统一任务详情与会话入口，让用户在同一工作空间完成讨论、分工、执行和验收。\n\n## 工作范围\n- 保留会话中的需求背景与决策记录\n- 明确负责人、交付物和截止时间\n- 任务进展回到原会话，减少重复沟通\n\n## 验收标准\n- 人与智能体作为平等成员参与协作\n- 从任务可回溯原始讨论与成果文档\n- 成员可以看到一致的进展与状态",
+        "parent": null,
+        "activity": [
+          {
+            "id": "demo-activity-106",
+            "text": "从会话「Cursor 调研 → MobileCoder 功能落地」创建，已明确负责人和交付日期。",
+            "time": "2026-11-12T10:30:00+08:00"
+          }
+        ]
+      },
+      {
+        "subscribed": true,
+        "pinned": false,
+        "read": true,
+        "createdAt": "2026-11-12T08:00:00+08:00",
+        "updatedAt": "2026-11-12T08:00:00+08:00",
+        "start": "2026-11-12",
+        "id": 107,
+        "title": "完成客户试用反馈与验收清单",
+        "assignee": "肖叶茂",
+        "status": "待办",
+        "project": "客户交付与验收",
+        "priority": "高",
+        "due": "2026-11-20",
+        "description": "## 目标\n完成客户试用反馈与验收清单，让用户在同一工作空间完成讨论、分工、执行和验收。\n\n## 工作范围\n- 保留会话中的需求背景与决策记录\n- 明确负责人、交付物和截止时间\n- 任务进展回到原会话，减少重复沟通\n\n## 验收标准\n- 人与智能体作为平等成员参与协作\n- 从任务可回溯原始讨论与成果文档\n- 成员可以看到一致的进展与状态",
+        "parent": null,
+        "activity": [
+          {
+            "id": "demo-activity-107",
+            "text": "从会话「Cursor 调研 → MobileCoder 功能落地」创建，已明确负责人和交付日期。",
+            "time": "2026-11-12T10:30:00+08:00"
+          }
+        ]
+      }
+    ],
+    "comments": [
+      {
+        "id": "showcase-comment-1",
+        "issue": 101,
+        "author": "彭姝",
+        "text": "已完成首轮调研，优先聚焦「多人会话、@ 智能体、讨论转任务」三个高频流程。需求文档已放在关联会话中，今天发起评审。",
+        "createdAt": "2026-11-12T10:30:00+08:00",
+        "reactions": []
+      },
+      {
+        "id": "showcase-comment-2",
+        "issue": 102,
+        "author": "赵一帆",
+        "text": "会话与成员模型已经对齐。先完成成员邀请和消息同步，再接入智能体执行与结果回传。",
+        "createdAt": "2026-11-12T10:30:00+08:00",
+        "reactions": []
+      }
+    ],
+    "chatMessages": [],
+    "drafts": {},
+    "projects": [
+      {
+        "name": "MobileCoder 产品升级",
+        "description": "从竞品调研到产品交付，人和智能体共同推进。",
+        "status": "进行中",
+        "priority": "高",
+        "lead": "肖叶茂",
+        "start": "2026-11-12",
+        "due": "2026-11-20",
+        "workflow": "Default",
+        "resources": []
+      },
+      {
+        "name": "MobileWork 协作平台",
+        "description": "统一会话、任务和多智能体协作。",
+        "status": "进行中",
+        "priority": "高",
+        "lead": "彭姝",
+        "start": "2026-11-12",
+        "due": "2026-11-20",
+        "workflow": "Default",
+        "resources": []
+      },
+      {
+        "name": "客户交付与验收",
+        "description": "需求对齐、进度同步与成果验收。",
+        "status": "进行中",
+        "priority": "高",
+        "lead": "赵一帆",
+        "start": "2026-11-12",
+        "due": "2026-11-20",
+        "workflow": "Default",
+        "resources": []
+      }
+    ],
+    "members": [
+      {
+        "name": "肖叶茂",
+        "email": "",
+        "role": "管理员"
+      },
+      {
+        "name": "彭姝",
+        "email": "",
+        "role": "成员"
+      },
+      {
+        "name": "赵一帆",
+        "email": "",
+        "role": "成员"
+      }
+    ],
+    "agents": [
+      {
+        "name": "肖叶茂的 Work 助手",
+        "description": "协助肖叶茂调研、整理需求并推进任务",
+        "runtime": "Work",
+        "visibility": "工作区",
+        "instructions": "",
+        "model": "默认",
+        "online": false,
+        "runs": 0,
+        "emoji": "",
+        "skills": []
+      },
+      {
+        "name": "彭姝的 Work 助手",
+        "description": "协助彭姝调研、整理需求并推进任务",
+        "runtime": "Work",
+        "visibility": "工作区",
+        "instructions": "",
+        "model": "默认",
+        "online": false,
+        "runs": 0,
+        "emoji": "",
+        "skills": []
+      },
+      {
+        "name": "赵一帆的 Work 助手",
+        "description": "协助赵一帆调研、整理需求并推进任务",
+        "runtime": "Work",
+        "visibility": "工作区",
+        "instructions": "",
+        "model": "默认",
+        "online": false,
+        "runs": 0,
+        "emoji": "",
+        "skills": []
+      }
+    ],
+    "squads": [],
+    "skills": [],
+    "views": [
+      "全部任务"
+    ],
+    "viewLayouts": {},
+    "invitations": [],
+    "issueCreationRequests": []
+  },
+  "conversations": [
+    {
+      "id": "showcase-cursor",
+      "title": "Cursor 调研 → MobileCoder 功能落地",
+      "project": "MobileCoder 产品升级",
+      "members": [
+        "肖叶茂",
+        "彭姝",
+        "赵一帆",
+        "肖叶茂的 Work 助手",
+        "赵一帆的 Work 助手"
+      ],
+      "issues": [
+        101,
+        102
+      ],
+      "messages": [
+        {
+          "author": "肖叶茂",
+          "text": "@彭姝 @赵一帆 把 Cursor 的协作能力用到 MobileCoder。我的 Work 助手先做调研，我们一起把需求和分工定下来。",
+          "time": "10:20",
+          "id": "showcase-cursor-m0",
+          "sentAt": "2026-11-12T10:20:00+08:00"
+        },
+        {
+          "author": "彭姝",
+          "text": "建议优先做三件事：多人讨论、@ 智能体参与、把讨论直接转成任务。我来补齐产品流程和验收标准。",
+          "time": "10:22",
+          "id": "showcase-cursor-m1",
+          "sentAt": "2026-11-12T10:22:00+08:00"
+        },
+        {
+          "author": "赵一帆",
+          "text": "我负责研发实现，先做成员邀请和消息同步。@赵一帆的 Work 助手 帮我梳理技术方案和实现步骤。",
+          "time": "10:24",
+          "id": "showcase-cursor-m2",
+          "sentAt": "2026-11-12T10:24:00+08:00"
+        },
+        {
+          "author": "肖叶茂的 Work 助手",
+          "text": "已整理调研文档，并将讨论拆成 2 项任务：\n彭姝负责产品需求，11 月 14 日评审；赵一帆负责协作实现，11 月 18 日联调。任务已关联本会话，后续进展在这里同步。",
+          "time": "10:28",
+          "kind": "showcase",
+          "files": [
+            {
+              "name": "Cursor 调研与 MobileCoder 需求清单.md",
+              "url": "data:text/markdown;charset=utf-8,%23%20MobileCoder%20%C2%B7%20Cursor%20%E8%83%BD%E5%8A%9B%E8%B0%83%E7%A0%94%E4%B8%8E%E9%9C%80%E6%B1%82%E6%B8%85%E5%8D%95%0A%0A%23%23%20%E6%9C%AC%E6%9C%9F%E7%9B%AE%E6%A0%87%0A%E8%AE%A9%E7%94%A8%E6%88%B7%E4%BB%8E%E4%B8%80%E5%8F%A5%E8%AF%9D%E5%87%BA%E5%8F%91%EF%BC%8C%E9%82%80%E8%AF%B7%E5%90%8C%E4%BA%8B%E5%92%8C%E6%99%BA%E8%83%BD%E4%BD%93%E5%8F%82%E4%B8%8E%E8%AE%A8%E8%AE%BA%EF%BC%8C%E5%B9%B6%E5%B0%86%E5%85%B1%E8%AF%86%E8%BD%AC%E6%88%90%E5%8F%AF%E6%89%A7%E8%A1%8C%E4%BB%BB%E5%8A%A1%E3%80%82%0A%0A%23%23%20%E4%BC%98%E5%85%88%E8%8C%83%E5%9B%B4%0A1.%20%E5%A4%9A%E4%BA%BA%E4%BC%9A%E8%AF%9D%E4%B8%8E%20%40%20%E9%82%80%E8%AF%B7%0A2.%20%E8%AE%A8%E8%AE%BA%E5%86%85%E5%AE%B9%E8%BD%AC%E4%BB%BB%E5%8A%A1%E5%B9%B6%E5%88%86%E9%85%8D%E8%B4%9F%E8%B4%A3%E4%BA%BA%0A3.%20%E6%99%BA%E8%83%BD%E4%BD%93%E6%89%A7%E8%A1%8C%E8%BF%9B%E5%B1%95%E5%92%8C%E6%88%90%E6%9E%9C%E5%9B%9E%E5%88%B0%E4%BC%9A%E8%AF%9D%0A%0A%23%23%20%E5%88%86%E5%B7%A5%0A%E5%BD%AD%E5%A7%9D%EF%BC%9A%E4%BA%A7%E5%93%81%E9%9C%80%E6%B1%82%E4%B8%8E%E9%AA%8C%E6%94%B6%E6%A0%87%E5%87%86%0A%E8%B5%B5%E4%B8%80%E5%B8%86%EF%BC%9A%E5%8D%8F%E4%BD%9C%E6%A8%A1%E5%9E%8B%E4%B8%8E%E7%A0%94%E5%8F%91%E5%AE%9E%E7%8E%B0%0AWork%20%E5%8A%A9%E6%89%8B%EF%BC%9A%E8%B0%83%E7%A0%94%E3%80%81%E6%96%87%E6%A1%A3%E4%B8%8E%E8%BF%9B%E5%B1%95%E6%95%B4%E7%90%86%0A%0A%3E%20%E4%BA%A7%E5%93%81%E6%BC%94%E7%A4%BA%E7%A4%BA%E4%BE%8B%E6%95%B0%E6%8D%AE%E3%80%82"
+            }
+          ],
+          "id": "showcase-cursor-m3",
+          "sentAt": "2026-11-12T10:28:00+08:00",
+          "execution": {
+            "id": "showcase-run-showcase-cursor-m3",
+            "status": "completed",
+            "duration": "24s",
+            "example": true,
+            "steps": [
+              {
+                "id": "context",
+                "title": "读取会话与任务背景",
+                "detail": "梳理参与成员、讨论目标和当前需求范围。",
+                "tool": "context",
+                "status": "completed",
+                "duration": "2s"
+              },
+              {
+                "id": "research",
+                "title": "检索 Cursor 产品能力",
+                "detail": "对照多人会话、智能体协作和任务工作流整理功能要点。",
+                "tool": "search",
+                "status": "completed",
+                "duration": "12s"
+              },
+              {
+                "id": "document",
+                "title": "生成调研与需求清单",
+                "detail": "整理产品流程、优先级及验收标准，产出可下载文档。",
+                "tool": "document",
+                "status": "completed",
+                "duration": "6s"
+              },
+              {
+                "id": "tasks",
+                "title": "创建任务并分配负责人",
+                "detail": "彭姝负责产品需求，赵一帆负责协作实现；关联原始讨论。",
+                "tool": "task",
+                "status": "completed",
+                "duration": "4s"
+              }
+            ]
+          }
+        }
+      ],
+      "createdAt": "2026-11-12T08:00:00+08:00",
+      "updatedAt": "2026-11-12T10:30:00+08:00"
+    },
+    {
+      "id": "showcase-design",
+      "title": "会话与任务 · 产品体验评审",
+      "project": "MobileWork 协作平台",
+      "members": [
+        "肖叶茂",
+        "彭姝",
+        "肖叶茂的 Work 助手"
+      ],
+      "issues": [
+        106
+      ],
+      "messages": [
+        {
+          "author": "肖叶茂",
+          "text": "把会话、任务和成员协作收拢在一个工作空间，用户不需要在多个入口之间来回切换。",
+          "time": "09:40",
+          "id": "showcase-design-m0",
+          "sentAt": "2026-11-12T09:40:00+08:00"
+        },
+        {
+          "author": "彭姝",
+          "text": "已完成任务详情方案：保留动态、会话、子任务三个页签，任务右侧可以直接继续讨论。",
+          "time": "09:45",
+          "id": "showcase-design-m1",
+          "sentAt": "2026-11-12T09:45:00+08:00"
+        }
+      ],
+      "createdAt": "2026-11-12T08:00:00+08:00",
+      "updatedAt": "2026-11-12T09:26:00+08:00"
+    },
+    {
+      "id": "showcase-delivery",
+      "title": "客户试用反馈与交付验收",
+      "project": "客户交付与验收",
+      "members": [
+        "肖叶茂",
+        "彭姝",
+        "赵一帆"
+      ],
+      "issues": [
+        107
+      ],
+      "messages": [
+        {
+          "author": "肖叶茂",
+          "text": "本周邀请客户试用，把反馈直接沉淀成任务，按影响范围安排修复。",
+          "time": "09:10",
+          "id": "showcase-delivery-m0",
+          "sentAt": "2026-11-12T09:10:00+08:00"
+        },
+        {
+          "author": "赵一帆",
+          "text": "我负责试用环境和问题跟踪，交付前逐项核对验收清单。",
+          "time": "09:12",
+          "id": "showcase-delivery-m1",
+          "sentAt": "2026-11-12T09:12:00+08:00"
+        }
+      ],
+      "createdAt": "2026-11-12T08:00:00+08:00",
+      "updatedAt": "2026-11-12T09:22:00+08:00"
+    },
+    {
+      "id": "showcase-research",
+      "title": "与 Work 一起整理竞品调研",
+      "project": "MobileCoder 产品升级",
+      "members": [
+        "肖叶茂",
+        "肖叶茂的 Work 助手"
+      ],
+      "issues": [
+        103
+      ],
+      "messages": [
+        {
+          "author": "肖叶茂",
+          "text": "帮我整理 Cursor 的产品能力，重点关注团队协作和智能体工作流。",
+          "time": "08:40",
+          "id": "showcase-research-m0",
+          "sentAt": "2026-11-12T08:40:00+08:00"
+        },
+        {
+          "author": "肖叶茂的 Work 助手",
+          "text": "调研已整理为需求清单。可以邀请产品和研发同事继续讨论，把确定的事项转成任务。",
+          "time": "08:48",
+          "kind": "showcase",
+          "id": "showcase-research-m1",
+          "sentAt": "2026-11-12T08:48:00+08:00",
+          "execution": {
+            "id": "showcase-run-showcase-research-m1",
+            "status": "completed",
+            "duration": "20s",
+            "example": true,
+            "steps": [
+              {
+                "id": "context",
+                "title": "读取会话与任务背景",
+                "detail": "梳理参与成员、讨论目标和当前需求范围。",
+                "tool": "context",
+                "status": "completed",
+                "duration": "2s"
+              },
+              {
+                "id": "research",
+                "title": "检索 Cursor 产品能力",
+                "detail": "对照多人会话、智能体协作和任务工作流整理功能要点。",
+                "tool": "search",
+                "status": "completed",
+                "duration": "12s"
+              },
+              {
+                "id": "document",
+                "title": "生成调研与需求清单",
+                "detail": "整理产品流程、优先级及验收标准，产出可下载文档。",
+                "tool": "document",
+                "status": "completed",
+                "duration": "6s"
+              }
+            ]
+          }
+        }
+      ],
+      "createdAt": "2026-11-12T08:00:00+08:00",
+      "updatedAt": "2026-11-12T09:18:00+08:00"
+    },
+    {
+      "id": "showcase-weekly",
+      "title": "本周进展 · 需求、研发与交付",
+      "project": "MobileWork 协作平台",
+      "members": [
+        "肖叶茂",
+        "彭姝",
+        "赵一帆",
+        "肖叶茂的 Work 助手"
+      ],
+      "issues": [],
+      "messages": [
+        {
+          "author": "肖叶茂",
+          "text": "本周先把多人协作流程跑通，再逐步接入智能体执行。",
+          "time": "08:10",
+          "id": "showcase-weekly-m0",
+          "sentAt": "2026-11-12T08:10:00+08:00"
+        },
+        {
+          "author": "彭姝",
+          "text": "产品、研发和交付三个项目的讨论已归档；每项任务都可以回到原会话查看背景。",
+          "time": "08:15",
+          "id": "showcase-weekly-m1",
+          "sentAt": "2026-11-12T08:15:00+08:00"
+        }
+      ],
+      "createdAt": "2026-11-12T08:00:00+08:00",
+      "updatedAt": "2026-11-12T09:14:00+08:00"
+    }
+  ]
+}

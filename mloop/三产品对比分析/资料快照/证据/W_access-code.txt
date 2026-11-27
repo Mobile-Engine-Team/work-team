@@ -1,0 +1,165 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/server/src/server.ts
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：19d53219acd88b0cf18dcdc93807413b8f7a04069603a5f3f9e69f6e05863510
+以下是带原行号的节选，不是完整文件。
+
+00001  import { qualifyWorkspace, setWorkspaceQualifier, workspaceQualificationKeys, runInServerFileScope, setServerFileRunner, inheritServerFileScope, serverEnvironment, withServerFiles, withWorkspaceFiles, assertWorkspaceCurrent, captureWorkspaceConnection, serverResponseModelStore, assertServerWorkCurrent } from "./server-file-scope.js";
+00002  import { assertServerExecutionCurrent, assertRequestExecutionContext } from "./execution-context.js";
+00003  import { fetchManualCompaction } from "./manual-compaction-fetch.js";
+00004  import { ConfigurationReloadCoordinator } from "./configuration-reload.js";
+00005  import { removeSessionContextUsage, closeContextUsageStore } from "./context-usage-store.js";
+00006  import { SkillApplicationCoordinator } from "./skill-application.js";
+00007  import { mobileworkSkillPolicyPath, readSkillPolicy, writeSkillPolicy } from "@openwork/mobilework-paths/skill-policy";
+00008  import { existsSync } from "node:fs";
+00009  import { createSearchService } from "./search-service.js";
+00010  import { engineDirectoryKey, engineDirectorySpelling, onDiskDirectorySpelling } from "./on-disk-directory.js";
+00011  import { decodeOpencodeDirectoryHeader, encodeOpencodeDirectoryHeader } from "@openwork/mobilework-paths/directory-identity";
+00012  import { OutputLengthContinuationCoordinator, mergeOutputLengthSse } from "./output-length-continuation.js";
+00013  import { createHash } from "node:crypto";
+00014  import { readFile, writeFile, rm, readdir, rename, stat, appendFile, mkdir, cp, open } from "node:fs/promises";
+00015  import { homedir, hostname } from "node:os";
+00016  import { basename, dirname, extname, isAbsolute, join, relative, resolve, sep } from "node:path";
+00017  import { createOpencodeClient } from "@opencode-ai/sdk/v2/client";
+00018  import { resolveOpencodeConfigDir, mobileworkConfigPath, mobileworkSkillsDir, mobileworkSkillsEnabledDir, mobileworkXdgPaths, globalMobileworkConfigPath, inspectMobileworkEnabledSkillsOverlay, syncMobileworkEnabledSkillsOverlay, mobileworkRetiredSkillExclusions } from "@openwork/mobilework-paths";
+00019  import { createWorkdirOwnershipStore, type WorkdirOwnershipStore } from "./workdir-ownership.js";
+00020  import { WorkspaceRegistry } from "./workspace-registry.js";
+00740   * docs/designs/cold-hot-session-port.md §2.2）。释放完成屏障要求同一目录只有一个释放方，
+00741   * 客户端必须经服务端配置写入与统一重载门禁，不能经通用代理直达引擎。
+00742   */
+00743  const ENGINE_LIFECYCLE_PROXY_ENDPOINTS: ReadonlyArray<readonly [method: string, path: RegExp]> = [
+00744    ["POST", /^\/instance\/dispose$/],
+00745    ["PATCH", /^\/config$/],
+00746    ["PATCH", /^\/global\/config$/],
+00747    ["POST", /^\/global\/dispose$/],
+00748    ["POST", /^\/global\/upgrade$/],
+00749    ["POST", /^\/project\/git\/init$/],
+00750    ["POST", /^\/experimental\/worktree$/],
+00751    ["DELETE", /^\/experimental\/worktree$/],
+00752    ["POST", /^\/experimental\/worktree\/reset$/],
+00753  ];
+00754  
+00755  function assertOpencodeProxyAllowed(actor: Actor, method: string, proxyPath: string) {
+00756    const m = method.toUpperCase();
+00757    const scope = actor.scope ?? "viewer";
+00758  
+00759    // 百分号编码与重复斜杠都不能绕过生命周期端点拦截。
+00760    let decodedPath = proxyPath;
+00761    try {
+00762      decodedPath = decodeURIComponent(proxyPath);
+00763    } catch {
+00764      // 非法编码按原文匹配，交给上游拒绝。
+00765    }
+00766    const lifecyclePath = normalizeOpencodeProxyPath(decodedPath.replace(/\/{2,}/g, "/"));
+00767    if (ENGINE_LIFECYCLE_PROXY_ENDPOINTS.some(([endpointMethod, path]) => endpointMethod === m && path.test(lifecyclePath))) {
+00768      throw new ApiError(403, "engine_lifecycle_proxy_forbidden", "引擎实例释放与配置写入须经服务端统一重载");
+00769    }
+00770  
+00771    if (scope === "viewer" && m !== "GET" && m !== "HEAD") {
+00772      throw new ApiError(403, "forbidden", "Viewer tokens are read-only");
+00773    }
+00774  
+00775    // 审批、沙箱策略和会话权限模式只能由所有者修改；共享同一套路径解码护栏。
+00776    if (scope !== "owner" && m !== "GET" && m !== "HEAD") {
+00777      const normalized = lifecyclePath;
+00778      if (/\/permission\/[^/]+\/reply$/.test(normalized)
+00779        || /^\/sandbox(?:\/|$)/.test(normalized)
+00780        || /^\/session\/[^/]+\/permission-mode$/.test(normalized)) {
+00781        throw new ApiError(403, "forbidden", "仅所有者可以审批或修改沙箱与会话权限");
+00782      }
+00783    }
+00784  }
+00785  
+00786  function isSessionCommandProxyRequest(method: string, proxyPath: string) {
+00787    return method === "POST" && /^\/session\/[^/]+\/command$/.test(normalizeOpencodeProxyPath(proxyPath));
+00788  }
+00789  
+00790  function promptSessionId(method: string, proxyPath: string): string | null {
+00791    if (method !== "POST") return null;
+00792    const match = normalizeOpencodeProxyPath(proxyPath).match(/^\/session\/([^/]+)\/prompt_async$/);
+00793    return match?.[1] ? decodeURIComponent(match[1]) : null;
+00794  }
+00795  
+00796  interface Route {
+00797    method: string;
+00798    regex: RegExp;
+00799    keys: string[];
+00800    auth: AuthMode;
+00801    handler: (ctx: RequestContext) => Promise<Response>;
+00802  }
+00803  
+00804  interface RequestContext {
+00805    request: Request;
+00806    url: URL;
+00807    params: Record<string, string>;
+00808    config: ServerConfig;
+00809    reloadEvents: ReloadEventStore;
+00810    tokens: TokenService;
+00811    actor?: Actor;
+00812  }
+00813  
+00814  export type OpenworkServerHandle = ServeResult;
+00815  
+00816  export function startServer(config: ServerConfig, options: Parameters<typeof startServerInScope>[1] = {}): Promise<OpenworkServerHandle> {
+00817    return runInServerFileScope(config, () => startServerInScope(config, options));
+00818  }
+00819  
+00820  async function startServerInScope(
+00821    config: ServerConfig,
+00822    options: {
+00823      searchPolicy?: import("@openwork/types/search-contract").SearchPolicy;
+00824      resolveSearchApiKey?: () => Promise<string | undefined>;
+00825      /** Test transport injection; production uses the fixed HTTPS adapter target. */
+00826      searchFetch?: typeof fetch;
+00827      /**
+00828       * 受管本地引擎的实例准备协调器（单用户形态），由可信组合根创建并负责释放。
+00829       * 缺省（独立服务端/远端引擎/未接线）时代理行为与引入协调器之前完全一致。
+00830       */
+00831      instancePreparation?: InstancePreparation;
+00832      registerCleanup?: (close: () => Promise<void>) => void;
+00833      signal?: AbortSignal;
+00834    } = {},
+00835  ): Promise<OpenworkServerHandle> {
+00836    ownershipStores.set(config, config.workspaceOwnership ?? createWorkdirOwnershipStore());
+00837    config.defaultWorkspaceBootstrap ??= { state: "pending" };
+00838    const reloadEvents = new ReloadEventStore();
+00839    const tokens = new TokenService(config);
+00840    const env = new EnvService();
+00841    const runRecovery = new RunRecoveryCoordinator();
+00842    runRecoveries.set(config, runRecovery);
+00843    skillApplications.set(config, createSkillApplication());
+00844    configurationReloads.set(config, createConfigurationReload(config));
+00845    const logger = createServerLogger(config);
+00846    const searchService = createSearchService({ policy: options.searchPolicy, resolveApiKey: options.resolveSearchApiKey, fetcher: options.searchFetch, diagnostic: (value) => logger.log("info", `[search] ${JSON.stringify(value)}`) });
+00847    const skillAuth = await createSkillAuthRuntime({ env: serverEnvironment() });
+00848    const reconcileSkillAuthCatalog = async (
+00849      originHints: Readonly<Record<string, SkillInstallOriginHint>> = {},
+00850    ): Promise<InstalledSkillAuthCatalog | null> => {
+00851      try {
+00852        return await skillAuth.reconcileActive(originHints);
+00853      } catch (error) {
+00854        const code = error instanceof SkillAuthCatalogError ? error.code : "CATALOG_UNAVAILABLE";
+00855        logger.log(code === "NOT_LOGGED_IN" ? "info" : "warn", "Skill auth catalog reconcile skipped", { code });
+00856        return null;
+00857      }
+00858    };
+00859    const startServerReloadWatchers = () => startReloadWatchers({
+00860      config,
+00861      reloadEvents,
+00862      logger,
+00863      onSharedSkillsChanged: async () => {
+00864        const items = await listSkills(config.workspaces[0]?.path ?? "", true);
+00865        await skillApplications.get(config)!.reconcile(items.map(item => item.name));
+00866        await reconcileSkillAuthCatalog();
+00867      },
+00868    });
+00869    options.signal?.throwIfAborted();
+00870    let watcherHandle = startServerReloadWatchers();
+00871    let httpServer: ServeResult | undefined;
+00872    const emptyDirectorySubscriptions = new Map<EngineEventHub, () => void>();
+00873    const emptyDirectoryLifetime = new AbortController();
+00874    let stopped = false;
+00875    const close = shareInFlight(async () => {
+00876      stopped = true;
+00877      const failures: unknown[] = [];
+00878      const attempt = async (operation: () => unknown) => {
+00879        try { await operation(); } catch (error) { failures.push(error); }

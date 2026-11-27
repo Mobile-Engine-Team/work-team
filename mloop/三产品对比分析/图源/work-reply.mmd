@@ -1,0 +1,23 @@
+sequenceDiagram
+    autonumber
+    participant p0 as 用户
+    participant p1 as 任务输入区
+    participant p2 as Session / 引擎
+    participant p3 as 主专家 / 子代理
+    participant p4 as 工具 / 文件
+    p0->>p1: 写追问并选择当前模型/专家/工具
+    Note over p0,p1: 当前任务是执行会话，不是共享评论讨论
+    p1->>p2: 空闲则发送；忙碌则进入待发队列
+    Note over p1,p2: 队列在内存按任务保存，不是持久 run 调度台账
+    p2->>p3: 执行当前回合
+    Note over p2,p3: 后续设置不改变当前回合
+    p3->>p0: 需人工授权时显示待确认
+    Note over p0,p3: 主/子会话显示来源；等待应答仍算忙
+    p0->>p4: 授权后才允许实际操作
+    Note over p0,p4: 安全许可与业务验收分开
+    p3->>p2: 提交最终结果且引擎空闲
+    Note over p2,p3: 才允许本轮真正结束并继续队列
+    p2->>p3: 下一条发出时读取当时的模型配置
+    Note over p2,p3: 排队时间的配置不一定就是执行时配置
+    p0->>p1: 停止、回退或继续处理失败
+    Note over p0,p1: 有限停止确认；不承诺外部副作用回滚

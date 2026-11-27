@@ -1,0 +1,165 @@
+源文件：/Users/xymtop/Desktop/mc/work/apps/app/src/react-app/domains/experts/asset-publish/asset-publish-dialog.tsx
+版本：8d2ea29fdf828de0d2e2fddec23130e6b71eb02e
+SHA-256：10b5376477aac0f0513b5ee6559ea4d2d870aed36d90371c913411aec9e29e9b
+以下是带原行号的节选，不是完整文件。
+
+00001  import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from "react";
+00002  import { Check, Loader2 } from "lucide-react";
+00003  import { toast } from "@/components/ui/sonner";
+00004  import { Button } from "@/components/ui/button";
+00005  import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+00006  import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+00007  import { Select, SelectContent, SelectGroup, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+00008  import { readLocalSkillFile } from "@/app/lib/desktop";
+00009  import { t } from "@/i18n";
+00010  import { cn } from "@/lib/utils";
+00011  
+00012  import type { SkillEntry } from "../tabs-skills";
+00013  import { parseSkillMarkdown } from "../tabs-skills";
+00014  import { resolveActiveWorkspaceRoot } from "../../shared/use-workspace-root";
+00015  import {
+00016    queryPublishConstructionTypes,
+00017    queryPublishDomainTree,
+00018    type PublishConstructionType,
+00019    type PublishDomainNode,
+00020  } from "../../shared/asset-publish-api";
+00117        {children}
+00118        {invalidText ? <span className="text-xs text-[var(--mw-error)]">{invalidText}</span> : null}
+00119      </div>
+00120    );
+00121  }
+00122  
+00123  /** hi-fi Select 触发器（528×34，3px 圆角，Gray6 边框，Gray4 占位）。 */
+00124  const selectTriggerClass =
+00125    "h-[34px] w-full rounded-[3px] border-[var(--mw-gray-6)] bg-white px-2 text-sm data-placeholder:text-[var(--mw-gray-4)] hover:bg-white dark:border-dls-border dark:bg-dls-surface dark:hover:bg-dls-surface dark:text-dls-text dark:data-placeholder:text-[var(--mw-gray-4)]";
+00126  
+00127  /** 发布范围单选（hi-fi 982:74760）：未选中白底 Gray5 描边；选中白底品牌蓝描边 + 蓝色圆点。 */
+00128  const radioItemClass =
+00129    "border-[var(--mw-gray-5)] bg-white data-checked:border-[var(--mw-brand)] data-checked:bg-white [&[data-checked]_[data-slot=radio-group-indicator]>span]:bg-[var(--mw-brand)] dark:border-dls-border dark:bg-dls-surface dark:data-checked:bg-dls-surface";
+00130  
+00131  /** 已安装技能发布资产中心弹窗（hi-fi 982:33150 两步向导：上传安全扫描报告 → 选择发布范围）。 */
+00132  export function AssetPublishDialog({
+00133    skill,
+00134    workspaceRoot,
+00135    onClose,
+00136    onPublished,
+00137  }: {
+00138    skill: SkillEntry;
+00139    /** 当前工作空间根（为空时提交/预填前再兜底解析一次）。 */
+00140    workspaceRoot: string | null;
+00141    onClose: () => void;
+00142    onPublished: () => void;
+00143  }) {
+00144    const [step, setStep] = useState<PublishStep>(1);
+00145  
+00146    // ── 预填：资产名称/摘要不设输入框（hi-fi 表单仅领域/建设主体/发布范围），
+00147    // assetName 取「修改技能」保存的技能名称（frontmatter/列表字段兜底）；frontmatterName
+00148    // 取 SKILL.md frontmatter name（稳定 slug）作注册 assetId；摘要/版本取 frontmatter，列表兜底；
+00149    // versionNum 缺失/不合法由 normalizeVersionNum 在注册时兜底 1.0.0。 ──
+00150    const prefillRef = useRef({
+00151      assetName: skill.name,
+00152      frontmatterName: skill.name,
+00153      summary: skill.description ?? "",
+00154      versionNum: "",
+00155    });
+00156    useEffect(() => {
+00157      let active = true;
+00158      void (async () => {
+00159        const root = workspaceRoot || (await resolveActiveWorkspaceRoot());
+00160        if (!root) return;
+00161        const result = await readLocalSkillFile(root, skill.id);
+00162        const { meta } = parseSkillMarkdown(result.content);
+00163        if (!active || !meta) return;
+00164        prefillRef.current = {
+00165          // assetName 优先取「修改技能」保存的技能名称（列表条目 name，registry custom 快照）；
+00166          // 为空时按既有逻辑回落：SKILL.md frontmatter name → 列表字段。
+00167          assetName: skill.name.trim() || meta.name?.trim() || skill.name,
+00168          // frontmatterName = SKILL.md frontmatter name（引擎写入的稳定 slug），注册 assetId 来源。
+00169          frontmatterName: meta.name?.trim() || skill.name,
+00170          summary: meta.description?.trim() || (skill.description ?? ""),
+00171          versionNum: meta.version?.trim() ?? "",
+00172        };
+00173      })().catch(() => undefined);
+00174      return () => {
+00175        active = false;
+00176      };
+00177    }, [skill.id, skill.name, skill.description, workspaceRoot]);
+00178  
+00179    // ── 建设主体：服务端枚举为提交值权威来源 ──
+00180    const [construction, setConstruction] = useState<ResourceState<PublishConstructionType[]>>({
+00181      data: [],
+00182      loading: true,
+00183      error: false,
+00184    });
+00185    const loadConstruction = useCallback(() => {
+00186      setConstruction((current) => ({ ...current, loading: true, error: false }));
+00187      void queryPublishConstructionTypes()
+00188        .then((data) => setConstruction({ data, loading: false, error: false }))
+00189        .catch(() => setConstruction((current) => ({ ...current, loading: false, error: true })));
+00190    }, []);
+00191    useEffect(() => void loadConstruction(), [loadConstruction]);
+00192  
+00193    // ── 领域树 ──
+00194    const [domains, setDomains] = useState<ResourceState<PublishDomainNode[]>>({
+00195      data: [],
+00196      loading: true,
+00197      error: false,
+00198    });
+00199    const loadDomains = useCallback(() => {
+00200      setDomains((current) => ({ ...current, loading: true, error: false }));
+00201      void queryPublishDomainTree()
+00202        .then((data) => setDomains({ data, loading: false, error: false }))
+00203        .catch(() => setDomains((current) => ({ ...current, loading: false, error: true })));
+00204    }, []);
+00205    useEffect(() => void loadDomains(), [loadDomains]);
+00206  
+00207    // ── 表单其余字段 ──
+00208    const [securityReportPath, setSecurityReportPath] = useState<string | null>(null);
+00209    const [constructionType, setConstructionType] = useState<string | null>(null);
+00210    const [domain, setDomain] = useState<DomainSelection | null>(null);
+00211    const [pubScope, setPubScope] = useState<"1" | "2">("1");
+00212    const [pubScopeSelection, setPubScopeSelection] = useState<ScopeSelection>(EMPTY_SCOPE_SELECTION);
+00213    const [attemptedSubmit, setAttemptedSubmit] = useState(false);
+00214  
+00215    const { stage, submitError, submit } = useSkillPublish({ workspaceRoot: workspaceRoot ?? "", skillId: skill.id });
+00216    const submitting = stage === "submitting";
+00217  
+00218    const missingConstruction = constructionType === null;
+00219    const missingDomain = domain === null;
+00220    const missingScope = pubScope === "2" && pubScopeSelection.orgs.length === 0 && pubScopeSelection.users.length === 0;
+00221    const step2Valid = !missingConstruction && !missingDomain && !missingScope;
+00222  
+00223    const handlePrimaryClick = () => {
+00224      if (submitting) return;
+00225      if (step === 1) {
+00226        // 上传成功（拿到 securityReportPath）才可进入下一步。
+00227        if (!securityReportPath) return;
+00228        setStep(2);
+00229        return;
+00230      }
+00231      setAttemptedSubmit(true);
+00232      if (!step2Valid) return;
+00233      void (async () => {
+00234        const ok = await submit({
+00235          assetName: prefillRef.current.assetName,
+00236          frontmatterName: prefillRef.current.frontmatterName,
+00237          summary: prefillRef.current.summary,
+00238          versionNum: prefillRef.current.versionNum,
+00239          securityReportPath: securityReportPath ?? "",
+00240          constructionType: constructionType ?? "",
+00241          domainTypeId: domain?.typeId ?? "",
+00242          ...(domain?.typeName ? { businessTypeName: domain.typeName } : {}),
+00243          ...(domain?.funcId ? { domainFuncId: domain.funcId } : {}),
+00244          ...(domain?.funcName ? { businessFuncName: domain.funcName } : {}),
+00245          pubScope,
+00246          scopeOrgs: pubScope === "2" ? pubScopeSelection.orgs : [],
+00247          scopeUsers: pubScope === "2" ? pubScopeSelection.users : [],
+00248        });
+00249        if (ok) {
+00250          toast.success(t("skills.publish_success_toast", { name: prefillRef.current.assetName }));
+00251          onPublished();
+00252        }
+00253      })();
+00254    };
+00255  
+00256    const fieldInvalid = (missing: boolean) => attemptedSubmit && missing;
